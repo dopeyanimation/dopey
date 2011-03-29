@@ -3,10 +3,8 @@ import gtk
 from gettext import gettext as _
 import gobject
 
-(
-  COLUMN_FRAME_NUMBER,
-  COLUMN_DESCRIPTION,
-) = range(2)
+columns_name = ('frame_number', 'description')
+columns_id = dict((name, i) for i, name in enumerate(columns_name))
 
 # test data:
 cel_list = []
@@ -62,7 +60,7 @@ class ToolWidget(gtk.VBox):
         # frame column
         
         cell = gtk.CellRendererText()
-        cell.set_data("column", COLUMN_FRAME_NUMBER)
+        cell.set_data("column", columns_id['frame_number'])
         cell.set_property('background-set' , True)
         
         column = gtk.TreeViewColumn(_("Frame"))
@@ -78,7 +76,7 @@ class ToolWidget(gtk.VBox):
         # description column
         
         cell = gtk.CellRendererText()
-        cell.set_data("column", COLUMN_DESCRIPTION)
+        cell.set_data("column", columns_id['description'])
         cell.set_property('editable' , True)
         cell.connect("edited", self.on_cell_edited, listmodel)
         
@@ -93,7 +91,7 @@ class ToolWidget(gtk.VBox):
         ani_cel = model.get_value(it, 0)
         column = cell.get_data("column")
         
-        if column == COLUMN_DESCRIPTION:
+        if column == columns_id['description']:
             ani_cel['description'] = new_text
     
     def set_frame(self, column, cell, model, it):
