@@ -28,12 +28,7 @@ class ToolWidget(gtk.VBox):
         gtk.VBox.__init__(self)
         self.app = app
         self.set_size_request(200, 150)
-        
-        sw = gtk.ScrolledWindow()
-        sw.set_shadow_type(gtk.SHADOW_ETCHED_IN)
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        self.pack_start(sw)
-        
+
         # create list:
         listmodel = self.create_list(cel_list)
         
@@ -41,10 +36,14 @@ class ToolWidget(gtk.VBox):
         treeview = gtk.TreeView(listmodel)
         treeview.set_rules_hint(True)
         treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
-        
-        sw.add(treeview)
-
+       
         self.add_columns(treeview)
+        
+        layers_scroll = gtk.ScrolledWindow()
+        layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        layers_scroll.add_with_viewport(treeview)
+
+        self.pack_start(layers_scroll)
         
         self.show_all()
     
