@@ -106,7 +106,7 @@ class ToolWidget(gtk.VBox):
             ani_cel['description'] = new_text
     
     def on_toggle_key(self, button):
-        print "toggle"
+        self.app.doc.model.ani.toggle_key()
     
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
