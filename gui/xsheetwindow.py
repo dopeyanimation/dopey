@@ -8,19 +8,6 @@ from layerswindow import stock_button
 columns_name = ('frame_number', 'description')
 columns_id = dict((name, i) for i, name in enumerate(columns_name))
 
-# test data:
-cel_list = []
-for i in range(1, 25):
-    cel_list.append({
-            'frame_number': i,
-            'description': "",
-            'has_cel': False,
-            'is_key': False,
-    })
-
-for i in (1, 8, 12):
-    cel_list[i-1]['is_key'] = True
-
 
 class ToolWidget(gtk.VBox):
     
@@ -29,10 +16,11 @@ class ToolWidget(gtk.VBox):
     def __init__(self, app):
         gtk.VBox.__init__(self)
         self.app = app
+        self.ani = app.doc.model.ani
         self.set_size_request(200, 150)
 
         # create list:
-        listmodel = self.create_list(cel_list)
+        listmodel = self.create_list(self.ani.cel_list)
         
         # create tree view:
         treeview = gtk.TreeView(listmodel)
@@ -103,20 +91,21 @@ class ToolWidget(gtk.VBox):
         column = cell.get_data("column")
         
         if column == columns_id['description']:
-            ani_cel['description'] = new_text
+            ani_cel.description = new_text
     
     def on_toggle_key(self, button):
-        self.app.doc.model.ani.toggle_key()
+        current_cel = self.ani.get_current_cel()
+        self.ani.toggle_key(current_cel)
     
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
-        cell.set_property('text', ani_cel['frame_number'])
-        if ani_cel['is_key']:
+        cell.set_property('text', ani_cel.frame_number)
+        if ani_cel.is_key:
             cell.set_property('background', '#f2f5a9')
         else:
             cell.set_property('background', '#ffffff')
 
     def set_description(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
-        cell.set_property('text', ani_cel['description'])
+        cell.set_property('text', ani_cel.description)
         
