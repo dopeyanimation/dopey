@@ -3,6 +3,8 @@ import gtk
 from gettext import gettext as _
 import gobject
 
+from layerswindow import stock_button
+
 columns_name = ('frame_number', 'description')
 columns_id = dict((name, i) for i, name in enumerate(columns_name))
 
@@ -43,7 +45,17 @@ class ToolWidget(gtk.VBox):
         layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         layers_scroll.add_with_viewport(treeview)
 
+        # controls:
+        
+        key_button = stock_button(gtk.STOCK_ADD)
+        key_button.connect('clicked', self.on_toggle_key)
+        key_button.set_tooltip_text(_('Toggle Keyframe'))
+
+        buttons_hbox = gtk.HBox()
+        buttons_hbox.pack_start(key_button)
+
         self.pack_start(layers_scroll)
+        self.pack_start(buttons_hbox, expand=False)
         
         self.show_all()
     
@@ -82,7 +94,7 @@ class ToolWidget(gtk.VBox):
         column = gtk.TreeViewColumn(_("Description"))
         column.pack_start(cell, True)
         column.set_cell_data_func(cell, self.set_description)
-        
+
         treeview.append_column(column)        
     
     def on_cell_edited(self, cell, path_string, new_text, model):
@@ -92,6 +104,9 @@ class ToolWidget(gtk.VBox):
         
         if column == columns_id['description']:
             ani_cel['description'] = new_text
+    
+    def on_toggle_key(self, button):
+        print "toggle"
     
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
