@@ -39,8 +39,13 @@ class Animation():
         cel.frame_number = len(self.cel_list)
         self.cel_idx = cel.frame_number - 1
     
-    def toggle_key(self, cel):
-        print unicode(cel)
+    def toggle_key(self):
+        cur_cel = self.get_current_cel()
+        cur_cel.is_key = not cur_cel.is_key
+    
+    def select_cel(self, idx):
+        assert idx >= 0 and idx < len(self.cel_list)
+        self.cel_idx = idx
     
     def get_current_cel(self):
         return self.cel_list[self.cel_idx]

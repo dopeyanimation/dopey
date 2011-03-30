@@ -20,18 +20,19 @@ class ToolWidget(gtk.VBox):
         self.set_size_request(200, 150)
 
         # create list:
-        listmodel = self.create_list(self.ani.cel_list)
+        self.listmodel = self.create_list(self.ani.cel_list)
         
         # create tree view:
-        treeview = gtk.TreeView(listmodel)
-        treeview.set_rules_hint(True)
-        treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
-       
-        self.add_columns(treeview)
+        self.treeview = gtk.TreeView(self.listmodel)
+        self.treeview.set_rules_hint(True)
+        self.treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
+        self.treeview.connect('row-activated', self.on_row_activated)
+        
+        self.add_columns()
         
         layers_scroll = gtk.ScrolledWindow()
         layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        layers_scroll.add_with_viewport(treeview)
+        layers_scroll.add_with_viewport(self.treeview)
 
         # controls:
         
@@ -48,18 +49,17 @@ class ToolWidget(gtk.VBox):
         self.show_all()
     
     def create_list(self, cel_list):
-        lstore = gtk.ListStore(object)
+        listmodel = gtk.ListStore(object)
         for cel in cel_list:
-            lstore.append((cel,))
-        return lstore
+            listmodel.append((cel,))
+        return listmodel
     
-    def add_columns(self, treeview):
-        listmodel = treeview.get_model()
+    def add_columns(self):
+        listmodel = self.treeview.get_model()
         
         # frame column
         
         cell = gtk.CellRendererText()
-        cell.set_data("column", columns_id['frame_number'])
         cell.set_property('background-set' , True)
         
         column = gtk.TreeViewColumn(_("Frame"))
@@ -70,32 +70,41 @@ class ToolWidget(gtk.VBox):
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         column.set_fixed_width(50)
         
-        treeview.append_column(column)
+        self.treeview.append_column(column)
         
         # description column
         
         cell = gtk.CellRendererText()
-        cell.set_data("column", columns_id['description'])
         cell.set_property('editable' , True)
-        cell.connect("edited", self.on_cell_edited, listmodel)
+        cell.connect("edited", self.on_cell_edited, 
+                     (listmodel, columns_id['description']))
         
         column = gtk.TreeViewColumn(_("Description"))
         column.pack_start(cell, True)
         column.set_cell_data_func(cell, self.set_description)
 
-        treeview.append_column(column)        
+        self.treeview.append_column(column)        
     
-    def on_cell_edited(self, cell, path_string, new_text, model):
+    def on_cell_edited(self, cell, path_string, new_text, user_data):
+        model, column = user_data
         it = model.get_iter_from_string(path_string)
         ani_cel = model.get_value(it, 0)
-        column = cell.get_data("column")
         
         if column == columns_id['description']:
             ani_cel.description = new_text
     
+    def on_row_activated(self, treeview, path, view_column):
+        self.ani.select_cel(path[0])
+    
     def on_toggle_key(self, button):
-        current_cel = self.ani.get_current_cel()
-        self.ani.toggle_key(current_cel)
+        
+        # First activate the selected row:
+        treeselection = self.treeview.get_selection()
+        model, it = treeselection.get_selected()
+        path = model.get_path(it)
+        self.ani.select_cel(path[0])
+
+        self.ani.toggle_key()
     
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
@@ -108,4 +117,3 @@ class ToolWidget(gtk.VBox):
     def set_description(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
         cell.set_property('text', ani_cel.description)
-        
