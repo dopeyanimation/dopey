@@ -37,7 +37,7 @@ class ToolWidget(gtk.VBox):
 
         # controls:
         
-        key_button = stock_button(gtk.STOCK_ADD)
+        key_button = stock_button(gtk.STOCK_JUMP_TO)
         key_button.connect('clicked', self.on_toggle_key)
         key_button.set_tooltip_text(_('Toggle Keyframe'))
         
@@ -45,9 +45,14 @@ class ToolWidget(gtk.VBox):
         chdesc_button.connect('clicked', self.on_change_description)
         chdesc_button.set_tooltip_text(_('Change Cel Description'))
         
+        add_button = stock_button(gtk.STOCK_ADD)
+        add_button.connect('clicked', self.on_add_drawing)
+        add_button.set_tooltip_text(_('Add Drawing to this Cel'))
+        
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(key_button)
         buttons_hbox.pack_start(chdesc_button)
+        buttons_hbox.pack_start(add_button)
 
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
@@ -117,6 +122,14 @@ class ToolWidget(gtk.VBox):
                                            ani_cel.description)
         if description:
             self.ani.change_description(ani_cel, description)
+    
+    def on_add_drawing(self, button):
+        self.activate_selected()
+        treeselection = self.treeview.get_selection()
+        model, it = treeselection.get_selected()
+        ani_cel = model.get_value(it, 0)
+        
+        self.ani.add_drawing(ani_cel)
     
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)

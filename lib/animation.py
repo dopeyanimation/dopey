@@ -8,6 +8,7 @@
 
 from gettext import gettext as _
 from command import Action
+import layer
 
 
 class AnimationCel():
@@ -57,6 +58,28 @@ class ChangeDescription(Action):
         self._notify_document_observers()
 
 
+class AddDrawing(Action):
+    def __init__(self, doc, cel):
+        self.doc = doc
+        self.cel = cel
+        self.layer = layer.Layer(self.cel.description)
+        self.layer.surface.observers.append(self.doc.layer_modified_cb)
+
+    def redo(self):
+        self.doc.layers.insert(0, self.layer)
+        self.prev_idx = self.doc.layer_idx
+        self.doc.layer_idx = 0
+        self.prev_value = self.cel.drawing
+        self.cel.drawing = self.layer
+        self._notify_document_observers()
+
+    def undo(self):
+        self.doc.layers.remove(self.layer)
+        self.doc.layer_idx = self.prev_idx
+        self.cel.drawing = self.prev_value
+        self._notify_document_observers()
+
+
 class Animation():
     """
     """
@@ -79,6 +102,11 @@ class Animation():
     def change_description(self, cel, new_description):
         self.doc.do(ChangeDescription(self.doc, cel, new_description))
     
+    def add_drawing(self, cel):
+        if cel.drawing != None:
+            return
+        self.doc.do(AddDrawing(self.doc, cel))
+
     def select_cel(self, idx):
         assert idx >= 0 and idx < len(self.cel_list)
         self.cel_idx = idx
