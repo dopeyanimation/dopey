@@ -6,9 +6,15 @@ import gobject
 import dialogs
 from layerswindow import stock_button
 
-columns_name = ('frame_number', 'description')
-columns_id = dict((name, i) for i, name in enumerate(columns_name))
+COLUMNS_NAME = ('frame_number', 'description')
+COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
+XSHEET_COLORS = {
+    'key_on': ('#f2f5a9', '#f2f5a9'),
+    'key_off': ('#ffffff', '#ededed'),
+    'with_drawing': ('#cdf5ff', '#c3e9f2'),
+    'without_drawing': ('#ffffff', '#ededed'),
+}
 
 class ToolWidget(gtk.VBox):
     
@@ -132,18 +138,31 @@ class ToolWidget(gtk.VBox):
         
         self.ani.add_drawing(ani_cel)
     
+    def _get_row_class(self, model, it):
+        """Return 0 if even row, 1 if odd row."""
+        path = model.get_path(it)[0]
+        return path % 2
+
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
         cell.set_property('text', ani_cel.frame_number)
+
+        r = self._get_row_class(model, it)
         if ani_cel.is_key:
-            cell.set_property('background', '#f2f5a9')
+            cell.set_property('background', 
+                              XSHEET_COLORS['key_on'][r])
         else:
-            cell.set_property('background', '#ffffff')
+            cell.set_property('background', 
+                              XSHEET_COLORS['key_off'][r])
 
     def set_description(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
         cell.set_property('text', ani_cel.description)
+        
+        r = self._get_row_class(model, it)
         if ani_cel.drawing is not None:
-            cell.set_property('background', '#eeeeee')
+            cell.set_property('background',
+                              XSHEET_COLORS['with_drawing'][r])
         else:
-            cell.set_property('background', '#ffffff')
+            cell.set_property('background', 
+                              XSHEET_COLORS['without_drawing'][r])
