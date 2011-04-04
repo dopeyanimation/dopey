@@ -9,6 +9,7 @@
 from gettext import gettext as _
 from command import Action
 
+
 class AnimationCel():
     def __init__(self, description=None, drawing=None, is_key=False):
         if description is None:
@@ -40,6 +41,22 @@ class ToggleKey(Action):
         self._notify_document_observers()
 
 
+class ChangeDescription(Action):
+    def __init__(self, doc, cel, new_description):
+        self.doc = doc
+        self.cel = cel
+        self.new_description = new_description
+
+    def redo(self):
+        self.prev_value = self.cel.description
+        self.cel.description = self.new_description
+        self._notify_document_observers()
+
+    def undo(self):
+        self.cel.description = self.prev_value
+        self._notify_document_observers()
+
+
 class Animation():
     """
     """
@@ -58,6 +75,9 @@ class Animation():
     def toggle_key(self):
         cur_cel = self.get_current_cel()
         self.doc.do(ToggleKey(self.doc, cur_cel))
+    
+    def change_description(self, cel, new_description):
+        self.doc.do(ChangeDescription(self.doc, cel, new_description))
     
     def select_cel(self, idx):
         assert idx >= 0 and idx < len(self.cel_list)

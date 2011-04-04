@@ -96,7 +96,7 @@ class ToolWidget(gtk.VBox):
         ani_cel = model.get_value(it, 0)
         
         if column == columns_id['description']:
-            ani_cel.description = new_text
+            self.ani.change_description(ani_cel, new_text)
     
     def on_row_activated(self, treeview, path, view_column):
         self.ani.select_cel(path[0])
