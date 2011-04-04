@@ -3,6 +3,7 @@ import gtk
 from gettext import gettext as _
 import gobject
 
+import dialogs
 from layerswindow import stock_button
 
 columns_name = ('frame_number', 'description')
@@ -39,9 +40,14 @@ class ToolWidget(gtk.VBox):
         key_button = stock_button(gtk.STOCK_ADD)
         key_button.connect('clicked', self.on_toggle_key)
         key_button.set_tooltip_text(_('Toggle Keyframe'))
-
+        
+        chdesc_button = stock_button(gtk.STOCK_ITALIC)
+        chdesc_button.connect('clicked', self.on_change_description)
+        chdesc_button.set_tooltip_text(_('Change Cel Description'))
+        
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(key_button)
+        buttons_hbox.pack_start(chdesc_button)
 
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
@@ -80,9 +86,6 @@ class ToolWidget(gtk.VBox):
         # description column
         
         cell = gtk.CellRendererText()
-        cell.set_property('editable' , True)
-        cell.connect("edited", self.on_cell_edited, 
-                     (listmodel, columns_id['description']))
         
         column = gtk.TreeViewColumn(_("Description"))
         column.pack_start(cell, True)
@@ -90,26 +93,30 @@ class ToolWidget(gtk.VBox):
 
         self.treeview.append_column(column)        
     
-    def on_cell_edited(self, cell, path_string, new_text, user_data):
-        model, column = user_data
-        it = model.get_iter_from_string(path_string)
-        ani_cel = model.get_value(it, 0)
-        
-        if column == columns_id['description']:
-            self.ani.change_description(ani_cel, new_text)
-    
     def on_row_activated(self, treeview, path, view_column):
         self.ani.select_cel(path[0])
-    
-    def on_toggle_key(self, button):
         
-        # First activate the selected row:
+    def activate_selected(self):
+        """Activate the selected row. """
         treeselection = self.treeview.get_selection()
         model, it = treeselection.get_selected()
         path = model.get_path(it)
         self.ani.select_cel(path[0])
-
+    
+    def on_toggle_key(self, button):
+        self.activate_selected()
         self.ani.toggle_key()
+    
+    def on_change_description(self, button):
+        self.activate_selected()
+        treeselection = self.treeview.get_selection()
+        model, it = treeselection.get_selected()
+        ani_cel = model.get_value(it, 0)
+        
+        description = dialogs.ask_for_name(self, _("Description"),
+                                           ani_cel.description)
+        if description:
+            self.ani.change_description(ani_cel, description)
     
     def set_frame(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
