@@ -7,7 +7,7 @@
 # (at your option) any later version.
 
 from gettext import gettext as _
-from command import Action
+from command import Action, SelectLayer
 import layer
 
 
@@ -25,6 +25,41 @@ class AnimationCel():
             return u"%d. * %s" % (self.frame_number, self.description)
         else:
             return u"%d. %s" % (self.frame_number, self.description)
+
+
+class SelectCel(Action):
+    def __init__(self, doc, idx):
+        self.doc = doc
+        self.idx = idx
+        self.select_layer = None
+    
+    def redo(self):
+        self.prev_value = self.doc.ani.cel_idx
+        self.doc.ani.cel_idx = self.idx
+        cur_cel = self.doc.ani.cel
+        if cur_cel.drawing is not None:
+            idx = self.doc.layers.index(cur_cel.drawing)
+            self.select_layer = SelectLayer(self.doc, idx)
+            self.select_layer.redo()
+            for l in self.doc.layers:
+                l.opacity = 0.3
+                self._notify_canvas_observers(l)
+            cur_cel.drawing.opacity = 1.0
+            self._notify_canvas_observers(cur_cel.drawing)
+        self._notify_document_observers()
+    
+    def undo(self):
+        self.doc.ani.cel_idx = self.prev_value
+        cur_cel = self.doc.ani.cel
+        if self.select_layer is not None:
+            self.select_layer.undo()
+        if cur_cel.drawing is not None:
+            for l in self.doc.layers:
+                l.opacity = 0.3
+                self._notify_canvas_observers(l)
+            cur_cel.drawing.opacity = 1.0
+            self._notify_canvas_observers(cur_cel.drawing)
+        self._notify_document_observers()
 
 
 class ToggleKey(Action):
@@ -96,8 +131,7 @@ class Animation():
         self.cel_idx = cel.frame_number - 1
     
     def toggle_key(self):
-        cur_cel = self.get_current_cel()
-        self.doc.do(ToggleKey(self.doc, cur_cel))
+        self.doc.do(ToggleKey(self.doc, self.cel))
     
     def change_description(self, cel, new_description):
         self.doc.do(ChangeDescription(self.doc, cel, new_description))
@@ -109,10 +143,11 @@ class Animation():
 
     def select_cel(self, idx):
         assert idx >= 0 and idx < len(self.cel_list)
-        self.cel_idx = idx
+        self.doc.do(SelectCel(self.doc, idx))
     
     def get_current_cel(self):
         return self.cel_list[self.cel_idx]
+    cel = property(get_current_cel)
     
     def _test_mock(self):
         for i in range(1, 25):

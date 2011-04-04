@@ -91,6 +91,7 @@ class ToolWidget(gtk.VBox):
         # description column
         
         cell = gtk.CellRendererText()
+        cell.set_property('background-set' , True)
         
         column = gtk.TreeViewColumn(_("Description"))
         column.pack_start(cell, True)
@@ -142,3 +143,7 @@ class ToolWidget(gtk.VBox):
     def set_description(self, column, cell, model, it):
         ani_cel = model.get_value(it, 0)
         cell.set_property('text', ani_cel.description)
+        if ani_cel.drawing is not None:
+            cell.set_property('background', '#eeeeee')
+        else:
+            cell.set_property('background', '#ffffff')
