@@ -7,7 +7,7 @@
 # (at your option) any later version.
 
 from gettext import gettext as _
-
+from command import Action
 
 class AnimationCel():
     def __init__(self, description=None, drawing=None, is_key=False):
@@ -25,11 +25,27 @@ class AnimationCel():
             return u"%d. %s" % (self.frame_number, self.description)
 
 
+class ToggleKey(Action):
+    def __init__(self, doc, cel):
+        self.doc = doc
+        self.cel = cel
+
+    def redo(self):
+        self.prev_value = self.cel.is_key
+        self.cel.is_key = not self.cel.is_key
+        self._notify_document_observers()
+
+    def undo(self):
+        self.cel.is_key = self.prev_value
+        self._notify_document_observers()
+
+
 class Animation():
     """
     """
     
-    def __init__(self):
+    def __init__(self, doc):
+        self.doc = doc
         self.cel_list = []
         self.cel_idx = None
         self._test_mock()
@@ -41,7 +57,7 @@ class Animation():
     
     def toggle_key(self):
         cur_cel = self.get_current_cel()
-        cur_cel.is_key = not cur_cel.is_key
+        self.doc.do(ToggleKey(self.doc, cur_cel))
     
     def select_cel(self, idx):
         assert idx >= 0 and idx < len(self.cel_list)
