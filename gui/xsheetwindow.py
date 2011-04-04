@@ -47,6 +47,11 @@ class ToolWidget(gtk.VBox):
         self.pack_start(buttons_hbox, expand=False)
         
         self.show_all()
+
+        self.app.doc.model.doc_observers.append(self.update)
+    
+    def update(self, doc):
+        self.queue_draw()
     
     def create_list(self, cel_list):
         listmodel = gtk.ListStore(object)
