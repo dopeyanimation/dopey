@@ -375,7 +375,9 @@ class WindowWithSavedPosition:
         """
         # Save the new position in the prefs...
         f_ex = self.window.get_frame_extents()
-        conf_pos = dict(x=f_ex.x, y=f_ex.y, w=event.width, h=event.height)
+        x = max(0, f_ex.x)
+        y = max(0, f_ex.y)
+        conf_pos = dict(x=x, y=y, w=event.width, h=event.height)
         self.__last_conf_pos = conf_pos
         if self.get_role() == 'main-window':
             # ... however, wait for a bit so window-state-event has a chance to
@@ -797,7 +799,6 @@ class ToolWindow (gtk.Window, ElasticContainer, WindowWithSavedPosition):
         WindowWithSavedPosition.__init__(self)
         self.layout_manager = layout_manager
         self.set_type_hint(gdk.WINDOW_TYPE_HINT_UTILITY)
-        self.set_position(gtk.WIN_POS_MOUSE)
         self.role = role
         self.set_role(role)
         self.set_title(title)
@@ -1236,11 +1237,17 @@ class ToolDragState:
             pass  # Widget has already been reordered,
                   # or snapped in and then reordered.
         else:
-            x, y = self.handle_pos_root
+            # Snap out
             if self.tool in sidebar.tools_vbox:
                 self.tool.set_floating(True)
-                self.tool.floating_window.resize(*self.preview_size)
-            self.tool.floating_window.move(x, y)
+            # Set window position to that of the floating window
+            x, y = self.handle_pos_root
+            w, h = self.preview_size
+            def set_pos(tool):
+                tool.floating_window.resize(w, h)
+                tool.floating_window.move(x, y)
+                return False  #oneshot
+            gobject.idle_add(set_pos, self.tool)
         self.preview.hide()
         self.tool.handle.on_reposition_drag_finished()
         self.tool = None
@@ -1421,13 +1428,13 @@ def set_initial_window_position(win, pos):
     assert screen_h > MIN_USABLE_SIZE
 
     if x is not None and y is not None:
-        if x > 0:
+        if x >= 0:
             final_x = x
         else:
             assert w is not None
             assert w > 0
             final_x = screen_w - w - abs(x)
-        if y > 0:
+        if y >= 0:
             final_y = y
         else:
             assert h is not None
@@ -1455,9 +1462,12 @@ def set_initial_window_position(win, pos):
         if final_w > screen_w or final_w < MIN_USABLE_SIZE: final_w = None
         if final_h > screen_h or final_h < MIN_USABLE_SIZE: final_h = None
 
-    if final_w and final_h:
-        win.set_default_size(final_w, final_h)
-
-    if final_x and final_y:
-        win.move(final_x, final_y)
+    if None not in (final_w, final_h, final_x, final_y):
+        geom_str = "%dx%d+%d+%d" % (final_w, final_h, final_x, final_y)
+        win.parse_geometry(geom_str)
+    else:
+        if final_w and final_h:
+            win.set_default_size(final_w, final_h)
+        if final_x and final_y:
+            win.move(final_x, final_y)
 
