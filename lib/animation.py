@@ -10,6 +10,7 @@ from gettext import gettext as _
 from command import Action, SelectLayer
 import layer
 
+from framelist import FrameList
 
 class AnimationCel():
     def __init__(self, description=None, drawing=None, is_key=False):
@@ -27,91 +28,93 @@ class AnimationCel():
             return u"%d. %s" % (self.frame_number, self.description)
 
 
-class SelectCel(Action):
-    def __init__(self, doc, idx):
+class SelectFrame(Action):
+    def __init__(self, doc, frames, idx):
         self.doc = doc
+        self.frames = frames
         self.idx = idx
         self.select_layer = None
     
     def redo(self):
-        self.prev_value = self.doc.ani.cel_idx
-        self.doc.ani.cel_idx = self.idx
-        cur_cel = self.doc.ani.cel
-        if cur_cel.drawing is not None:
-            idx = self.doc.layers.index(cur_cel.drawing)
+        cel = self.frames.cel_at(self.idx)
+        if cel is not None:
+            idx = self.doc.layers.index(cel)
             self.select_layer = SelectLayer(self.doc, idx)
             self.select_layer.redo()
-            for l in self.doc.layers:
-                l.opacity = 0.3
-                self._notify_canvas_observers(l)
-            cur_cel.drawing.opacity = 1.0
-            self._notify_canvas_observers(cur_cel.drawing)
+        
+        self.prev_value = self.frames.idx
+        self.frames.select(self.idx)
+        opacities = self.frames.get_opacities()
+        for cel, opa in opacities.items():
+            cel.opacity = opa
+            self._notify_canvas_observers(cel)
         self._notify_document_observers()
     
     def undo(self):
-        self.doc.ani.cel_idx = self.prev_value
-        cur_cel = self.doc.ani.cel
         if self.select_layer is not None:
             self.select_layer.undo()
-        if cur_cel.drawing is not None:
-            for l in self.doc.layers:
-                l.opacity = 0.3
-                self._notify_canvas_observers(l)
-            cur_cel.drawing.opacity = 1.0
-            self._notify_canvas_observers(cur_cel.drawing)
+        
+        self.frames.select(self.prev_value)
+        opacities = self.frames.get_opacities()
+        for cel, opa in opacities.items():
+            cel.opacity = opa
+            self._notify_canvas_observers(cel)
         self._notify_document_observers()
 
 
 class ToggleKey(Action):
-    def __init__(self, doc, cel):
+    def __init__(self, doc, frames):
         self.doc = doc
-        self.cel = cel
-
+        self.frames = frames
+        self.f = self.frames.get_selected()
+    
     def redo(self):
-        self.prev_value = self.cel.is_key
-        self.cel.is_key = not self.cel.is_key
+        self.prev_value = self.f.is_key
+        self.f.toggle_key()
         self._notify_document_observers()
 
     def undo(self):
-        self.cel.is_key = self.prev_value
+        self.f.is_key = self.prev_value
         self._notify_document_observers()
 
 
 class ChangeDescription(Action):
-    def __init__(self, doc, cel, new_description):
+    def __init__(self, doc, frames, new_description):
         self.doc = doc
-        self.cel = cel
+        self.frames = frames
+        self.f = self.frames.get_selected()
         self.new_description = new_description
 
     def redo(self):
-        self.prev_value = self.cel.description
-        self.cel.description = self.new_description
+        self.prev_value = self.f.description
+        self.f.description = self.new_description
         self._notify_document_observers()
 
     def undo(self):
-        self.cel.description = self.prev_value
+        self.f.description = self.prev_value
         self._notify_document_observers()
 
 
-class AddDrawing(Action):
-    def __init__(self, doc, cel):
+class AddCel(Action):
+    def __init__(self, doc, frames):
         self.doc = doc
-        self.cel = cel
-        self.layer = layer.Layer(self.cel.description)
+        self.frames = frames
+        self.f = self.frames.get_selected()
+        self.layer = layer.Layer(self.f.description)
         self.layer.surface.observers.append(self.doc.layer_modified_cb)
-
+    
     def redo(self):
         self.doc.layers.insert(0, self.layer)
         self.prev_idx = self.doc.layer_idx
         self.doc.layer_idx = 0
-        self.prev_value = self.cel.drawing
-        self.cel.drawing = self.layer
+        
+        self.f.add_cel(self.layer)
         self._notify_document_observers()
-
+    
     def undo(self):
         self.doc.layers.remove(self.layer)
         self.doc.layer_idx = self.prev_idx
-        self.cel.drawing = self.prev_value
+        self.f.remove_cel()
         self._notify_document_observers()
 
 
@@ -121,37 +124,28 @@ class Animation():
     
     def __init__(self, doc):
         self.doc = doc
-        self.cel_list = []
-        self.cel_idx = None
+        self.frames = FrameList(24)
         self._test_mock()
-        
-    def add_cel(self, cel):
-        self.cel_list.append(cel)
-        cel.frame_number = len(self.cel_list)
-        self.cel_idx = cel.frame_number - 1
+    
+    def get_xsheet_list(self):
+        return list(enumerate(self.frames))
     
     def toggle_key(self):
-        self.doc.do(ToggleKey(self.doc, self.cel))
+        self.doc.do(ToggleKey(self.doc, self.frames))
     
-    def change_description(self, cel, new_description):
-        self.doc.do(ChangeDescription(self.doc, cel, new_description))
+    def change_description(self, new_description):
+        self.doc.do(ChangeDescription(self.doc, self.frames, new_description))
     
-    def add_drawing(self, cel):
-        if cel.drawing != None:
+    def add_cel(self):
+        # TODO remove, the button should not provide this:
+        if self.frames.get_selected().cel != None:
             return
-        self.doc.do(AddDrawing(self.doc, cel))
+        self.doc.do(AddCel(self.doc, self.frames))
 
-    def select_cel(self, idx):
-        assert idx >= 0 and idx < len(self.cel_list)
-        self.doc.do(SelectCel(self.doc, idx))
-    
-    def get_current_cel(self):
-        return self.cel_list[self.cel_idx]
-    cel = property(get_current_cel)
+    def select_frame(self, idx):
+        self.doc.do(SelectFrame(self.doc, self.frames, idx))
     
     def _test_mock(self):
-        for i in range(1, 25):
-            self.add_cel(AnimationCel())
         for i in (1, 8, 12, 24):
-            self.cel_list[i-1].is_key = True
+            self.frames[i-1].set_key()
         

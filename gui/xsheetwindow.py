@@ -6,14 +6,14 @@ import gobject
 import dialogs
 from layerswindow import stock_button
 
-COLUMNS_NAME = ('frame_number', 'description')
+COLUMNS_NAME = ('frame_index', 'frame_data')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
 XSHEET_COLORS = {
     'key_on': ('#f2f5a9', '#f2f5a9'),
     'key_off': ('#ffffff', '#ededed'),
-    'with_drawing': ('#cdf5ff', '#c3e9f2'),
-    'without_drawing': ('#ffffff', '#ededed'),
+    'with_cel': ('#cdf5ff', '#c3e9f2'),
+    'without_cel': ('#ffffff', '#ededed'),
 }
 
 class ToolWidget(gtk.VBox):
@@ -25,9 +25,9 @@ class ToolWidget(gtk.VBox):
         self.app = app
         self.ani = app.doc.model.ani
         self.set_size_request(200, 150)
-
+        
         # create list:
-        self.listmodel = self.create_list(self.ani.cel_list)
+        self.listmodel = self.create_list(self.ani.get_xsheet_list())
         
         # create tree view:
         self.treeview = gtk.TreeView(self.listmodel)
@@ -52,8 +52,8 @@ class ToolWidget(gtk.VBox):
         chdesc_button.set_tooltip_text(_('Change Cel Description'))
         
         add_button = stock_button(gtk.STOCK_ADD)
-        add_button.connect('clicked', self.on_add_drawing)
-        add_button.set_tooltip_text(_('Add Drawing to this Cel'))
+        add_button.connect('clicked', self.on_add_cel)
+        add_button.set_tooltip_text(_('Add cel to this frame'))
         
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(key_button)
@@ -70,10 +70,10 @@ class ToolWidget(gtk.VBox):
     def update(self, doc):
         self.queue_draw()
     
-    def create_list(self, cel_list):
-        listmodel = gtk.ListStore(object)
-        for cel in cel_list:
-            listmodel.append((cel,))
+    def create_list(self, xsheet_list):
+        listmodel = gtk.ListStore(int, object)
+        for i, frame in xsheet_list:
+            listmodel.append((i, frame))
         return listmodel
     
     def add_columns(self):
@@ -86,7 +86,7 @@ class ToolWidget(gtk.VBox):
         
         column = gtk.TreeViewColumn(_("Frame"))
         column.pack_start(cell, True)
-        column.set_cell_data_func(cell, self.set_frame)
+        column.set_cell_data_func(cell, self.set_number)
         
         # fix column to 50 pixels:
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
@@ -106,14 +106,14 @@ class ToolWidget(gtk.VBox):
         self.treeview.append_column(column)        
     
     def on_row_activated(self, treeview, path, view_column):
-        self.ani.select_cel(path[0])
+        self.ani.select_frame(path[COLUMNS_ID['frame_index']])
         
     def activate_selected(self):
         """Activate the selected row. """
         treeselection = self.treeview.get_selection()
         model, it = treeselection.get_selected()
         path = model.get_path(it)
-        self.ani.select_cel(path[0])
+        self.ani.select_frame(path[COLUMNS_ID['frame_index']])
     
     def on_toggle_key(self, button):
         self.activate_selected()
@@ -123,32 +123,32 @@ class ToolWidget(gtk.VBox):
         self.activate_selected()
         treeselection = self.treeview.get_selection()
         model, it = treeselection.get_selected()
-        ani_cel = model.get_value(it, 0)
+        frame = model.get_value(it, COLUMNS_ID['frame_data'])
         
         description = dialogs.ask_for_name(self, _("Description"),
-                                           ani_cel.description)
+                                           frame.description)
         if description:
-            self.ani.change_description(ani_cel, description)
+            self.ani.change_description(description)
     
-    def on_add_drawing(self, button):
+    def on_add_cel(self, button):
         self.activate_selected()
         treeselection = self.treeview.get_selection()
         model, it = treeselection.get_selected()
-        ani_cel = model.get_value(it, 0)
-        
-        self.ani.add_drawing(ani_cel)
+        frame = model.get_value(it, COLUMNS_ID['frame_data'])
+        self.ani.add_cel()
     
     def _get_row_class(self, model, it):
         """Return 0 if even row, 1 if odd row."""
         path = model.get_path(it)[0]
         return path % 2
 
-    def set_frame(self, column, cell, model, it):
-        ani_cel = model.get_value(it, 0)
-        cell.set_property('text', ani_cel.frame_number)
-
+    def set_number(self, column, cell, model, it):
+        idx = model.get_value(it, COLUMNS_ID['frame_index'])
+        cell.set_property('text', idx+1)
+        
+        frame = model.get_value(it, COLUMNS_ID['frame_data'])
         r = self._get_row_class(model, it)
-        if ani_cel.is_key:
+        if frame.is_key:
             cell.set_property('background', 
                               XSHEET_COLORS['key_on'][r])
         else:
@@ -156,13 +156,13 @@ class ToolWidget(gtk.VBox):
                               XSHEET_COLORS['key_off'][r])
 
     def set_description(self, column, cell, model, it):
-        ani_cel = model.get_value(it, 0)
-        cell.set_property('text', ani_cel.description)
+        frame = model.get_value(it, COLUMNS_ID['frame_data'])
+        cell.set_property('text', frame.description)
         
         r = self._get_row_class(model, it)
-        if ani_cel.drawing is not None:
+        if frame.cel is not None:
             cell.set_property('background',
-                              XSHEET_COLORS['with_drawing'][r])
+                              XSHEET_COLORS['with_cel'][r])
         else:
             cell.set_property('background', 
-                              XSHEET_COLORS['without_drawing'][r])
+                              XSHEET_COLORS['without_cel'][r])
