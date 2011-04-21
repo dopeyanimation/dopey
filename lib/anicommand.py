@@ -9,10 +9,22 @@
 from command import Action, SelectLayer
 import layer
 
-class SelectFrame(Action):
+
+class AniAction(Action):
+    def __init__(self, frames):
+        self.frames = frames 
+    
+    def update_opacities(self):
+        opacities = self.frames.get_opacities()
+        for cel, opa in opacities.items():
+            cel.opacity = opa
+            self._notify_canvas_observers(cel)
+        
+
+class SelectFrame(AniAction):
     def __init__(self, doc, frames, idx):
+        AniAction.__init__(self, frames)
         self.doc = doc
-        self.frames = frames
         self.idx = idx
         self.select_layer = None
     
@@ -25,10 +37,7 @@ class SelectFrame(Action):
         
         self.prev_value = self.frames.idx
         self.frames.select(self.idx)
-        opacities = self.frames.get_opacities()
-        for cel, opa in opacities.items():
-            cel.opacity = opa
-            self._notify_canvas_observers(cel)
+        self.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
@@ -36,17 +45,14 @@ class SelectFrame(Action):
             self.select_layer.undo()
         
         self.frames.select(self.prev_value)
-        opacities = self.frames.get_opacities()
-        for cel, opa in opacities.items():
-            cel.opacity = opa
-            self._notify_canvas_observers(cel)
+        self.update_opacities()
         self._notify_document_observers()
 
 
-class ToggleKey(Action):
+class ToggleKey(AniAction):
     def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
         self.doc = doc
-        self.frames = frames
         self.f = self.frames.get_selected()
     
     def redo(self):
@@ -59,10 +65,44 @@ class ToggleKey(Action):
         self._notify_document_observers()
 
 
-class ChangeDescription(Action):
-    def __init__(self, doc, frames, new_description):
+class GoToPrevious(AniAction):
+    def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
         self.doc = doc
-        self.frames = frames
+        self.f = self.frames.get_selected()
+    
+    def redo(self):
+        self.frames.goto_previous()
+        self.update_opacities()
+        self._notify_document_observers()
+    
+    def undo(self):
+        self.frames.goto_next()
+        self.update_opacities()
+        self._notify_document_observers()
+
+
+class GoToNext(AniAction):
+    def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.f = self.frames.get_selected()
+    
+    def redo(self):
+        self.frames.goto_next()
+        self.update_opacities()
+        self._notify_document_observers()
+    
+    def undo(self):
+        self.frames.goto_previous()
+        self.update_opacities()
+        self._notify_document_observers()
+
+
+class ChangeDescription(AniAction):
+    def __init__(self, doc, frames, new_description):
+        AniAction.__init__(self, frames)
+        self.doc = doc
         self.f = self.frames.get_selected()
         self.new_description = new_description
 
@@ -76,10 +116,10 @@ class ChangeDescription(Action):
         self._notify_document_observers()
 
 
-class AddCel(Action):
+class AddCel(AniAction):
     def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
         self.doc = doc
-        self.frames = frames
         self.f = self.frames.get_selected()
         self.layer = layer.Layer(self.f.description)
         self.layer.surface.observers.append(self.doc.layer_modified_cb)

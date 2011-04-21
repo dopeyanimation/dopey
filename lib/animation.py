@@ -43,12 +43,10 @@ class Animation():
         self.doc.do(anicommand.ToggleKey(self.doc, self.frames))
     
     def previous_frame(self):
-        # TODO
-        pass
+        self.doc.do(anicommand.GoToPrevious(self.doc, self.frames))
     
     def next_frame(self):
-        # TODO
-        pass
+        self.doc.do(anicommand.GoToNext(self.doc, self.frames))
     
     def change_description(self, new_description):
         self.doc.do(anicommand.ChangeDescription(self.doc, self.frames,
