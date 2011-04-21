@@ -129,13 +129,13 @@ class ToolWidget(gtk.VBox):
         self.activate_selected()
         self.ani.toggle_key()
     
-    def on_next_frame(self, button):
-        self.activate_selected()
-        self.ani.next_frame()
-    
     def on_previous_frame(self, button):
         self.activate_selected()
         self.ani.previous_frame()
+    
+    def on_next_frame(self, button):
+        self.activate_selected()
+        self.ani.next_frame()
     
     def on_change_description(self, button):
         self.activate_selected()
