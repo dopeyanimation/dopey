@@ -47,6 +47,14 @@ class ToolWidget(gtk.VBox):
         key_button.connect('clicked', self.on_toggle_key)
         key_button.set_tooltip_text(_('Toggle Keyframe'))
         
+        previous_button = stock_button(gtk.STOCK_GO_UP)
+        previous_button.connect('clicked', self.on_previous_frame)
+        previous_button.set_tooltip_text(_('Previous Frame'))
+        
+        next_button = stock_button(gtk.STOCK_GO_DOWN)
+        next_button.connect('clicked', self.on_next_frame)
+        next_button.set_tooltip_text(_('Next Frame'))
+        
         chdesc_button = stock_button(gtk.STOCK_ITALIC)
         chdesc_button.connect('clicked', self.on_change_description)
         chdesc_button.set_tooltip_text(_('Change Cel Description'))
@@ -57,6 +65,8 @@ class ToolWidget(gtk.VBox):
         
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(key_button)
+        buttons_hbox.pack_start(previous_button)
+        buttons_hbox.pack_start(next_button)
         buttons_hbox.pack_start(chdesc_button)
         buttons_hbox.pack_start(add_button)
 
@@ -118,6 +128,14 @@ class ToolWidget(gtk.VBox):
     def on_toggle_key(self, button):
         self.activate_selected()
         self.ani.toggle_key()
+    
+    def on_next_frame(self, button):
+        self.activate_selected()
+        self.ani.next_frame()
+    
+    def on_previous_frame(self, button):
+        self.activate_selected()
+        self.ani.previous_frame()
     
     def on_change_description(self, button):
         self.activate_selected()
