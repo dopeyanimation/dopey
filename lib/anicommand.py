@@ -58,10 +58,12 @@ class ToggleKey(AniAction):
     def redo(self):
         self.prev_value = self.f.is_key
         self.f.toggle_key()
+        self.update_opacities()
         self._notify_document_observers()
 
     def undo(self):
         self.f.is_key = self.prev_value
+        self.update_opacities()
         self._notify_document_observers()
 
 
@@ -130,10 +132,12 @@ class AddCel(AniAction):
         self.doc.layer_idx = 0
         
         self.f.add_cel(self.layer)
+        self.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.doc.layers.remove(self.layer)
         self.doc.layer_idx = self.prev_idx
         self.f.remove_cel()
+        self.update_opacities()
         self._notify_document_observers()
