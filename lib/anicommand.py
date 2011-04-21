@@ -31,8 +31,9 @@ class SelectFrame(AniAction):
     def redo(self):
         cel = self.frames.cel_at(self.idx)
         if cel is not None:
-            idx = self.doc.layers.index(cel)
-            self.select_layer = SelectLayer(self.doc, idx)
+            # Select the corresponding layer:
+            layer_idx = self.doc.layers.index(cel)
+            self.select_layer = SelectLayer(self.doc, layer_idx)
             self.select_layer.redo()
         
         self.prev_value = self.frames.idx
