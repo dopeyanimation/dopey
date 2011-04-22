@@ -14,6 +14,7 @@ from gettext import gettext as _
 class Animation(object):
     def __init__(self, doc):
         self.doc = doc
+        self.model = doc.model.ani
 
     def get_init_actions(self):
         # name, stock id, label, accelerator, tooltip, callback
@@ -25,12 +26,12 @@ class Animation(object):
         return actions
 
     def previous_frame_cb(self, action):
-        if self.doc.model.ani.frames.has_previous():
-            self.doc.model.ani.previous_frame()
+        if self.model.frames.has_previous():
+            self.model.previous_frame()
     
     def next_frame_cb(self, action):
-        if self.doc.model.ani.frames.has_next():
-            self.doc.model.ani.next_frame()
+        if self.model.frames.has_next():
+            self.model.next_frame()
 
     def add_cel_cb(self, action):
-        self.doc.model.ani.add_cel()
+        self.model.add_cel()
