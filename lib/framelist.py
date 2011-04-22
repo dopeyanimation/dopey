@@ -1,8 +1,8 @@
 
 DEFAULT_OPACITIES = {
     'current':    1.0,  # The current cel
-    'key':        1./2, # The cel keys that are after and before the current cel 
     'nextprev':   1./2, # The inmediate next and previous cels
+    'key':        1./2, # The cel keys that are after and before the current cel 
     'inbetweens': 1./4, # The cels that are between the keys mentioned above
     'other keys': 1./4, # The other keys
     'other':      0,    # The rest of the cels
@@ -123,6 +123,34 @@ class FrameList(list):
                 return f.cel
         return None
     
+    def get_previous_cel(self):
+        """
+        Return the previous cel that is different than the cel of the
+        current frame.
+        
+        """
+        cur_cel = self.cel_at(self.idx)
+        if not cur_cel:
+            return None
+        for f in reversed(self[:self.idx]):
+            if f.cel != cur_cel:
+                return f.cel
+        return None
+    
+    def get_next_cel(self):
+        """
+        Return the next cel that is different than the cel of the
+        current frame.
+        
+        """
+        cur_cel = self.cel_at(self.idx)
+        if not cur_cel:
+            return None
+        for f in (self[self.idx+1:]):
+            if f.cel != cur_cel:
+                return f.cel
+        return None
+    
     def cel_for_frame(self, frame):
         """
         Return the cel for the frame.
@@ -148,6 +176,14 @@ class FrameList(list):
         cel = self.cel_for_frame(self.get_selected())
         if cel:
             opacities[cel] = self.opacities['current']
+        
+        cel = self.get_previous_cel()
+        if cel and cel not in opacities.keys():
+            opacities[cel] = self.opacities['nextprev']
+
+        cel = self.get_next_cel()
+        if cel and cel not in opacities.keys():
+            opacities[cel] = self.opacities['nextprev']
         
         if self.has_previous_key():
             cel = self.cel_for_frame(self.get_previous_key())
