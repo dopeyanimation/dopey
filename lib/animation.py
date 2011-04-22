@@ -6,6 +6,7 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
+import os
 from gettext import gettext as _
 
 import anicommand
@@ -44,6 +45,24 @@ class Animation(object):
         self.doc = doc
         self.frames = FrameList(24, self.opacities)
         self._test_mock()
+    
+    def save_xsheet(self, filename):
+        root, ext = os.path.splitext(filename)
+        xsheet_fn = root + '.xsheet'
+        xsheetfile = open(xsheet_fn, 'w')
+        # TODO save X Sheet to file
+        xsheetfile.write('xsheet!')
+    
+    def load_xsheet(self, filename):
+        root, ext = os.path.splitext(filename)
+        xsheet_fn = root + '.xsheet'
+        try:
+            xsheetfile = open(xsheet_fn, 'r')
+        except IOError:
+            # TODO new X Sheet
+            pass
+        # TODO load X Sheet from file
+        print xsheetfile.readlines()
     
     def get_xsheet_list(self):
         return list(enumerate(self.frames))
