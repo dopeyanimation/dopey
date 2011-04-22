@@ -180,24 +180,40 @@ class FrameList(list):
         cel = self.get_previous_cel()
         if cel and cel not in opacities.keys():
             opacities[cel] = self.opacities['nextprev']
-
+        
         cel = self.get_next_cel()
         if cel and cel not in opacities.keys():
             opacities[cel] = self.opacities['nextprev']
         
+        prevkey_idx = 0
         if self.has_previous_key():
-            cel = self.cel_for_frame(self.get_previous_key())
+            prevkey = self.get_previous_key()
+            prevkey_idx = self.index(prevkey)
+            cel = self.cel_for_frame(prevkey)
             if cel and cel not in opacities.keys():
                 opacities[cel] = self.opacities['key']
         
+        nextkey_idx = len(self)-1
         if self.has_next_key():
-            cel = self.cel_for_frame(self.get_next_key())
+            nextkey = self.get_next_key()
+            nextkey_idx = self.index(nextkey)
+            cel = self.cel_for_frame(nextkey)
             if cel and cel not in opacities.keys():
                 opacities[cel] = self.opacities['key']
         
         def has_cel(f):
             return f.cel is not None
-        for frame in filter(has_cel, self):
+        
+        # inbetweens:
+        inbetweens_range = self[prevkey_idx:nextkey_idx]
+        for frame in filter(has_cel, inbetweens_range):
+            cel = frame.cel
+            if cel not in opacities.keys():
+                opacities[cel] = self.opacities['inbetweens']
+        
+        # frames outside inmediate keys:
+        outside_range = self[:prevkey_idx] + self[nextkey_idx:]
+        for frame in filter(has_cel, outside_range):
             cel = frame.cel
             if cel not in opacities.keys():
                 if frame.is_key:
