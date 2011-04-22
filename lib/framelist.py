@@ -1,4 +1,13 @@
 
+DEFAULT_OPACITIES = {
+    'current':    1.0,  # The current cel
+    'key':        1./2, # The cel keys that are after and before the current cel 
+    'nextprev':   1./2, # The inmediate next and previous cels
+    'inbetweens': 1./4, # The cels that are between the keys mentioned above
+    'other keys': 1./4, # The other keys
+    'other':      0,    # The rest of the cels
+}
+
 class Frame(object):
     def __init__(self, is_key=False, cel=None):
         self.is_key = is_key
@@ -26,10 +35,17 @@ class FrameList(list):
     The list of frames that constitutes an animation.
     
     """
-    def __init__(self, length):
+    def __init__(self, length, opacities=None):
         for l in range(length):
             self.append(Frame())
         self.idx = 0
+        if opacities is None:
+            opacities = {}
+        self.opacities = dict(DEFAULT_OPACITIES)
+        self.config_opacities(opacities)
+    
+    def config_opacities(self, opacities):
+        self.opacities.update(opacities)
     
     def get_selected(self):
         return self[self.idx]
@@ -126,18 +142,18 @@ class FrameList(list):
             nextkey_idx = self.index(self.get_next_key())
             if self.cel_at(nextkey_idx):
                 cel = self.cel_at(nextkey_idx)
-                opacities[cel] = 1./2
+                opacities[cel] = self.opacities['key']
         
         if self.has_previous_key():
             previouskey_idx = self.index(self.get_previous_key())
             if self.cel_at(previouskey_idx):
                 cel = self.cel_at(previouskey_idx)
-                opacities[cel] = 1./2
+                opacities[cel] = self.opacities['key']
         
         selected_idx = self.index(self.get_selected())
         if self.cel_at(selected_idx):
             cel = self.cel_at(selected_idx)
-            opacities[cel] = 1.0
+            opacities[cel] = self.opacities['current']
         
         def has_cel(f):
             return f.cel is not None
@@ -145,7 +161,7 @@ class FrameList(list):
             return f.cel
         for f in map(get_cel, filter(has_cel, self)):
             if f not in opacities.keys():
-                opacities[f] = 0.0
+                opacities[f] = self.opacities['other']
         
         return opacities
 

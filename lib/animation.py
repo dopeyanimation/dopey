@@ -31,9 +31,18 @@ class Animation(object):
     """
     """
     
+    opacities = {
+    'current':    1.0,
+    'key':        0.4,
+    'nextprev':   0.5,
+    'inbetweens': 0.2,
+    'other keys': 0.4,
+    'other':      0,
+    }
+    
     def __init__(self, doc):
         self.doc = doc
-        self.frames = FrameList(24)
+        self.frames = FrameList(24, opacities)
         self._test_mock()
     
     def get_xsheet_list(self):
