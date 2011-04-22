@@ -42,7 +42,7 @@ class Animation(object):
     
     def __init__(self, doc):
         self.doc = doc
-        self.frames = FrameList(24, opacities)
+        self.frames = FrameList(24, self.opacities)
         self._test_mock()
     
     def get_xsheet_list(self):

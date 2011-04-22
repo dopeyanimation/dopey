@@ -115,10 +115,6 @@ class FrameList(list):
         """
         Return the cel at the nth frame.
         
-        If no cel is defined for this frame, look back the frame list
-        for the first cel that appears.  The returned cel is the one
-        to be shown in the animation at the nth frame.
-        
         """
         if self[n].cel is not None:
             return self[n].cel
@@ -126,6 +122,17 @@ class FrameList(list):
             if f.cel is not None:
                 return f.cel
         return None
+    
+    def cel_for_frame(self, frame):
+        """
+        Return the cel for the frame.
+        
+        If no cel is defined for this frame, look back the frame list
+        for the first cel that appears.  The returned cel is the one
+        to be shown in the animation at the nth frame.
+        
+        """
+        return self.cel_at(self.index(frame))
     
     def get_opacities(self):
         """
@@ -138,30 +145,27 @@ class FrameList(list):
         """
         opacities = {}
         
-        if self.has_next_key():
-            nextkey_idx = self.index(self.get_next_key())
-            if self.cel_at(nextkey_idx):
-                cel = self.cel_at(nextkey_idx)
-                opacities[cel] = self.opacities['key']
+        cel = self.cel_for_frame(self.get_selected())
+        if cel:
+            opacities[cel] = self.opacities['current']
         
         if self.has_previous_key():
-            previouskey_idx = self.index(self.get_previous_key())
-            if self.cel_at(previouskey_idx):
-                cel = self.cel_at(previouskey_idx)
+            cel = self.cel_for_frame(self.get_previous_key())
+            if cel and cel not in opacities.keys():
                 opacities[cel] = self.opacities['key']
         
-        selected_idx = self.index(self.get_selected())
-        if self.cel_at(selected_idx):
-            cel = self.cel_at(selected_idx)
-            opacities[cel] = self.opacities['current']
+        if self.has_next_key():
+            cel = self.cel_for_frame(self.get_next_key())
+            if cel and cel not in opacities.keys():
+                opacities[cel] = self.opacities['key']
         
         def has_cel(f):
             return f.cel is not None
         def get_cel(f):
             return f.cel
-        for f in map(get_cel, filter(has_cel, self)):
-            if f not in opacities.keys():
-                opacities[f] = self.opacities['other']
+        for cel in map(get_cel, filter(has_cel, self)):
+            if cel not in opacities.keys():
+                opacities[cel] = self.opacities['other']
         
         return opacities
 
@@ -256,6 +260,8 @@ IndexError: Trying to select inexistent frame.
 >>> frames.cel_at(2)
 'b'
 >>> frames.cel_at(3)
+'c'
+>>> frames.cel_for_frame(frames.get_next_key())
 'c'
 >>> set(frames.get_opacities().items()) == set([('a', 0.5), ('b', 1.0), ('c', 0.5)])
 True
