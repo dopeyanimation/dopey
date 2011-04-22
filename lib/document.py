@@ -17,7 +17,6 @@ from gettext import gettext as _
 import helpers, tiledsurface, pixbufsurface, backgroundsurface, mypaintlib
 import command, stroke, layer
 import brush
-import animation
 
 N = tiledsurface.N
 LOAD_CHUNK_SIZE = 64*1024
@@ -57,9 +56,7 @@ class Document():
         # Used by move_frame() to accumulate values
         self._frame_dx = 0.0
         self._frame_dy = 0.0
-        
-        self.ani = animation.Animation(self)
-
+    
     def get_frame(self):
         return self._frame
 

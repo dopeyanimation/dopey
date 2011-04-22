@@ -23,7 +23,7 @@ class ToolWidget(gtk.VBox):
     def __init__(self, app):
         gtk.VBox.__init__(self)
         self.app = app
-        self.ani = app.doc.model.ani
+        self.ani = app.doc.ani.model
         self.set_size_request(200, 150)
         
         # create list:

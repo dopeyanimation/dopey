@@ -11,11 +11,13 @@
 import gtk
 from gettext import gettext as _
 
+import lib.animation
+
 class Animation(object):
     def __init__(self, doc):
         self.doc = doc
-        self.model = doc.model.ani
-
+        self.model = lib.animation.Animation(doc.model)
+    
     def get_init_actions(self):
         # name, stock id, label, accelerator, tooltip, callback
         actions = [
