@@ -45,13 +45,12 @@ class Animation(object):
     def __init__(self, doc):
         self.doc = doc
         self.frames = FrameList(24, self.opacities)
-        self._test_mock()
     
     def save_xsheet(self, filename):
         root, ext = os.path.splitext(filename)
         xsheet_fn = root + '.xsheet'
         xsheetfile = open(xsheet_fn, 'w')
-        anistorage.save(self.frames, xsheetfile)
+        anistorage.save(self.frames, xsheetfile, self.doc)
     
     def load_xsheet(self, filename):
         root, ext = os.path.splitext(filename)
@@ -61,7 +60,7 @@ class Animation(object):
         except IOError:
             # TODO new X Sheet
             pass
-        anistorage.load(self.frames, xsheetfile)
+        anistorage.load(self.frames, xsheetfile, self.doc)
     
     def get_xsheet_list(self):
         return list(enumerate(self.frames))
@@ -87,8 +86,4 @@ class Animation(object):
 
     def select_frame(self, idx):
         self.doc.do(anicommand.SelectFrame(self.doc, self.frames, idx))
-    
-    def _test_mock(self):
-        for i in (1, 8, 12, 24):
-            self.frames[i-1].set_key()
         
