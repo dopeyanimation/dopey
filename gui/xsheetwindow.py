@@ -34,6 +34,8 @@ class ToolWidget(gtk.VBox):
         self.treeview.set_rules_hint(True)
         self.treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
         self.treeview.connect('row-activated', self.on_row_activated)
+        # TODO function to call before a row is selected:
+        #self.treeview.get_selection().set_select_function(func, data)
         
         self.add_columns()
         
@@ -76,8 +78,14 @@ class ToolWidget(gtk.VBox):
         self.show_all()
 
         self.app.doc.model.doc_observers.append(self.update)
+        
+    def _get_path_from_frame(self, frame):
+        return (self.ani.frames.idx, )
     
     def update(self, doc):
+        frame = self.ani.frames.get_selected()
+        path = self._get_path_from_frame(frame)
+        self.treeview.get_selection().select_path(path)
         self.queue_draw()
     
     def create_list(self, xsheet_list):
