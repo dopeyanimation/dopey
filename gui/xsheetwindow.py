@@ -44,32 +44,32 @@ class ToolWidget(gtk.VBox):
 
         # controls:
         
-        key_button = stock_button(gtk.STOCK_JUMP_TO)
-        key_button.connect('clicked', self.on_toggle_key)
-        key_button.set_tooltip_text(_('Toggle Keyframe'))
+        self.key_button = stock_button(gtk.STOCK_JUMP_TO)
+        self.key_button.connect('clicked', self.on_toggle_key)
+        self.key_button.set_tooltip_text(_('Toggle Keyframe'))
         
-        previous_button = stock_button(gtk.STOCK_GO_UP)
-        previous_button.connect('clicked', self.on_previous_frame)
-        previous_button.set_tooltip_text(_('Previous Frame'))
+        self.previous_button = stock_button(gtk.STOCK_GO_UP)
+        self.previous_button.connect('clicked', self.on_previous_frame)
+        self.previous_button.set_tooltip_text(_('Previous Frame'))
         
-        next_button = stock_button(gtk.STOCK_GO_DOWN)
-        next_button.connect('clicked', self.on_next_frame)
-        next_button.set_tooltip_text(_('Next Frame'))
+        self.next_button = stock_button(gtk.STOCK_GO_DOWN)
+        self.next_button.connect('clicked', self.on_next_frame)
+        self.next_button.set_tooltip_text(_('Next Frame'))
         
-        chdesc_button = stock_button(gtk.STOCK_ITALIC)
-        chdesc_button.connect('clicked', self.on_change_description)
-        chdesc_button.set_tooltip_text(_('Change Cel Description'))
+        self.chdesc_button = stock_button(gtk.STOCK_ITALIC)
+        self.chdesc_button.connect('clicked', self.on_change_description)
+        self.chdesc_button.set_tooltip_text(_('Change Cel Description'))
         
-        add_button = stock_button(gtk.STOCK_ADD)
-        add_button.connect('clicked', self.on_add_cel)
-        add_button.set_tooltip_text(_('Add cel to this frame'))
+        self.add_button = stock_button(gtk.STOCK_ADD)
+        self.add_button.connect('clicked', self.on_add_cel)
+        self.add_button.set_tooltip_text(_('Add cel to this frame'))
         
         buttons_hbox = gtk.HBox()
-        buttons_hbox.pack_start(key_button)
-        buttons_hbox.pack_start(previous_button)
-        buttons_hbox.pack_start(next_button)
-        buttons_hbox.pack_start(chdesc_button)
-        buttons_hbox.pack_start(add_button)
+        buttons_hbox.pack_start(self.key_button)
+        buttons_hbox.pack_start(self.previous_button)
+        buttons_hbox.pack_start(self.next_button)
+        buttons_hbox.pack_start(self.chdesc_button)
+        buttons_hbox.pack_start(self.add_button)
 
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
@@ -120,15 +120,17 @@ class ToolWidget(gtk.VBox):
         column.pack_start(cell, True)
         column.set_cell_data_func(cell, self.set_description)
 
-        self.treeview.append_column(column)        
+        self.treeview.append_column(column)
     
-    def on_row_activated(self, treeview, path, view_column):
-        self.ani.select_frame(path[COLUMNS_ID['frame_index']])
-
-    def on_row_changed(self, treeselection):
-        model, it = treeselection.get_selected()
+    def _change_buttons(self):
+        self.previous_button.set_sensitive(self.ani.frames.has_previous())
+        self.next_button.set_sensitive(self.ani.frames.has_next())
+    
+    def on_row_changed(self, treesel):
+        model, it = treesel.get_selected()
         path = model.get_path(it)
         self.ani.select_frame(path[COLUMNS_ID['frame_index']])
+        self._change_buttons()
         
     def on_toggle_key(self, button):
         self.ani.toggle_key()
@@ -140,8 +142,8 @@ class ToolWidget(gtk.VBox):
         self.ani.next_frame()
     
     def on_change_description(self, button):
-        treeselection = self.treeview.get_selection()
-        model, it = treeselection.get_selected()
+        treesel = self.treeview.get_selection()
+        model, it = treesel.get_selected()
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
         
         description = dialogs.ask_for_name(self, _("Description"),
@@ -150,8 +152,8 @@ class ToolWidget(gtk.VBox):
             self.ani.change_description(description)
     
     def on_add_cel(self, button):
-        treeselection = self.treeview.get_selection()
-        model, it = treeselection.get_selected()
+        treesel = self.treeview.get_selection()
+        model, it = treesel.get_selected()
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
         self.ani.add_cel()
     
