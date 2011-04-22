@@ -32,10 +32,9 @@ class ToolWidget(gtk.VBox):
         # create tree view:
         self.treeview = gtk.TreeView(self.listmodel)
         self.treeview.set_rules_hint(True)
-        self.treeview.get_selection().set_mode(gtk.SELECTION_SINGLE)
-        self.treeview.connect('row-activated', self.on_row_activated)
-        # TODO function to call before a row is selected:
-        #self.treeview.get_selection().set_select_function(func, data)
+        treesel = self.treeview.get_selection()
+        treesel.set_mode(gtk.SELECTION_SINGLE)
+        treesel.connect('changed', self.on_row_changed)
         
         self.add_columns()
         
@@ -125,28 +124,22 @@ class ToolWidget(gtk.VBox):
     
     def on_row_activated(self, treeview, path, view_column):
         self.ani.select_frame(path[COLUMNS_ID['frame_index']])
-        
-    def activate_selected(self):
-        """Activate the selected row. """
-        treeselection = self.treeview.get_selection()
+
+    def on_row_changed(self, treeselection):
         model, it = treeselection.get_selected()
         path = model.get_path(it)
         self.ani.select_frame(path[COLUMNS_ID['frame_index']])
-    
+        
     def on_toggle_key(self, button):
-        self.activate_selected()
         self.ani.toggle_key()
     
     def on_previous_frame(self, button):
-        self.activate_selected()
         self.ani.previous_frame()
     
     def on_next_frame(self, button):
-        self.activate_selected()
         self.ani.next_frame()
     
     def on_change_description(self, button):
-        self.activate_selected()
         treeselection = self.treeview.get_selection()
         model, it = treeselection.get_selected()
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
@@ -157,7 +150,6 @@ class ToolWidget(gtk.VBox):
             self.ani.change_description(description)
     
     def on_add_cel(self, button):
-        self.activate_selected()
         treeselection = self.treeview.get_selection()
         model, it = treeselection.get_selected()
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
