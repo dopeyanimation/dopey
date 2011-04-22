@@ -161,11 +161,13 @@ class FrameList(list):
         
         def has_cel(f):
             return f.cel is not None
-        def get_cel(f):
-            return f.cel
-        for cel in map(get_cel, filter(has_cel, self)):
+        for frame in filter(has_cel, self):
+            cel = frame.cel
             if cel not in opacities.keys():
-                opacities[cel] = self.opacities['other']
+                if frame.is_key:
+                    opacities[cel] = self.opacities['other keys']
+                else:
+                    opacities[cel] = self.opacities['other']
         
         return opacities
 

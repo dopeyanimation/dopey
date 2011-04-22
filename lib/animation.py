@@ -37,7 +37,7 @@ class Animation(object):
     'nextprev':   0.5,
     'inbetweens': 0.2,
     'other keys': 0.4,
-    'other':      0,
+    'other':      0.2,
     }
     
     def __init__(self, doc):
