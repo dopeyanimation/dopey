@@ -11,7 +11,7 @@ from gettext import gettext as _
 import anicommand
 from framelist import FrameList
 
-class AnimationCel():
+class AnimationCel(object):
     def __init__(self, description=None, drawing=None, is_key=False):
         if description is None:
             description = u""
@@ -27,7 +27,7 @@ class AnimationCel():
             return u"%d. %s" % (self.frame_number, self.description)
 
 
-class Animation():
+class Animation(object):
     """
     """
     

@@ -152,9 +152,6 @@ class ToolWidget(gtk.VBox):
             self.ani.change_description(description)
     
     def on_add_cel(self, button):
-        treesel = self.treeview.get_selection()
-        model, it = treesel.get_selected()
-        frame = model.get_value(it, COLUMNS_ID['frame_data'])
         self.ani.add_cel()
     
     def _get_row_class(self, model, it):

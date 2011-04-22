@@ -20,6 +20,8 @@ from lib import backgroundsurface, command, helpers, layer
 import tileddrawwidget, stategroup
 from brushmanager import ManagedBrush
 
+import animation
+
 # This value allows the user to go back to the exact original size with brush_smaller_cb().
 ERASER_MODE_RADIUS_CHANGE_DEFAULT = 3*(0.3)
 ERASER_MODE_RADIUS_CHANGE_PREF = 'document.eraser_mode_radius_change'
@@ -29,6 +31,7 @@ class Document(object):
         self.app = app
         self.model = lib.document.Document()
         self.model.set_brush(self.app.brush)
+        self.ani = animation.Animation(self)
 
         # View
         self.tdw = tileddrawwidget.TiledDrawWidget(self.model)
@@ -128,6 +131,7 @@ class Document(object):
         ]
         ag = self.action_group = gtk.ActionGroup('DocumentActions')
         ag.add_actions(actions)
+        ag.add_actions(self.ani.get_init_actions())
 
         toggle_actions = [
             # name, stock id, label, accelerator, tooltip, callback, default toggle status
