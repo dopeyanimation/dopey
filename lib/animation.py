@@ -10,6 +10,7 @@ import os
 from gettext import gettext as _
 
 import anicommand
+import anistorage
 from framelist import FrameList
 
 class AnimationCel(object):
@@ -50,8 +51,7 @@ class Animation(object):
         root, ext = os.path.splitext(filename)
         xsheet_fn = root + '.xsheet'
         xsheetfile = open(xsheet_fn, 'w')
-        # TODO save X Sheet to file
-        xsheetfile.write('xsheet!')
+        anistorage.save(self.frames, xsheetfile)
     
     def load_xsheet(self, filename):
         root, ext = os.path.splitext(filename)
@@ -61,8 +61,7 @@ class Animation(object):
         except IOError:
             # TODO new X Sheet
             pass
-        # TODO load X Sheet from file
-        print xsheetfile.readlines()
+        anistorage.load(self.frames, xsheetfile)
     
     def get_xsheet_list(self):
         return list(enumerate(self.frames))
