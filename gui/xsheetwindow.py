@@ -34,7 +34,7 @@ class ToolWidget(gtk.VBox):
         self.treeview.set_rules_hint(True)
         treesel = self.treeview.get_selection()
         treesel.set_mode(gtk.SELECTION_SINGLE)
-        treesel.connect('changed', self.on_row_changed)
+        self.changed_handler = treesel.connect('changed', self.on_row_changed)
         
         self.add_columns()
         
@@ -81,7 +81,31 @@ class ToolWidget(gtk.VBox):
     def _get_path_from_frame(self, frame):
         return (self.ani.frames.idx, )
     
+    def setup(self):
+        treesel = self.treeview.get_selection()
+        model, it = treesel.get_selected()
+        treesel.handler_block(self.changed_handler)
+        
+        self.listmodel.clear()
+        xsheet_list = self.ani.get_xsheet_list()
+        for i, frame in xsheet_list:
+            self.listmodel.append((i, frame))
+            
+        column = self.treeview.get_column(0)
+        cell = column.get_cell_renderers()[0]
+        column.set_cell_data_func(cell, self.set_number)
+        column = self.treeview.get_column(1)
+        cell = column.get_cell_renderers()[0]
+        column.set_cell_data_func(cell, self.set_description)
+        
+        treesel.select_iter(it)
+        treesel.handler_unblock(self.changed_handler)
+    
     def update(self, doc):
+        if self.ani.cleared:
+            self.setup()
+            self.ani.cleared = False
+        
         frame = self.ani.frames.get_selected()
         path = self._get_path_from_frame(frame)
         self.treeview.get_selection().select_path(path)

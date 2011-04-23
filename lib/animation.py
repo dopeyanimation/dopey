@@ -44,7 +44,11 @@ class Animation(object):
     
     def __init__(self, doc):
         self.doc = doc
+        self.cleared = False
+    
+    def clear_xsheet(self, init=False):
         self.frames = FrameList(24, self.opacities)
+        self.cleared = True
     
     def save_xsheet(self, filename):
         root, ext = os.path.splitext(filename)

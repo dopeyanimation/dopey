@@ -46,6 +46,7 @@ class Document():
 
     def __init__(self):
         self.brush = brush.Brush()
+        self.ani = animation.Animation(self)
         self.stroke = None
         self.canvas_observers = []
         self.stroke_observers = [] # callback arguments: stroke, brush (brush is a temporary read-only convenience object)
@@ -59,8 +60,6 @@ class Document():
         self._frame_dx = 0.0
         self._frame_dy = 0.0
         
-        self.ani = animation.Animation(self)
-    
     def get_frame(self):
         return self._frame
 
@@ -131,6 +130,7 @@ class Document():
             for f in self.canvas_observers:
                 f(*bbox)
 
+        self.ani.clear_xsheet(init)
         self.call_doc_observers()
 
     def get_current_layer(self):
