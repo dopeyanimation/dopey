@@ -83,14 +83,16 @@ class ToolWidget(gtk.VBox):
     
     def setup(self):
         treesel = self.treeview.get_selection()
-        model, it = treesel.get_selected()
         treesel.handler_block(self.changed_handler)
+
+        # disconnect treeview so it doesn't update for each row added:
+        self.treeview.set_model(None)
         
         self.listmodel.clear()
         xsheet_list = self.ani.get_xsheet_list()
         for i, frame in xsheet_list:
             self.listmodel.append((i, frame))
-            
+        
         column = self.treeview.get_column(0)
         cell = column.get_cell_renderers()[0]
         column.set_cell_data_func(cell, self.set_number)
@@ -98,7 +100,9 @@ class ToolWidget(gtk.VBox):
         cell = column.get_cell_renderers()[0]
         column.set_cell_data_func(cell, self.set_description)
         
-        treesel.select_iter(it)
+        # reconnect treeview:
+        self.treeview.set_model(self.listmodel)
+        
         treesel.handler_unblock(self.changed_handler)
     
     def update(self, doc):
