@@ -6,6 +6,8 @@ import gobject
 import dialogs
 from layerswindow import stock_button
 
+from lib.framelist import DEFAULT_ACTIVE_CELS
+
 COLUMNS_NAME = ('frame_index', 'frame_data')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
@@ -42,7 +44,7 @@ class ToolWidget(gtk.VBox):
         layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         layers_scroll.add_with_viewport(self.treeview)
 
-        # controls:
+        # xsheet controls:
         
         self.key_button = stock_button(gtk.STOCK_JUMP_TO)
         self.key_button.connect('clicked', self.on_toggle_key)
@@ -71,16 +73,38 @@ class ToolWidget(gtk.VBox):
         buttons_hbox.pack_start(self.chdesc_button)
         buttons_hbox.pack_start(self.add_button)
 
+        # lightbox controls:
+        
         penciltest_button = stock_button(gtk.STOCK_MEDIA_PLAY)
         penciltest_button.connect('clicked', self.on_penciltest)
         penciltest_button.set_tooltip_text(_('Pencil Test'))
         
         anibuttons_hbox = gtk.HBox()
         anibuttons_hbox.pack_start(penciltest_button)
-
+        
+        def opacity_checkbox(attr, label, tooltip=None):
+            cb = gtk.CheckButton(label)
+            pref = "lightbox.%s" % (attr,)
+            default = DEFAULT_ACTIVE_CELS[attr]
+            cb.set_active(self.app.preferences.get(pref, default))
+            cb.connect('toggled', self.on_opacity_toggled, attr)
+            if tooltip is not None:
+                cb.set_tooltip_text(tooltip)
+            self.on_opacity_toggled(cb, attr)
+            opacity_vbox.pack_start(cb, expand=False)
+        
+        opacity_vbox = gtk.VBox()
+        opacity_checkbox('current', _('Current cel'), _("Show the current cel."))
+        opacity_checkbox('nextprev', _('Inmediate cels'), _("Show the inmediate next and previous cels."))
+        opacity_checkbox('key', _('Show inmediate keys'), _("Show the cel keys that are after and before the current cel."))
+        opacity_checkbox('inbetweens', _('Inbetweens'), _("Show the cels that are between the inmediate key cels."))
+        opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
+        opacity_checkbox('other', _('Other cels'), _("Show the rest of the cels."))
+        
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
         self.pack_start(anibuttons_hbox, expand=False)
+        self.pack_start(opacity_vbox, expand=False)
         
         self.show_all()
 
@@ -226,3 +250,10 @@ class ToolWidget(gtk.VBox):
 
     def on_penciltest(self, button):
         self.ani.penciltest()
+
+    def on_opacity_toggled(self, checkbox, attr):
+        pref = "lightbox.%s" % (attr,)
+        self.app.preferences[pref] = checkbox.get_active()
+        self.ani.toggle_opacity(attr, checkbox.get_active())
+        self.queue_draw()
+

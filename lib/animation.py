@@ -165,3 +165,7 @@ class Animation(object):
     def select_frame(self, idx):
         self.doc.do(anicommand.SelectFrame(self.doc, self.frames, idx))
         
+    def toggle_opacity(self, attr, is_active):
+        self.doc.do(anicommand.ToggleOpacity(self.doc, self.frames,
+                                             attr, is_active))
+    

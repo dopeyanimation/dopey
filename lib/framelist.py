@@ -15,6 +15,15 @@ DEFAULT_OPACITIES = {
     'other':      0,    # The rest of the cels
 }
 
+DEFAULT_ACTIVE_CELS = {
+    'current':    True,
+    'nextprev':   True,
+    'key':        True,
+    'inbetweens': True,
+    'other keys': True,
+    'other':      False,
+}
+
 class Frame(object):
     def __init__(self, is_key=False, cel=None):
         self.is_key = is_key
@@ -42,17 +51,24 @@ class FrameList(list):
     The list of frames that constitutes an animation.
     
     """
-    def __init__(self, length, opacities=None):
+    def __init__(self, length, opacities=None, active_cels=None):
         for l in range(length):
             self.append(Frame())
         self.idx = 0
         if opacities is None:
             opacities = {}
         self.opacities = dict(DEFAULT_OPACITIES)
-        self.config_opacities(opacities)
+        if active_cels is None:
+            active_cels = {}
+        self.active_cels = dict(DEFAULT_ACTIVE_CELS)
+        self.setup_opacities(opacities)
+        self.setup_active_cels(active_cels)
     
-    def config_opacities(self, opacities):
+    def setup_opacities(self, opacities):
         self.opacities.update(opacities)
+    
+    def setup_active_cels(self, active_cels):
+        self.active_cels.update(active_cels)
     
     def get_selected(self):
         return self[self.idx]
@@ -180,17 +196,22 @@ class FrameList(list):
         """
         opacities = {}
         
+        def get_opa(c):
+            if self.active_cels[c]:
+                return self.opacities[c]
+            return 0
+        
         cel = self.cel_for_frame(self.get_selected())
         if cel:
-            opacities[cel] = self.opacities['current']
+            opacities[cel] = get_opa('current')
         
         cel = self.get_previous_cel()
         if cel and cel not in opacities.keys():
-            opacities[cel] = self.opacities['nextprev']
+            opacities[cel] = get_opa('nextprev')
         
         cel = self.get_next_cel()
         if cel and cel not in opacities.keys():
-            opacities[cel] = self.opacities['nextprev']
+            opacities[cel] = get_opa('nextprev')
         
         prevkey_idx = 0
         if self.has_previous_key():
@@ -198,7 +219,7 @@ class FrameList(list):
             prevkey_idx = self.index(prevkey)
             cel = self.cel_for_frame(prevkey)
             if cel and cel not in opacities.keys():
-                opacities[cel] = self.opacities['key']
+                opacities[cel] = get_opa('key')
         
         nextkey_idx = len(self)-1
         if self.has_next_key():
@@ -206,7 +227,7 @@ class FrameList(list):
             nextkey_idx = self.index(nextkey)
             cel = self.cel_for_frame(nextkey)
             if cel and cel not in opacities.keys():
-                opacities[cel] = self.opacities['key']
+                opacities[cel] = get_opa('key')
         
         def has_cel(f):
             return f.cel is not None
@@ -216,7 +237,7 @@ class FrameList(list):
         for frame in filter(has_cel, inbetweens_range):
             cel = frame.cel
             if cel not in opacities.keys():
-                opacities[cel] = self.opacities['inbetweens']
+                opacities[cel] = get_opa('inbetweens')
         
         # frames outside inmediate keys:
         outside_range = self[:prevkey_idx] + self[nextkey_idx:]
@@ -224,9 +245,9 @@ class FrameList(list):
             cel = frame.cel
             if cel not in opacities.keys():
                 if frame.is_key:
-                    opacities[cel] = self.opacities['other keys']
+                    opacities[cel] = get_opa('other keys')
                 else:
-                    opacities[cel] = self.opacities['other']
+                    opacities[cel] = get_opa('other')
         
         return opacities
 
