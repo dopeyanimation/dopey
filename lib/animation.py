@@ -67,9 +67,17 @@ class Animation(object):
         anistorage.load(self.frames, xsheetfile, self.doc)
     
     def save_png(self, filename, **kwargs):
-        for f in self.frames:
-            print f
-
+        prefix, ext = os.path.splitext(filename)
+        # if we have a number already, strip it
+        l = prefix.rsplit('.', 1)
+        if l[-1].isdigit():
+            prefix = l[0]
+        doc_bbox = self.doc.get_effective_bbox()
+        for i in range(len(self.frames)):
+            filename = '%s.%03d%s' % (prefix, i+1, ext)
+            cel = self.frames.cel_at(i)
+            cel.surface.save(filename, *doc_bbox, **kwargs)
+    
     def get_xsheet_list(self):
         return list(enumerate(self.frames))
     
