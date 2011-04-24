@@ -90,7 +90,6 @@ class ToolWidget(gtk.VBox):
             cb.connect('toggled', self.on_opacity_toggled, attr)
             if tooltip is not None:
                 cb.set_tooltip_text(tooltip)
-            self.on_opacity_toggled(cb, attr)
             opacity_vbox.pack_start(cb, expand=False)
         
         opacity_vbox = gtk.VBox()
@@ -112,6 +111,14 @@ class ToolWidget(gtk.VBox):
         
     def _get_path_from_frame(self, frame):
         return (self.ani.frames.idx, )
+    
+    def setup_lightbox(self):
+        active_cels = {}
+        for attr, default in DEFAULT_ACTIVE_CELS.items():
+            pref = "lightbox.%s" % (attr,)
+            default = DEFAULT_ACTIVE_CELS[attr]
+            active_cels[attr] = self.app.preferences.get(pref, default)
+        self.ani.frames.setup_active_cels(active_cels)
     
     def setup(self):
         treesel = self.treeview.get_selection()
@@ -136,6 +143,8 @@ class ToolWidget(gtk.VBox):
         self.treeview.set_model(self.listmodel)
         
         treesel.handler_unblock(self.changed_handler)
+        
+        self.setup_lightbox()
     
     def update(self, doc):
         if self.ani.cleared:
