@@ -344,7 +344,6 @@ class Document():
         except IOError, e:
             traceback.print_exc()
             raise SaveLoadError, _('Unable to save: %s') % e.strerror
-        self.ani.save_xsheet(filename)
         self.unsaved_painting_time = 0.0
 
     def load(self, filename, **kwargs):
@@ -363,7 +362,6 @@ class Document():
         except IOError, e:
             traceback.print_exc()
             raise SaveLoadError, _('Error while loading: IOError %s') % e
-        self.ani.load_xsheet(filename)
         self.command_stack.clear()
         self.unsaved_painting_time = 0.0
         self.call_doc_observers()
@@ -540,6 +538,7 @@ class Document():
 
         print '%.3fs save_ora total' % (time.time() - t0)
 
+        self.ani.save_xsheet(filename)
         return thumbnail_pixbuf
 
     def load_ora(self, filename, feedback_cb=None):
@@ -672,3 +671,5 @@ class Document():
             # this leaves the topmost layer selected
 
         print '%.3fs load_ora total' % (time.time() - t0)
+        
+        self.ani.load_xsheet(filename)
