@@ -66,6 +66,10 @@ class Animation(object):
             pass
         anistorage.load(self.frames, xsheetfile, self.doc)
     
+    def save_png(self, filename, **kwargs):
+        for f in self.frames:
+            print f
+
     def get_xsheet_list(self):
         return list(enumerate(self.frames))
     

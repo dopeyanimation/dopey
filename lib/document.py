@@ -388,10 +388,12 @@ class Document():
         print 'Rendered thumbnail in', time.time() - t0, 'seconds.'
         return pixbuf
 
-    def save_png(self, filename, alpha=False, multifile=False, **kwargs):
+    def save_png(self, filename, alpha=False, multifile=False, animation=False, **kwargs):
         doc_bbox = self.get_effective_bbox()
         if multifile:
             self.save_multifile_png(filename, **kwargs)
+        if animation:
+            self.ani.save_png(filename, **kwargs)
         else:
             if alpha:
                 tmp_layer = layer.Layer()
