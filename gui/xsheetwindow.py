@@ -114,6 +114,7 @@ class ToolWidget(gtk.VBox):
         path = self._get_path_from_frame(frame)
         self.treeview.get_selection().select_path(path)
         self.queue_draw()
+        self._change_buttons()
     
     def create_list(self, xsheet_list):
         listmodel = gtk.ListStore(int, object)
@@ -153,6 +154,9 @@ class ToolWidget(gtk.VBox):
     def _change_buttons(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
         self.next_button.set_sensitive(self.ani.frames.has_next())
+        
+        f = self.ani.frames.get_selected()
+        self.add_button.set_sensitive(f.cel is None)
     
     def on_row_changed(self, treesel):
         model, it = treesel.get_selected()
