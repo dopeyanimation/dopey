@@ -69,12 +69,12 @@ class Animation(object):
     def save_png(self, filename, **kwargs):
         prefix, ext = os.path.splitext(filename)
         # if we have a number already, strip it
-        l = prefix.rsplit('.', 1)
+        l = prefix.rsplit('-', 1)
         if l[-1].isdigit():
             prefix = l[0]
         doc_bbox = self.doc.get_effective_bbox()
         for i in range(len(self.frames)):
-            filename = '%s.%03d%s' % (prefix, i+1, ext)
+            filename = '%s-%03d%s' % (prefix, i+1, ext)
             cel = self.frames.cel_at(i)
             cel.surface.save(filename, *doc_bbox, **kwargs)
     
