@@ -62,9 +62,9 @@ class Animation(object):
         try:
             xsheetfile = open(xsheet_fn, 'r')
         except IOError:
-            # TODO new X Sheet
-            pass
-        anistorage.load(self.frames, xsheetfile, self.doc)
+            self.clear_xsheet()
+        else:
+            anistorage.load(self.frames, xsheetfile, self.doc)
     
     def save_png(self, filename, **kwargs):
         prefix, ext = os.path.splitext(filename)
