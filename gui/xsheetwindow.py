@@ -71,8 +71,16 @@ class ToolWidget(gtk.VBox):
         buttons_hbox.pack_start(self.chdesc_button)
         buttons_hbox.pack_start(self.add_button)
 
+        penciltest_button = stock_button(gtk.STOCK_MEDIA_PLAY)
+        penciltest_button.connect('clicked', self.on_penciltest)
+        penciltest_button.set_tooltip_text(_('Pencil Test'))
+        
+        anibuttons_hbox = gtk.HBox()
+        anibuttons_hbox.pack_start(penciltest_button)
+
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
+        self.pack_start(anibuttons_hbox, expand=False)
         
         self.show_all()
 
@@ -215,3 +223,6 @@ class ToolWidget(gtk.VBox):
         else:
             cell.set_property('background', 
                               XSHEET_COLORS['without_cel'][r])
+
+    def on_penciltest(self, button):
+        self.ani.penciltest()

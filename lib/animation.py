@@ -9,6 +9,10 @@
 import os
 from gettext import gettext as _
 import json
+import tempfile
+from subprocess import call
+
+import pixbufsurface
 
 import anicommand
 from framelist import FrameList
@@ -107,6 +111,34 @@ class Animation(object):
             filename = '%s-%03d%s' % (prefix, i+1, ext)
             cel = self.frames.cel_at(i)
             cel.surface.save(filename, *doc_bbox, **kwargs)
+    
+    def _play_penciltest(self, tempdir):
+        
+        # TODO using external program for now:
+        call('blender-2.49b -a ' + tempdir + '/*png', shell=True)
+    
+    def penciltest(self):
+        tempdir = tempfile.mkdtemp(prefix='penciltest')
+        doc_bbox = self.doc.get_effective_bbox()
+        idx = self.frames.idx
+        
+        def select_without_undo(idx):
+            "Like the command but without undo/redo"
+            self.frames.select(idx)
+            opacities = self.frames.get_opacities()
+            for cel, opa in opacities.items():
+                cel.opacity = opa
+                self.doc.call_doc_observers()
+        
+        for i in range(len(self.frames)):
+            select_without_undo(i)
+            prefix = 'cel-' + str(i).zfill(3)
+            suffix = '.png'
+            tempf = tempfile.mkstemp(suffix, prefix, tempdir)
+            pixbufsurface.save_as_png(self.doc, tempf[1], *doc_bbox, alpha=False)
+        
+        select_without_undo(idx)
+        self._play_penciltest(tempdir)
     
     def get_xsheet_list(self):
         return list(enumerate(self.frames))
