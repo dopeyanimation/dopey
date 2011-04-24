@@ -8,9 +8,9 @@
 
 import os
 from gettext import gettext as _
+import json
 
 import anicommand
-import anistorage
 from framelist import FrameList
 
 class AnimationCel(object):
@@ -30,8 +30,6 @@ class AnimationCel(object):
 
 
 class Animation(object):
-    """
-    """
     
     opacities = {
     'current':    1.0,
@@ -50,11 +48,43 @@ class Animation(object):
         self.frames = FrameList(24, self.opacities)
         self.cleared = True
     
+    def _write_xsheet(self, xsheetfile):
+        """
+        Save FrameList to file.
+        
+        """
+        data = []
+        for f in self.frames:
+            if f.cel is not None:
+                layer_idx = self.doc.layers.index(f.cel)
+            else:
+                layer_idx = None
+            data.append((f.is_key, f.description, layer_idx))
+        str_data = json.dumps(data, sort_keys=True, indent=4)
+        xsheetfile.write(str_data)
+
+    def _read_xsheet(self, xsheetfile):
+        """
+        Update FrameList from file.
+    
+        """
+        str_data = xsheetfile.read()
+        data = json.loads(str_data)
+        for i, d in enumerate(data):
+            is_key, description, layer_idx = d
+            if layer_idx is not None:
+                cel = self.doc.layers[layer_idx]
+            else:
+                cel = None
+            self.frames[i].is_key = is_key
+            self.frames[i].description = description
+            self.frames[i].cel = cel
+    
     def save_xsheet(self, filename):
         root, ext = os.path.splitext(filename)
         xsheet_fn = root + '.xsheet'
         xsheetfile = open(xsheet_fn, 'w')
-        anistorage.save(self.frames, xsheetfile, self.doc)
+        self._write_xsheet(xsheetfile)
     
     def load_xsheet(self, filename):
         root, ext = os.path.splitext(filename)
@@ -64,7 +94,7 @@ class Animation(object):
         except IOError:
             self.clear_xsheet()
         else:
-            anistorage.load(self.frames, xsheetfile, self.doc)
+            self._read_xsheet(xsheetfile)
     
     def save_png(self, filename, **kwargs):
         prefix, ext = os.path.splitext(filename)
