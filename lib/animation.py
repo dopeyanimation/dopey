@@ -117,7 +117,7 @@ class Animation(object):
         # TODO using external program for now:
         call('blender-2.49b -a -f 24 1 ' + tempdir + '/*png', shell=True)
     
-    def penciltest(self, fast=False):
+    def penciltest(self, fast=True):
         tempdir = tempfile.mkdtemp(prefix='penciltest')
         idx = self.frames.idx
         
@@ -129,7 +129,12 @@ class Animation(object):
                 cel.opacity = opa
                 self.doc.call_doc_observers()
         
-        def save_with_opacities():
+        def frames_to_png_opacities():
+            """
+            Saves one png for each frame, with the lightbox on, that
+            is, maybe showing other cels transparented.
+            
+            """
             doc_bbox = self.doc.get_effective_bbox()
             for i in range(len(self.frames)):
                 select_without_undo(i)
@@ -139,7 +144,11 @@ class Animation(object):
                 pixbufsurface.save_as_png(self.doc, tempf[1],
                                           *doc_bbox, alpha=False)
         
-        def save_without_opacities():
+        def frames_to_png():
+            """
+            Saves one png for each frame.
+            
+            """
             doc_bbox = self.doc.get_effective_bbox()
             for i in range(len(self.frames)):
                 prefix = 'cel-' + str(i).zfill(3)
@@ -148,10 +157,32 @@ class Animation(object):
                 cel = self.frames.cel_at(i)
                 cel.surface.save(tempf[1], *doc_bbox)
         
+        def frames_to_png2():
+            """
+            TODO HACK, remove and use the other after finding a
+            solution for penciltest playback.
+
+            """
+            previous_active_cels = dict(self.frames.active_cels)
+            active_cels = {'current': True, 'nextprev': False, 
+                           'key': False, 'inbetweens': False,
+                           'other keys': False, 'other': False}
+            self.frames.setup_active_cels(active_cels)
+            doc_bbox = self.doc.get_effective_bbox()
+            for i in range(len(self.frames)):
+                select_without_undo(i)
+                prefix = 'cel-' + str(i).zfill(3)
+                suffix = '.png'
+                tempf = tempfile.mkstemp(suffix, prefix, tempdir)
+                pixbufsurface.save_as_png(self.doc, tempf[1],
+                                          *doc_bbox, alpha=False)
+            self.frames.setup_active_cels(previous_active_cels)
+        
         if fast:
-            save_without_opacities()
+#            frames_to_png()
+            frames_to_png2()
         else:
-            save_with_opacities()
+            frames_to_png_opacities()
         
         select_without_undo(idx)
         self._play_penciltest(tempdir)
