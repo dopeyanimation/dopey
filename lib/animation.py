@@ -117,9 +117,8 @@ class Animation(object):
         # TODO using external program for now:
         call('blender-2.49b -a ' + tempdir + '/*png', shell=True)
     
-    def penciltest(self):
+    def penciltest(self, fast=False):
         tempdir = tempfile.mkdtemp(prefix='penciltest')
-        doc_bbox = self.doc.get_effective_bbox()
         idx = self.frames.idx
         
         def select_without_undo(idx):
@@ -130,12 +129,29 @@ class Animation(object):
                 cel.opacity = opa
                 self.doc.call_doc_observers()
         
-        for i in range(len(self.frames)):
-            select_without_undo(i)
-            prefix = 'cel-' + str(i).zfill(3)
-            suffix = '.png'
-            tempf = tempfile.mkstemp(suffix, prefix, tempdir)
-            pixbufsurface.save_as_png(self.doc, tempf[1], *doc_bbox, alpha=False)
+        def save_with_opacities():
+            doc_bbox = self.doc.get_effective_bbox()
+            for i in range(len(self.frames)):
+                select_without_undo(i)
+                prefix = 'cel-' + str(i).zfill(3)
+                suffix = '.png'
+                tempf = tempfile.mkstemp(suffix, prefix, tempdir)
+                pixbufsurface.save_as_png(self.doc, tempf[1],
+                                          *doc_bbox, alpha=False)
+        
+        def save_without_opacities():
+            doc_bbox = self.doc.get_effective_bbox()
+            for i in range(len(self.frames)):
+                prefix = 'cel-' + str(i).zfill(3)
+                suffix = '.png'
+                tempf = tempfile.mkstemp(suffix, prefix, tempdir)
+                cel = self.frames.cel_at(i)
+                cel.surface.save(tempf[1], *doc_bbox)
+        
+        if fast:
+            save_without_opacities()
+        else:
+            save_with_opacities()
         
         select_without_undo(idx)
         self._play_penciltest(tempdir)
