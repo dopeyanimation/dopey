@@ -156,7 +156,7 @@ class FrameList(list):
         if not cur_cel:
             return None
         for f in reversed(self[:self.idx]):
-            if f.cel != cur_cel:
+            if f.cel is not None and f.cel != cur_cel:
                 return f.cel
         return None
     
@@ -170,7 +170,7 @@ class FrameList(list):
         if not cur_cel:
             return None
         for f in (self[self.idx+1:]):
-            if f.cel != cur_cel:
+            if f.cel is not None and f.cel != cur_cel:
                 return f.cel
         return None
     
@@ -365,6 +365,21 @@ Traceback (most recent call last):
 IndexError: Trying to go to inexistent next keyframe.
 >>> frames.idx
 3
+
+Testing opacities
+-----------------
+
+>>> active_cels = {'current': True, 'nextprev': True, 'key': False, \
+                   'inbetweens': False, 'other keys': False, \
+                   'other': False}
+
+>>> frames = FrameList(6, active_cels=active_cels)
+>>> frames[0].add_cel('a')
+>>> frames[2].add_cel('b')
+>>> frames[4].add_cel('c')
+>>> frames.select(2)
+>>> set(frames.get_opacities().items()) == set([('a', 0.5), ('b', 1.0), ('c', 0.5)])
+True
 
 """)
 
