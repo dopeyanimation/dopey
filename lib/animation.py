@@ -115,7 +115,7 @@ class Animation(object):
     def _play_penciltest(self, tempdir):
         
         # TODO using external program for now:
-        call('blender-2.49b -a ' + tempdir + '/*png', shell=True)
+        call('blender-2.49b -a -f 24 1 ' + tempdir + '/*png', shell=True)
     
     def penciltest(self, fast=False):
         tempdir = tempfile.mkdtemp(prefix='penciltest')
