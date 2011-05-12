@@ -187,9 +187,6 @@ class Animation(object):
         select_without_undo(idx)
         self._play_penciltest(tempdir)
     
-    def get_xsheet_list(self):
-        return list(enumerate(self.frames))
-    
     def toggle_key(self):
         self.doc.do(anicommand.ToggleKey(self.doc, self.frames))
     
@@ -204,9 +201,6 @@ class Animation(object):
                                                  new_description))
     
     def add_cel(self):
-        # TODO remove, the button should not provide this:
-        if self.frames.get_selected().cel != None:
-            return
         self.doc.do(anicommand.AddCel(self.doc, self.frames))
 
     def select_frame(self, idx):
@@ -216,3 +210,6 @@ class Animation(object):
         self.doc.do(anicommand.ToggleOpacity(self.doc, self.frames,
                                              attr, is_active))
     
+    def append_frames(self):
+        self.doc.do(anicommand.AppendFrames(self.doc, self.frames, 4))
+        self.cleared = True

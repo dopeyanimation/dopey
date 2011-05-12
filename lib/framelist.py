@@ -52,8 +52,7 @@ class FrameList(list):
     
     """
     def __init__(self, length, opacities=None, active_cels=None):
-        for l in range(length):
-            self.append(Frame())
+        self.append_frames(length)
         self.idx = 0
         if opacities is None:
             opacities = {}
@@ -63,12 +62,21 @@ class FrameList(list):
         self.active_cels = dict(DEFAULT_ACTIVE_CELS)
         self.setup_opacities(opacities)
         self.setup_active_cels(active_cels)
-    
+        
     def setup_opacities(self, opacities):
         self.opacities.update(opacities)
     
     def setup_active_cels(self, active_cels):
         self.active_cels.update(active_cels)
+    
+    def append_frames(self, length):
+        for l in range(length):
+            self.append(Frame())
+    
+    def pop_frames(self, length):
+        for l in range(length):
+            assert self[len(self)-1].cel == None
+            self.pop()
     
     def get_selected(self):
         return self[self.idx]
@@ -380,6 +388,21 @@ Testing opacities
 >>> frames.select(2)
 >>> set(frames.get_opacities().items()) == set([('a', 0.5), ('b', 1.0), ('c', 0.5)])
 True
+
+Appending more frames
+---------------------
+
+>>> frames = FrameList(6)
+>>> len(frames)
+6
+
+>>> frames.append_frames(6)
+>>> len(frames)
+12
+
+>>> frames.pop_frames(6)
+>>> len(frames)
+6
 
 """)
 

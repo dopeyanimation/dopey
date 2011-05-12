@@ -160,3 +160,17 @@ class ToggleOpacity(AniAction):
         self.frames.setup_active_cels({self.attr: self.prev_value})
         self.update_opacities()
         self._notify_document_observers()
+
+class AppendFrames(AniAction):
+    def __init__(self, doc, frames, length):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.length = length
+
+    def redo(self):
+        self.frames.append_frames(self.length)
+        self._notify_document_observers()
+
+    def undo(self):
+        self.frames.pop_frames(self.length)
+        self._notify_document_observers()

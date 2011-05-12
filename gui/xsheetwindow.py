@@ -29,7 +29,7 @@ class ToolWidget(gtk.VBox):
         self.set_size_request(200, 150)
         
         # create list:
-        self.listmodel = self.create_list(self.ani.get_xsheet_list())
+        self.listmodel = self.create_list()
         
         # create tree view:
         self.treeview = gtk.TreeView(self.listmodel)
@@ -82,6 +82,15 @@ class ToolWidget(gtk.VBox):
         anibuttons_hbox = gtk.HBox()
         anibuttons_hbox.pack_start(penciltest_button)
         
+        # frames edit controls:
+        
+        append_button = stock_button(gtk.STOCK_ADD)
+        append_button.connect('clicked', self.on_append)
+        append_button.set_tooltip_text(_('Append frames'))
+
+        editbuttons_hbox = gtk.HBox()
+        editbuttons_hbox.pack_start(append_button)
+        
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
             pref = "lightbox.%s" % (attr,)
@@ -103,6 +112,7 @@ class ToolWidget(gtk.VBox):
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
         self.pack_start(anibuttons_hbox, expand=False)
+        self.pack_start(editbuttons_hbox, expand=False)
         self.pack_start(opacity_vbox, expand=False)
         
         self.show_all()
@@ -128,7 +138,7 @@ class ToolWidget(gtk.VBox):
         self.treeview.set_model(None)
         
         self.listmodel.clear()
-        xsheet_list = self.ani.get_xsheet_list()
+        xsheet_list = list(enumerate(self.ani.frames))
         for i, frame in xsheet_list:
             self.listmodel.append((i, frame))
         
@@ -157,7 +167,8 @@ class ToolWidget(gtk.VBox):
         self.queue_draw()
         self._change_buttons()
     
-    def create_list(self, xsheet_list):
+    def create_list(self):
+        xsheet_list = list(enumerate(self.ani.frames))
         listmodel = gtk.ListStore(int, object)
         for i, frame in xsheet_list:
             listmodel.append((i, frame))
@@ -266,3 +277,6 @@ class ToolWidget(gtk.VBox):
         self.ani.toggle_opacity(attr, checkbox.get_active())
         self.queue_draw()
 
+    def on_append(self, button):
+        self.ani.append_frames()
+        
