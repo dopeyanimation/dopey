@@ -84,12 +84,17 @@ class ToolWidget(gtk.VBox):
         
         # frames edit controls:
         
-        append_button = stock_button(gtk.STOCK_ADD)
-        append_button.connect('clicked', self.on_append)
-        append_button.set_tooltip_text(_('Append frames'))
+        insert_button = stock_button(gtk.STOCK_ADD)
+        insert_button.connect('clicked', self.on_insert)
+        insert_button.set_tooltip_text(_('Insert two frames below selection'))
+
+        pop_button = stock_button(gtk.STOCK_REMOVE)
+        pop_button.connect('clicked', self.on_pop)
+        pop_button.set_tooltip_text(_('Remove two frames below selection'))
 
         editbuttons_hbox = gtk.HBox()
-        editbuttons_hbox.pack_start(append_button)
+        editbuttons_hbox.pack_start(insert_button)
+        editbuttons_hbox.pack_start(pop_button)
         
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
@@ -277,6 +282,9 @@ class ToolWidget(gtk.VBox):
         self.ani.toggle_opacity(attr, checkbox.get_active())
         self.queue_draw()
 
-    def on_append(self, button):
-        self.ani.append_frames()
+    def on_insert(self, button):
+        self.ani.insert_frames()
+
+    def on_pop(self, button):
+        self.ani.pop_frames()
         

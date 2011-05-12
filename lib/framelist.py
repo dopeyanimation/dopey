@@ -73,10 +73,19 @@ class FrameList(list):
         for l in range(length):
             self.append(Frame())
     
-    def pop_frames(self, length):
+    def pop_frames(self, length, at_current=False):
+        
+        # TODO: check if can pop
         for l in range(length):
             assert self[len(self)-1].cel == None
-            self.pop()
+            if at_current:
+                self.pop(self.idx+1)
+            else:
+                self.pop()
+    
+    def insert_frames(self, length):
+        for l in range(length):
+            self.insert(self.idx+1, Frame())
     
     def get_selected(self):
         return self[self.idx]
@@ -403,6 +412,38 @@ Appending more frames
 >>> frames.pop_frames(6)
 >>> len(frames)
 6
+
+Inserting frames
+----------------
+
+>>> frames = FrameList(4)
+>>> len(frames)
+4
+
+>>> frames[0].add_cel('a')
+>>> frames[2].add_cel('c')
+
+>>> frames.idx = 1
+>>> frames.insert_frames(2)
+>>> len(frames)
+6
+
+>>> frames[2].add_cel('b')
+>>> frames.cel_at(0)
+'a'
+>>> frames.cel_at(2)
+'b'
+>>> frames.cel_at(4)
+'c'
+
+>>> frames.pop_frames(2, at_current=True)
+>>> len(frames)
+4
+
+>>> frames.cel_at(0)
+'a'
+>>> frames.cel_at(2)
+'c'
 
 """)
 

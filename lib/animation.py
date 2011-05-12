@@ -213,3 +213,12 @@ class Animation(object):
     def append_frames(self):
         self.doc.do(anicommand.AppendFrames(self.doc, self.frames, 4))
         self.cleared = True
+
+    def insert_frames(self):
+        self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 2))
+        self.cleared = True
+
+    def pop_frames(self):
+        # TODO: remove layers if necessary
+        #self.doc.do(anicommand.PopFrames(self.doc, self.frames, 2))
+        self.cleared = True

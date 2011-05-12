@@ -174,3 +174,18 @@ class AppendFrames(AniAction):
     def undo(self):
         self.frames.pop_frames(self.length)
         self._notify_document_observers()
+
+class InsertFrames(AniAction):
+    def __init__(self, doc, frames, length):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.idx = frames.idx
+        self.length = length
+
+    def redo(self):
+        self.frames.insert_frames(self.length)
+        self._notify_document_observers()
+
+    def undo(self):
+        self.frames.pop_frames(self.length, at_current=True)
+        self._notify_document_observers()
