@@ -209,6 +209,9 @@ class Animation(object):
     def add_cel(self):
         self.doc.do(anicommand.AddCel(self.doc, self.frames))
 
+    def remove_cel(self):
+        self.doc.do(anicommand.RemoveCel(self.doc, self.frames))
+
     def select_frame(self, idx):
         self.doc.do(anicommand.SelectFrame(self.doc, self.frames, idx))
         

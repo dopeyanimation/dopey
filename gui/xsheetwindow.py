@@ -66,12 +66,17 @@ class ToolWidget(gtk.VBox):
         self.add_button.connect('clicked', self.on_add_cel)
         self.add_button.set_tooltip_text(_('Add cel to this frame'))
         
+        self.remove_button = stock_button(gtk.STOCK_REMOVE)
+        self.remove_button.connect('clicked', self.on_remove_cel)
+        self.remove_button.set_tooltip_text(_('Remove cel of this frame'))
+        
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(self.key_button)
         buttons_hbox.pack_start(self.previous_button)
         buttons_hbox.pack_start(self.next_button)
         buttons_hbox.pack_start(self.chdesc_button)
         buttons_hbox.pack_start(self.add_button)
+        buttons_hbox.pack_start(self.remove_button)
 
         # lightbox controls:
         
@@ -120,8 +125,8 @@ class ToolWidget(gtk.VBox):
         self.pack_start(editbuttons_hbox, expand=False)
         self.pack_start(opacity_vbox, expand=False)
         
+        self._change_buttons()
         self.show_all()
-
         self.app.doc.model.doc_observers.append(self.update)
         
     def _get_path_from_frame(self, frame):
@@ -213,7 +218,12 @@ class ToolWidget(gtk.VBox):
         self.next_button.set_sensitive(self.ani.frames.has_next())
         
         f = self.ani.frames.get_selected()
-        self.add_button.set_sensitive(f.cel is None)
+        if f.cel is None:
+            self.add_button.show()
+            self.remove_button.hide()
+        else:
+            self.add_button.hide()
+            self.remove_button.show()
     
     def on_row_changed(self, treesel):
         model, it = treesel.get_selected()
@@ -242,6 +252,9 @@ class ToolWidget(gtk.VBox):
     
     def on_add_cel(self, button):
         self.ani.add_cel()
+    
+    def on_remove_cel(self, button):
+        self.ani.remove_cel()
     
     def _get_row_class(self, model, it):
         """Return 0 if even row, 1 if odd row."""

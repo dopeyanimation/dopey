@@ -178,6 +178,31 @@ class AddCel(AniAction):
         self._notify_document_observers()
 
 
+class RemoveCel(AniAction):
+    def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.f = self.frames.get_selected()
+        self.layer = self.f.cel
+    
+    def redo(self):
+        self.doc.layers.remove(self.layer)
+        self.prev_idx = self.doc.layer_idx
+        self.doc.layer_idx = 0
+        
+        self.f.remove_cel()
+        self.update_opacities()
+        self._notify_document_observers()
+    
+    def undo(self):
+        self.doc.layers.insert(0, self.layer)
+        self.doc.layer_idx = self.prev_idx
+
+        self.f.add_cel(self.layer)
+        self.update_opacities()
+        self._notify_document_observers()
+
+
 class ToggleOpacity(AniAction):
     def __init__(self, doc, frames, attr, is_active):
         AniAction.__init__(self, frames)
