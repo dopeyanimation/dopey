@@ -216,6 +216,9 @@ class Animation(object):
         self.doc.do(anicommand.ToggleOpacity(self.doc, self.frames,
                                              attr, is_active))
     
+    # This is not used actually, it is planned to be used to
+    # automatically append frames when the scroll of the xsheet list
+    # reaches the bottom.
     def append_frames(self):
         self.doc.do(anicommand.AppendFrames(self.doc, self.frames, 4))
         self.cleared = True
@@ -225,6 +228,5 @@ class Animation(object):
         self.cleared = True
 
     def pop_frames(self):
-        # TODO: remove layers if necessary
-        #self.doc.do(anicommand.PopFrames(self.doc, self.frames, 2))
+        self.doc.do(anicommand.PopFrames(self.doc, self.frames, 1))
         self.cleared = True

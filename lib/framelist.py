@@ -73,9 +73,13 @@ class FrameList(list):
         for l in range(length):
             self.append(Frame())
     
+    def can_pop(self):
+        return self.idx+1 < len(self) 
+
     def pop_frames(self, length, at_current=False):
+        if not self.can_pop():
+            raise IndexError("Trying to pop at the last frame.")
         
-        # TODO: check if can pop
         for l in range(length):
             assert self[len(self)-1].cel == None
             if at_current:
@@ -444,6 +448,14 @@ Inserting frames
 'a'
 >>> frames.cel_at(2)
 'c'
+
+>>> frames.idx = 3 # at the end
+>>> frames.can_pop()
+False
+
+>>> frames.pop_frames(2, at_current=True)
+Traceback (most recent call last):
+IndexError: Trying to pop at the last frame.
 
 """)
 

@@ -177,6 +177,7 @@ class AddCel(AniAction):
         self.update_opacities()
         self._notify_document_observers()
 
+
 class ToggleOpacity(AniAction):
     def __init__(self, doc, frames, attr, is_active):
         AniAction.__init__(self, frames)
@@ -195,6 +196,7 @@ class ToggleOpacity(AniAction):
         self.update_opacities()
         self._notify_document_observers()
 
+
 class AppendFrames(AniAction):
     def __init__(self, doc, frames, length):
         AniAction.__init__(self, frames)
@@ -209,6 +211,7 @@ class AppendFrames(AniAction):
         self.frames.pop_frames(self.length)
         self._notify_document_observers()
 
+
 class InsertFrames(AniAction):
     def __init__(self, doc, frames, length):
         AniAction.__init__(self, frames)
@@ -222,4 +225,24 @@ class InsertFrames(AniAction):
 
     def undo(self):
         self.frames.pop_frames(self.length, at_current=True)
+        self._notify_document_observers()
+
+
+class PopFrames(AniAction):
+
+    # TODO: if the frames have cels, take care of layers (remove on
+    # redo, insert on undo)
+    def __init__(self, doc, frames, length):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.idx = frames.idx
+        self.length = length
+        layers_to_remove = []
+    
+    def redo(self):
+        self.frames.pop_frames(self.length, at_current=True)
+        self._notify_document_observers()
+
+    def undo(self):
+        self.frames.insert_frames(self.length)
         self._notify_document_observers()
