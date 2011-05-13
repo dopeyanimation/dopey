@@ -21,6 +21,8 @@ class Animation(object):
         actions = [
             ('PrevFrame', gtk.STOCK_GO_UP, _('Previous Frame'), 'Up', None, self.previous_frame_cb),
             ('NextFrame', gtk.STOCK_GO_DOWN, _('Next Frame'), 'Down', None, self.next_frame_cb),
+            ('PrevKeyFrame', None, _('Previous Keyframe'), '<control>Up', None, self.previous_keyframe_cb),
+            ('NextKeyFrame', None, _('Next Keyframe'), '<control>Down', None, self.next_keyframe_cb),
             ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
             ('ToggleKey', gtk.STOCK_JUMP_TO, _('Toggle Keyframe'), 'k', None, self.toggle_key_cb),
         ]
@@ -33,6 +35,14 @@ class Animation(object):
     def next_frame_cb(self, action):
         if self.model.frames.has_next():
             self.model.next_frame()
+
+    def previous_keyframe_cb(self, action):
+        if self.model.frames.has_previous_key():
+            self.model.previous_keyframe()
+    
+    def next_keyframe_cb(self, action):
+        if self.model.frames.has_next_key():
+            self.model.next_keyframe()
 
     def add_cel_cb(self, action):
         self.model.add_cel()

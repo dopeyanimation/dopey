@@ -196,6 +196,12 @@ class Animation(object):
     def next_frame(self):
         self.doc.do(anicommand.GoToNext(self.doc, self.frames))
     
+    def previous_keyframe(self):
+        self.doc.do(anicommand.GoToPrevKey(self.doc, self.frames))
+    
+    def next_keyframe(self):
+        self.doc.do(anicommand.GoToNextKey(self.doc, self.frames))
+    
     def change_description(self, new_description):
         self.doc.do(anicommand.ChangeDescription(self.doc, self.frames,
                                                  new_description))

@@ -102,6 +102,40 @@ class GoToNext(AniAction):
         self._notify_document_observers()
 
 
+class GoToPrevKey(AniAction):
+    def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.idx = self.frames.idx
+    
+    def redo(self):
+        self.frames.goto_previous_key()
+        self.update_opacities()
+        self._notify_document_observers()
+    
+    def undo(self):
+        self.frames.idx = self.idx
+        self.update_opacities()
+        self._notify_document_observers()
+
+
+class GoToNextKey(AniAction):
+    def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.idx = self.frames.idx
+    
+    def redo(self):
+        self.frames.goto_next_key()
+        self.update_opacities()
+        self._notify_document_observers()
+    
+    def undo(self):
+        self.frames.idx = self.idx
+        self.update_opacities()
+        self._notify_document_observers()
+
+
 class ChangeDescription(AniAction):
     def __init__(self, doc, frames, new_description):
         AniAction.__init__(self, frames)
