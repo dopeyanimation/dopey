@@ -125,7 +125,6 @@ class ToolWidget(gtk.VBox):
         self.pack_start(editbuttons_hbox, expand=False)
         self.pack_start(opacity_vbox, expand=False)
         
-        self._change_buttons()
         self.show_all()
         self.app.doc.model.doc_observers.append(self.update)
         

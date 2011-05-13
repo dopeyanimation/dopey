@@ -230,10 +230,12 @@ class AppendFrames(AniAction):
 
     def redo(self):
         self.frames.append_frames(self.length)
+        self.doc.ani.cleared = True
         self._notify_document_observers()
 
     def undo(self):
         self.frames.pop_frames(self.length)
+        self.doc.ani.cleared = True
         self._notify_document_observers()
 
 
@@ -246,10 +248,12 @@ class InsertFrames(AniAction):
 
     def redo(self):
         self.frames.insert_frames(self.length)
+        self.doc.ani.cleared = True
         self._notify_document_observers()
 
     def undo(self):
         self.frames.pop_frames(self.length, at_current=True)
+        self.doc.ani.cleared = True
         self._notify_document_observers()
 
 
@@ -266,8 +270,10 @@ class PopFrames(AniAction):
     
     def redo(self):
         self.frames.pop_frames(self.length, at_current=True)
+        self.doc.ani.cleared = True
         self._notify_document_observers()
 
     def undo(self):
         self.frames.insert_frames(self.length)
+        self.doc.ani.cleared = True
         self._notify_document_observers()
