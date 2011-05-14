@@ -258,28 +258,25 @@ class InsertFrames(AniAction):
 
 
 class PopFrames(AniAction):
-
-    # TODO: if the frames have cels, take care of layers (remove on
-    # redo, insert on undo)
     def __init__(self, doc, frames, length):
         AniAction.__init__(self, frames)
         self.doc = doc
         self.idx = frames.idx
         self.length = length
-        layers_to_remove = self.frames.cels_to_pop(self.length,
-                                                   at_current=True)
+        self.layers_to_remove = self.frames.cels_to_pop(self.length,
+                                                        at_current=True)
     
     def redo(self):
         self.frames.pop_frames(self.length, at_current=True)
-        for layer in layers_to_remove:
-            self.doc.layers.remove(0, layer)
+        for layer in self.layers_to_remove:
+            self.doc.layers.remove(layer)
             
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
     def undo(self):
         self.frames.insert_frames(self.length)
-        for layer in layers_to_remove:
+        for layer in self.layers_to_remove:
             self.doc.layers.insert(0, layer)
         
         self.doc.ani.cleared = True
