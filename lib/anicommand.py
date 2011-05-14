@@ -266,14 +266,21 @@ class PopFrames(AniAction):
         self.doc = doc
         self.idx = frames.idx
         self.length = length
-        layers_to_remove = []
+        layers_to_remove = self.frames.cels_to_pop(self.length,
+                                                   at_current=True)
     
     def redo(self):
         self.frames.pop_frames(self.length, at_current=True)
+        for layer in layers_to_remove:
+            self.doc.layers.remove(0, layer)
+            
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
     def undo(self):
         self.frames.insert_frames(self.length)
+        for layer in layers_to_remove:
+            self.doc.layers.insert(0, layer)
+        
         self.doc.ani.cleared = True
         self._notify_document_observers()
