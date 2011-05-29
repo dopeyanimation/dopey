@@ -78,15 +78,25 @@ class ToolWidget(gtk.VBox):
         buttons_hbox.pack_start(self.add_button)
         buttons_hbox.pack_start(self.remove_button)
 
-        # lightbox controls:
+        # penciltest controls:
         
-        penciltest_button = stock_button(gtk.STOCK_MEDIA_PLAY)
-        penciltest_button.connect('clicked', self.on_penciltest)
-        penciltest_button.set_tooltip_text(_('Pencil Test'))
+        self.play_button = stock_button(gtk.STOCK_MEDIA_PLAY)
+        self.play_button.connect('clicked', self.on_penciltest_play)
+        self.play_button.set_tooltip_text(_('Pencil Test'))
         
+        self.pause_button = stock_button(gtk.STOCK_MEDIA_PAUSE)
+        self.pause_button.connect('clicked', self.on_penciltest_pause)
+        self.pause_button.set_tooltip_text(_('Pause Pencil Test'))
+
+        self.stop_button = stock_button(gtk.STOCK_MEDIA_STOP)
+        self.stop_button.connect('clicked', self.on_penciltest_stop)
+        self.stop_button.set_tooltip_text(_('Stop Pencil Test'))
+
         anibuttons_hbox = gtk.HBox()
-        anibuttons_hbox.pack_start(penciltest_button)
-        
+        anibuttons_hbox.pack_start(self.play_button)
+        anibuttons_hbox.pack_start(self.pause_button)
+        anibuttons_hbox.pack_start(self.stop_button)
+
         # frames edit controls:
         
         insert_button = stock_button(gtk.STOCK_ADD)
@@ -100,6 +110,8 @@ class ToolWidget(gtk.VBox):
         editbuttons_hbox = gtk.HBox()
         editbuttons_hbox.pack_start(insert_button)
         editbuttons_hbox.pack_start(pop_button)
+        
+        # lightbox controls:
         
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
@@ -126,6 +138,7 @@ class ToolWidget(gtk.VBox):
         self.pack_start(opacity_vbox, expand=False)
         
         self.show_all()
+        self._change_penciltest_buttons(is_playing=False)
         self.app.doc.model.doc_observers.append(self.update)
         
     def _get_path_from_frame(self, frame):
@@ -212,6 +225,15 @@ class ToolWidget(gtk.VBox):
 
         self.treeview.append_column(column)
     
+    def _change_penciltest_buttons(self, is_playing):
+        if is_playing:
+            self.play_button.hide()
+            self.pause_button.show()
+        else:
+            self.play_button.show()
+            self.pause_button.hide()
+        self.stop_button.set_sensitive(is_playing)
+
     def _change_buttons(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
         self.next_button.set_sensitive(self.ani.frames.has_next())
@@ -285,12 +307,33 @@ class ToolWidget(gtk.VBox):
             cell.set_property('background', 
                               XSHEET_COLORS['without_cel'][r])
 
-    def on_penciltest(self, button):
+    def _call_penciltest(self):
+        has_next_frame = self.ani.penciltest_next()
+        keep_playing = True
+        if not has_next_frame or self.penciltest_state == "stop":
+            self.ani.select_without_undo(self.beforeplay_frame)
+            keep_playing = False
+            self._change_penciltest_buttons(keep_playing)
+        if self.penciltest_state == "pause":
+            keep_playing = False
+            self._change_penciltest_buttons(keep_playing)
+        return keep_playing
+
+    def on_penciltest_play(self, button):
         """
         Add a 24fps (almost 42ms) animation timer.
 
         """
-        gobject.timeout_add(42, self.ani.penciltest_next)
+        self.beforeplay_frame = self.ani.frames.idx
+        self.penciltest_state = "play"
+        self._change_penciltest_buttons(is_playing=True)
+        bla = gobject.timeout_add(42, self._call_penciltest)
+
+    def on_penciltest_pause(self, button):
+        self.penciltest_state = "pause"
+
+    def on_penciltest_stop(self, button):
+        self.penciltest_state = "stop"
 
     def on_opacity_toggled(self, checkbox, attr):
         pref = "lightbox.%s" % (attr,)

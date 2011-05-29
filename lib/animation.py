@@ -112,97 +112,29 @@ class Animation(object):
             cel = self.frames.cel_at(i)
             cel.surface.save(filename, *doc_bbox, **kwargs)
     
-    def penciltest_next(self):
-        def _notify_canvas_observers(affected_layer):
-            bbox = affected_layer.surface.get_bbox()
-            for f in self.doc.canvas_observers:
-                f(*bbox)
+    def _notify_canvas_observers(self, affected_layer):
+        bbox = affected_layer.surface.get_bbox()
+        for f in self.doc.canvas_observers:
+            f(*bbox)
 
+    def select_without_undo(self, idx):
+        """Like the command but without undo/redo."""
+        self.frames.select(idx)
+        opacities = self.frames.get_opacities()
+        for cel, opa in opacities.items():
+            cel.opacity = opa
+            self._notify_canvas_observers(cel)
+
+    def penciltest_next(self):
         if self.frames.has_next():
             self.frames.goto_next()
             # update opacities:
             opacities = self.frames.get_opacities()
             for cel, opa in opacities.items():
                 cel.opacity = opa
-                _notify_canvas_observers(cel)
+                self._notify_canvas_observers(cel)
             return True
         return False
-
-    def _play_penciltest(self, tempdir):
-        
-        # TODO using external program for now:
-        call('blender-2.49b -a -f 24 1 ' + tempdir + '/*png', shell=True)
-    
-    def penciltest(self, fast=True):
-        tempdir = tempfile.mkdtemp(prefix='penciltest')
-        idx = self.frames.idx
-        
-        def select_without_undo(idx):
-            "Like the command but without undo/redo"
-            self.frames.select(idx)
-            opacities = self.frames.get_opacities()
-            for cel, opa in opacities.items():
-                cel.opacity = opa
-                # TODO try this outside the for loop
-                self.doc.call_doc_observers()
-
-        def frames_to_png_opacities():
-            """
-            Saves one png for each frame, with the lightbox on, that
-            is, maybe showing other cels transparented.
-            
-            """
-            doc_bbox = self.doc.get_effective_bbox()
-            for i in range(len(self.frames)):
-                select_without_undo(i)
-                prefix = 'cel-' + str(i).zfill(3)
-                suffix = '.png'
-                tempf = tempfile.mkstemp(suffix, prefix, tempdir)
-                pixbufsurface.save_as_png(self.doc, tempf[1],
-                                          *doc_bbox, alpha=False)
-        
-        def frames_to_png():
-            """
-            Saves one png for each frame.
-            
-            """
-            doc_bbox = self.doc.get_effective_bbox()
-            for i in range(len(self.frames)):
-                prefix = 'cel-' + str(i).zfill(3)
-                suffix = '.png'
-                tempf = tempfile.mkstemp(suffix, prefix, tempdir)
-                cel = self.frames.cel_at(i)
-                cel.surface.save(tempf[1], *doc_bbox)
-        
-        def frames_to_png2():
-            """
-            TODO HACK, remove and use the other after finding a
-            solution for penciltest playback.
-
-            """
-            previous_active_cels = dict(self.frames.active_cels)
-            active_cels = {'current': True, 'nextprev': False, 
-                           'key': False, 'inbetweens': False,
-                           'other keys': False, 'other': False}
-            self.frames.setup_active_cels(active_cels)
-            doc_bbox = self.doc.get_effective_bbox()
-            for i in range(len(self.frames)):
-                select_without_undo(i)
-                prefix = 'cel-' + str(i).zfill(3)
-                suffix = '.png'
-                tempf = tempfile.mkstemp(suffix, prefix, tempdir)
-                pixbufsurface.save_as_png(self.doc, tempf[1],
-                                          *doc_bbox, alpha=False)
-            self.frames.setup_active_cels(previous_active_cels)
-        
-        if fast:
-#            frames_to_png()
-            frames_to_png2()
-        else:
-            frames_to_png_opacities()
-        
-        select_without_undo(idx)
-        self._play_penciltest(tempdir)
     
     def toggle_key(self):
         self.doc.do(anicommand.ToggleKey(self.doc, self.frames))
