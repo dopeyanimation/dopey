@@ -76,18 +76,11 @@ class FrameList(list):
     def can_pop(self):
         return self.idx+1 < len(self) 
     
-    def cels_to_pop(self, length, at_current=False):
-        result = []
+    def frames_to_pop(self, length, at_current=False):
         if at_current:
-            for l in range(length):
-                idx = self.idx + 1 + l
-                if self[idx].cel is not None:
-                    result.append(self[idx].cel)
+            return list(self[self.idx:self.idx+length])
         else:
-            for f in self[-length:]:
-                if f.cel is not None:
-                    result.append(f.cel)
-        return result
+            return list(self[-length:])
     
     def pop_frames(self, length, at_current=False):
         if not self.can_pop():
@@ -452,9 +445,6 @@ Inserting frames
 'b'
 >>> frames.cel_at(4)
 'c'
-
->>> frames.cels_to_pop(2, at_current=True)
-['b']
 
 >>> frames.pop_frames(2, at_current=True)
 >>> len(frames)
