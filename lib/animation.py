@@ -112,6 +112,22 @@ class Animation(object):
             cel = self.frames.cel_at(i)
             cel.surface.save(filename, *doc_bbox, **kwargs)
     
+    def penciltest_next(self):
+        def _notify_canvas_observers(affected_layer):
+            bbox = affected_layer.surface.get_bbox()
+            for f in self.doc.canvas_observers:
+                f(*bbox)
+
+        if self.frames.has_next():
+            self.frames.goto_next()
+            # update opacities:
+            opacities = self.frames.get_opacities()
+            for cel, opa in opacities.items():
+                cel.opacity = opa
+                _notify_canvas_observers(cel)
+            return True
+        return False
+
     def _play_penciltest(self, tempdir):
         
         # TODO using external program for now:
@@ -127,8 +143,9 @@ class Animation(object):
             opacities = self.frames.get_opacities()
             for cel, opa in opacities.items():
                 cel.opacity = opa
+                # TODO try this outside the for loop
                 self.doc.call_doc_observers()
-        
+
         def frames_to_png_opacities():
             """
             Saves one png for each frame, with the lightbox on, that

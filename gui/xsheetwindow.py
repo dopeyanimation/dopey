@@ -286,7 +286,11 @@ class ToolWidget(gtk.VBox):
                               XSHEET_COLORS['without_cel'][r])
 
     def on_penciltest(self, button):
-        self.ani.penciltest()
+        """
+        Add a 24fps (almost 42ms) animation timer.
+
+        """
+        gobject.timeout_add(42, self.ani.penciltest_next)
 
     def on_opacity_toggled(self, checkbox, attr):
         pref = "lightbox.%s" % (attr,)
