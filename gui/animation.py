@@ -27,6 +27,8 @@ class Animation(object):
             ('StopPenciltest', None, _('Stop Penciltest'), None, None, self.stop_penciltest_cb),
             ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
             ('ToggleKey', gtk.STOCK_JUMP_TO, _('Toggle Keyframe'), 'k', None, self.toggle_key_cb),
+            ('InsertFrames', gtk.STOCK_ADD, _('Insert frame'), None, None, self.insert_frames_cb),
+            ('PopFrames', gtk.STOCK_REMOVE, _('Remove frame'), None, None, self.pop_frames_cb),
         ]
         return actions
 
@@ -58,3 +60,9 @@ class Animation(object):
 
     def toggle_key_cb(self, action):
         self.model.toggle_key()
+
+    def insert_frames_cb(self, action):
+        self.model.insert_frames()
+
+    def pop_frames_cb(self, action):
+        self.model.pop_frames()
