@@ -189,6 +189,9 @@ class ToolWidget(gtk.VBox):
         self.treeview.scroll_to_cell(path)
         self.queue_draw()
         self._change_buttons()
+        
+        if self.ani.penciltest_state == "play":
+            self._play_penciltest()
     
     def update(self, doc):
         return self._update()
@@ -314,32 +317,33 @@ class ToolWidget(gtk.VBox):
     def _call_penciltest(self):
         has_next_frame = self.ani.penciltest_next()
         keep_playing = True
-        if not has_next_frame or self.penciltest_state == "stop":
+        if not has_next_frame or self.ani.penciltest_state == "stop":
             self.ani.select_without_undo(self.beforeplay_frame)
             keep_playing = False
             self._change_penciltest_buttons(keep_playing)
+            self.ani.penciltest_state = None
             self._update()
-        if self.penciltest_state == "pause":
+        if self.ani.penciltest_state == "pause":
             keep_playing = False
             self._change_penciltest_buttons(keep_playing)
+            self.ani.penciltest_state = None
             self._update()
         return keep_playing
 
-    def on_penciltest_play(self, button):
-        """
-        Add a 24fps (almost 42ms) animation timer.
-
-        """
+    def _play_penciltest(self):
         self.beforeplay_frame = self.ani.frames.idx
-        self.penciltest_state = "play"
         self._change_penciltest_buttons(is_playing=True)
-        bla = gobject.timeout_add(42, self._call_penciltest)
+        # add a 24fps (almost 42ms) animation timer:
+        gobject.timeout_add(42, self._call_penciltest)
+
+    def on_penciltest_play(self, button):
+        self.ani.play_penciltest()
 
     def on_penciltest_pause(self, button):
-        self.penciltest_state = "pause"
+        self.ani.pause_penciltest()
 
     def on_penciltest_stop(self, button):
-        self.penciltest_state = "stop"
+        self.ani.stop_penciltest()
 
     def on_opacity_toggled(self, checkbox, attr):
         pref = "lightbox.%s" % (attr,)

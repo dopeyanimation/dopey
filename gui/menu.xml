@@ -138,6 +138,7 @@
       <menuitem action='NextFrame'/>
       <menuitem action='PrevKeyFrame'/>
       <menuitem action='NextKeyFrame'/>
+      <menuitem action='PlayPausePenciltest'/>
       <separator/>
       <menuitem action='ToggleKey'/>
       <menuitem action='AddCel'/>

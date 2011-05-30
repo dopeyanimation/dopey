@@ -47,6 +47,7 @@ class Animation(object):
     def __init__(self, doc):
         self.doc = doc
         self.cleared = False
+        self.penciltest_state = None
     
     def clear_xsheet(self, init=False):
         self.frames = FrameList(24, self.opacities)
@@ -124,6 +125,23 @@ class Animation(object):
         for cel, opa in opacities.items():
             cel.opacity = opa
             self._notify_canvas_observers(cel)
+
+    def play_penciltest(self):
+        self.penciltest_state = "play"
+        self.doc.call_doc_observers()
+
+    def pause_penciltest(self):
+        self.penciltest_state = "pause"
+
+    def playpause_penciltest(self):
+        if self.penciltest_state != "play":
+            self.penciltest_state = "play"
+        else:
+            self.penciltest_state = "pause"
+        self.doc.call_doc_observers()
+
+    def stop_penciltest(self):
+        self.penciltest_state = "stop"
 
     def penciltest_next(self):
         if self.frames.has_next():
