@@ -14,15 +14,14 @@ import windowing
 from brushlib import brushsettings
 from lib import command
 
-
 class Window(windowing.SubWindow):
 
     PAGE_BRUSHSETTINGS = 0
     PAGE_BRUSHINPUTS = 1
+    PAGE_BRUSHPROPERTIES = 2
 
     def __init__(self, app):
         windowing.SubWindow.__init__(self, app, key_input=True)
-        self.app.brushmanager.selected_brush_observers.append(self.brush_selected_cb)
 
         self.adj = {}
         self.functionWindows = {}
@@ -33,59 +32,73 @@ class Window(windowing.SubWindow):
         self.init_ui()
         self.set_default_size(450, 500)
 
-        self.update_settings()
+        self.app.brush.observers.append(self.brush_modified_cb)
 
     def init_ui(self):
         """Construct and pack widgets."""
         vbox = gtk.VBox()
         self.add(vbox)
 
-        # Expander with brushcreation widget under it
-        expander = self.expander = gtk.Expander(label=_('Edit brush icon'))
-        expander.set_expanded(False)
         brushicon_editor = brushcreationwidget.BrushIconEditorWidget(self.app)
-        expander.add(brushicon_editor)
-        vbox.pack_end(expander, expand=False, fill=False)
+        self.brushinputs_widget = functionwindow.BrushInputsWidget(self.app)
 
         # Header with brush name and actions
         brush_actions = brushcreationwidget.BrushManipulationWidget(self.app, brushicon_editor)
         vbox.pack_start(brush_actions, expand=False)
 
-        # Live update
+        # Header with current page name
+        header_hbox = gtk.HBox()
+        self.header_label = gtk.Label()
+        self.header_label.set_markup('<b><span size="large">%s</span></b>' % ('Brush Settings',))
+        self.header_label.set_alignment(0.0, 0.0)
+
+        self.header_button = gtk.Button(_('Back to settings'))
+        self.header_button.set_no_show_all(True)
+
+        header_hbox.pack_start(self.header_label, expand=False)
+        header_hbox.pack_end(self.header_button, expand=False)
+        vbox.pack_start(header_hbox, expand=False)
+
+        # Live update (goes to the end)
         cb = self.live_update = gtk.CheckButton(_('Live update the last canvas stroke'))
-        vbox.pack_start(cb, expand=False, fill=True)
+        vbox.pack_end(cb, expand=False, fill=True)
         cb.connect('toggled', self.live_update_cb)
-        self.app.brush.settings_observers.append(self.live_update_cb)
+        cb.set_no_show_all(True)
 
         # ScrolledWindow for brushsetting-expanders
         scroll = self.brushsettings_widget = gtk.ScrolledWindow()
         scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_ALWAYS)
 
-        self.brushinputs_widget = functionwindow.BrushInputsWidget(self.app)
         nb = self.settings_notebook = gtk.Notebook()
         nb.set_show_tabs(False)
         nb.insert_page(self.brushsettings_widget, position=self.PAGE_BRUSHSETTINGS)
         nb.insert_page(self.brushinputs_widget, position=self.PAGE_BRUSHINPUTS)
-        nb.set_current_page(self.PAGE_BRUSHSETTINGS)
+        nb.insert_page(brushicon_editor, position=self.PAGE_BRUSHPROPERTIES)
+
+        vbox.pack_start(nb, expand=True, fill=True)
 
         def activate_brushsettings_page(*ignore):
             nb.set_current_page(self.PAGE_BRUSHSETTINGS)
-        self.brushinputs_widget.back_button.set_label(_('All settings'))
-        self.brushinputs_widget.back_button.connect('clicked', activate_brushsettings_page)
+            self.header_label.set_markup('<b><span size="large">%s</span></b>' % ('Brush Settings',))
+            self.header_button.hide()
+            self.live_update.show()
+        def activate_brushproperties_page(*ignore):
+            nb.set_current_page(self.PAGE_BRUSHPROPERTIES)
+            self.header_label.set_markup('<b><span size="large">%s</span></b>' % ('Brush Icon',))
+            self.header_button.show()
+            self.live_update.hide()
 
-        vbox.pack_start(nb, expand=True, fill=True)
+        activate_brushsettings_page() # Default page
+
+        brush_actions.edit_brush_properties_cb = activate_brushproperties_page
+        self.header_button.connect('clicked', activate_brushsettings_page)
 
         brushsetting_vbox = gtk.VBox()
         scroll.add_with_viewport(brushsetting_vbox)
 
-        header_label = gtk.Label()
-        header_label.set_markup('<b><span size="large">%s</span></b>' % ('Brush Settings',))
-        header_label.set_alignment(0.0, 0.0)
-        brushsetting_vbox.pack_start(header_label, expand=False)
-
         groups = [
             {'id' : 'basic',    'title' : _('Basic'),   'settings' : [ 'radius_logarithmic', 'radius_by_random', 'hardness', 'eraser', 'offset_by_random', 'elliptical_dab_angle', 'elliptical_dab_ratio', 'direction_filter' ]},
-            {'id' : 'opacity',  'title' : _('Opacity'), 'settings' : [ 'opaque', 'opaque_multiply', 'opaque_linearize' ]},
+            {'id' : 'opacity',  'title' : _('Opacity'), 'settings' : [ 'opaque', 'opaque_multiply', 'opaque_linearize', 'lock_alpha' ]},
             {'id' : 'dabs',     'title' : _('Dabs'),    'settings' : [ 'dabs_per_basic_radius', 'dabs_per_actual_radius', 'dabs_per_second' ]},
             {'id' : 'smudge',   'title' : _('Smudge'),  'settings' : [ 'smudge', 'smudge_length', 'smudge_radius_log' ]},
             {'id' : 'speed',    'title' : _('Speed'),   'settings' : [ 'speed1_slowness', 'speed2_slowness', 'speed1_gamma', 'speed2_gamma', 'offset_by_speed', 'offset_by_speed_slowness' ]},
@@ -112,8 +125,8 @@ class Window(windowing.SubWindow):
                 l.set_tooltip_text(s.tooltip)
 
                 adj = self.app.brush_adjustment[s.cname]
-                adj.connect('value-changed', self.value_changed_cb, s.index, self.app)
-                self.adj[s] = adj
+                adj.connect('value-changed', self.value_changed_cb, cname)
+                self.adj[cname] = adj
                 h = gtk.HScale(adj)
                 h.set_digits(2)
                 h.set_draw_value(True)
@@ -150,47 +163,44 @@ class Window(windowing.SubWindow):
         """Go to brush input/dynamics page."""
         self.brushinputs_widget.set_brushsetting(setting, adj)
         self.settings_notebook.set_current_page(self.PAGE_BRUSHINPUTS)
+        self.header_label.set_markup('<b><span size="large">%s</span></b>' % setting.name)
+        self.header_label.set_tooltip_text(setting.tooltip)
+        self.header_button.show()
+        self.live_update.show()
 
-    def value_changed_cb(self, adj, index, app):
-        setting = [k for k, v in self.adj.items() if v == adj][0]
-        s = app.brush.settings[index]
-        s.set_base_value(adj.get_value())
-        self.relabel_setting_buttons(adj, setting, s)
+    def value_changed_cb(self, adj, cname):
+        value = adj.get_value()
+        self.app.brush.set_base_value(cname, value)
 
-    def update_settings(self):
-        """Update all settings; their value and button labels"""
-        for s in self.visible_settings:
-            setting = brushsettings.settings_dict[s]
-            adj = self.adj[setting]
-            s = self.app.brush.settings[setting.index]
-            self.relabel_setting_buttons(adj, setting, s)
-            adj.set_value(s.base_value)
+    def update_settings(self, settings):
+        """Update adjustment and button labels"""
+        for cname in settings.intersection(self.visible_settings):
+            # Update slider
+            adj = self.adj[cname]
+            adj.set_value(self.app.brush.get_base_value(cname))
 
-    def relabel_setting_buttons(self, adj, setting, brushsetting):
-        """Relabel the buttons of a setting"""
-        s = brushsetting
+            # Make the "input value mapping" button reflect whether
+            # this brush already has a mapping or not
+            if adj.three_dots_button:
+                def set_label(s, t):
+                    if adj.three_dots_button.get_label() == s: return
+                    adj.three_dots_button.set_label(s)
+                    adj.three_dots_button.set_tooltip_text(t)
+                if self.app.brush.has_only_base_value(cname):
+                    set_label("...", _("Add input values mapping"))
+                else:
+                    set_label("X", _("Modify input values mapping"))
 
-        # Make "input value mapping" button reflect if this brush
-        # allready has a mapping or not
-        if adj.three_dots_button:
-            def set_label(s, t):
-                if adj.three_dots_button.get_label() == s: return
-                adj.three_dots_button.set_label(s)
-                adj.three_dots_button.set_tooltip_text(t)
-            if s.has_only_base_value():
-                set_label("...", _("Add input values mapping"))
+            # Make "reset to default value" button insensitive
+            # if the value is already the default (the button will have no effect)
+            if adj.get_value() == brushsettings.settings_dict[cname].default:
+                adj.default_value_button.set_sensitive(False)
             else:
-                set_label("X", _("Modify input values mapping"))
+                adj.default_value_button.set_sensitive(True)
 
-        # Make "reset to default value" button insensitive
-        # if the value is already the default (the button will have no effect)
-        if adj.get_value() == setting.default:
-            adj.default_value_button.set_sensitive(False)
-        else:
-            adj.default_value_button.set_sensitive(True)
-
-    def brush_selected_cb(self, brush):
-        self.update_settings()
+    def brush_modified_cb(self, settings):
+        self.update_settings(settings)
+        self.live_update_cb()
 
     def live_update_cb(self, *trash):
         if self.live_update.get_active():

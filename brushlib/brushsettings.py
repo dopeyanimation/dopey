@@ -1,13 +1,17 @@
 # brushlib - The MyPaint Brush Library
-# Copyright (C) 2007-2008 Martin Renold <martinxyz@gmx.ch>
+# Copyright (C) 2007-2011 Martin Renold <martinxyz@gmx.ch>
 #
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
 #
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY. See the COPYING file for more details.
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """Brush Settings / States
 
@@ -79,6 +83,8 @@ settings_list = [
     ['elliptical_dab_ratio', _('Elliptical dab: ratio'), False, 1.0, 1.0, 10.0, _("aspect ratio of the dabs; must be >= 1.0, where 1.0 means a perfectly round dab. TODO: linearize? start at 0.0 maybe, or log?")],
     ['elliptical_dab_angle', _('Elliptical dab: angle'), False, 0.0, 90.0, 180.0, _("this defines the angle by which eliptical dabs are tilted\n 0.0 horizontal dabs\n 45.0 45 degrees, turned clockwise\n 180.0 horizontal again")],
     ['direction_filter', _('Direction filter'), False, 0.0, 2.0, 10.0, _("a low value will make the direction input adapt more quickly, a high value will make it smoother")],
+
+    ['lock_alpha', _('Lock alpha'), False, 0.0, 0.0, 1.0, _("do not modify the alpha channel of the layer (paint only where there is paint already)\n 0.0 normal painting\n 0.5 half of the paint gets applied normally\n 1.0 alpha channel fully locked")],
     ]
 
 settings_hidden = 'color_h color_s color_v'.split()

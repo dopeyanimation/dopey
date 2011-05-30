@@ -1,13 +1,17 @@
 /* brushlib - The MyPaint Brush Library
- * Copyright (C) 2007-2008 Martin Renold <martinxyz@gmx.ch>
+ * Copyright (C) 2007-2011 Martin Renold <martinxyz@gmx.ch>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
  *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY. See the COPYING file for more details.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <stdio.h>
@@ -61,6 +65,8 @@ private:
   // cached calculation results
   float speed_mapping_gamma[2], speed_mapping_m[2], speed_mapping_q[2];
 
+  bool reset_requested;
+
 public:
   Brush() {
     for (int i=0; i<BRUSH_SETTINGS_COUNT; i++) {
@@ -75,6 +81,8 @@ public:
     new_stroke();
 
     settings_base_values_have_changed();
+
+    reset_requested = true;
   }
 
   ~Brush() {
@@ -82,6 +90,11 @@ public:
       delete settings[i];
     }
     g_rand_free (rng); rng = NULL;
+  }
+
+  void reset()
+  {
+    reset_requested = true;
   }
 
   void new_stroke()
@@ -478,7 +491,8 @@ private:
     // the functions below will CLAMP most inputs
     hsv_to_rgb_float (&color_h, &color_s, &color_v);
     return surface->draw_dab (x, y, radius, color_h, color_s, color_v, opaque, hardness, eraser_target_alpha,
-                              states[STATE_ACTUAL_ELLIPTICAL_DAB_RATIO], states[STATE_ACTUAL_ELLIPTICAL_DAB_ANGLE]);
+                              states[STATE_ACTUAL_ELLIPTICAL_DAB_RATIO], states[STATE_ACTUAL_ELLIPTICAL_DAB_ANGLE],
+                              settings_value[BRUSH_LOCK_ALPHA]);
   }
 
   // How many dabs will be drawn between the current and the next (x, y, pressure, +dt) position?
@@ -610,7 +624,8 @@ public:
     float dist_todo = count_dabs_to (x, y, pressure, dtime);
 
     //if (dtime > 5 || dist_todo > 300) {
-    if (dtime > 5) {
+    if (dtime > 5 || reset_requested) {
+      reset_requested = false;
 
       /*
         TODO:
@@ -774,16 +789,4 @@ public:
     }
   }
 
-  double get_actual_radius() {
-
-    double base_radius = expf(settings[BRUSH_RADIUS_LOGARITHMIC]->base_value);
-    //double base_radius = states[STATE_ACTUAL_RADIUS];
-
-    double r = base_radius;
-
-    r += 2*base_radius*settings[BRUSH_OFFSET_BY_RANDOM]->base_value;
-    //r += 2*base_radius*settings_value[BRUSH_OFFSET_BY_RANDOM];
-
-    return r;
-  }
 };

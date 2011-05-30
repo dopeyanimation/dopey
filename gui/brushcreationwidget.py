@@ -39,7 +39,6 @@ class BrushManipulationWidget(gtk.HBox):
         self.init_widgets()
 
         self.bm.selected_brush_observers.append(self.brush_selected_cb)
-        self.app.brush.settings_observers.append(self.brush_modified_cb)
 
     def init_widgets(self):
 
@@ -50,6 +49,7 @@ class BrushManipulationWidget(gtk.HBox):
         right_vbox_buttons = [
         (gtk.STOCK_SAVE, self.update_settings_cb, _('Save Settings')),
         (gtk.STOCK_ADD, self.create_brush_cb, _('Add As New')),
+        (gtk.STOCK_PROPERTIES, self.edit_brush_cb, _('Edit Brush Icon')),
         (gtk.STOCK_EDIT, self.rename_brush_cb, _('Rename...')),
         (gtk.STOCK_DELETE, self.delete_brush_cb, _('Remove...')),
         ]
@@ -68,14 +68,14 @@ class BrushManipulationWidget(gtk.HBox):
             name = name.replace('_', ' ')   # XXX safename/unsafename utils?
         self.brush_name_label.set_text(name)
 
-    def brush_modified_cb(self):
-        pass
+    def edit_brush_cb(self, window):
+        self.edit_brush_properties_cb()
 
     def create_brush_cb(self, window):
         """Create and save a new brush based on the current working brush."""
         b = brushmanager.ManagedBrush(self.bm)
-        b.brushinfo = self.app.brush.brushinfo.clone()
-        b.brushinfo.pop("parent_brush_name", None) #avoid mis-hilight
+        b.brushinfo = self.app.brush.clone()
+        b.brushinfo.set_string_property("parent_brush_name", None) #avoid mis-hilight
         b.preview = self.brushicon_editor.get_preview_pixbuf()
         b.save()
 
@@ -94,9 +94,7 @@ class BrushManipulationWidget(gtk.HBox):
 
         # Pretend that the active app.brush is a child of the new one, for the
         # sake of the strokemap and strokes drawn immediately after.
-        self.app.brush.begin_atomic()
-        self.app.brush.brushinfo["parent_brush_name"] = b.name
-        self.app.brush.end_atomic()
+        self.app.brush.set_string_property("parent_brush_name", b.name)
 
     def rename_brush_cb(self, window):
         src_brush = self.bm.selected_brush
@@ -145,7 +143,7 @@ class BrushManipulationWidget(gtk.HBox):
         if not b.name:
             dialogs.error(self, _('No brush selected, please use "add as new" instead.'))
             return
-        b.brushinfo = self.app.brush.brushinfo.clone()
+        b.brushinfo = self.app.brush.clone()
         b.save()
 
     def delete_brush_cb(self, window):
@@ -175,9 +173,9 @@ class BrushManipulationWidget(gtk.HBox):
             deleted_brushes.insert(0, b)
             for f in self.bm.brushes_observers: f(deleted_brushes)
 
-class BrushIconEditorWidget(gtk.HBox):
+class BrushIconEditorWidget(gtk.VBox):
     def __init__(self, app):
-        gtk.HBox.__init__(self)
+        gtk.VBox.__init__(self)
         self.app = app
         self.bm = app.brushmanager
 
@@ -186,18 +184,22 @@ class BrushIconEditorWidget(gtk.HBox):
         self.init_widgets()
 
         self.bm.selected_brush_observers.append(self.brush_selected_cb)
-        self.app.brush.settings_observers.append(self.brush_modified_cb)
 
         self.set_brush_preview_edit_mode(False)
 
     def init_widgets(self):
-        button_box = gtk.VBox()
+        button_box = gtk.HBox()
 
-        doc = document.Document()
+        doc = document.Document(self.app.brush)
         self.tdw = tileddrawwidget.TiledDrawWidget(doc)
-        self.tdw.set_size_request(brushmanager.preview_w, brushmanager.preview_h)
+        self.tdw.set_size_request(brushmanager.preview_w*2, brushmanager.preview_h*2)
+        self.tdw.scale = 2.0
 
-        self.pack_start(self.tdw, expand=False, fill=False, padding=3)
+        tdw_box = gtk.HBox()
+        tdw_box.pack_start(self.tdw, expand=False, fill=False)
+        tdw_box.pack_start(gtk.Label(), expand=True)
+
+        self.pack_start(tdw_box, expand=False, fill=False, padding=3)
         self.pack_start(button_box, expand=False, fill=False, padding=3)
 
         self.brush_preview_edit_mode_button = b = gtk.CheckButton(_('Edit'))
@@ -248,11 +250,7 @@ class BrushIconEditorWidget(gtk.HBox):
                 for f in self.bm.brushes_observers: f(brushes)
 
     def brush_selected_cb(self, brush):
-
         # Update brush icon preview if it is not in edit mode
         if not self.brush_preview_edit_mode:
             self.set_preview_pixbuf(brush.preview)
-
-    def brush_modified_cb(self):
-        self.tdw.doc.set_brush(self.app.brush)
 
