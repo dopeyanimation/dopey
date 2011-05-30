@@ -133,6 +133,14 @@
     </menu>
     <menu action='AnimationMenu'>
       <menuitem action='XSheetWindow'/>
+      <separator/>
+      <menuitem action='PrevFrame'/>
+      <menuitem action='NextFrame'/>
+      <menuitem action='PrevKeyFrame'/>
+      <menuitem action='NextKeyFrame'/>
+      <separator/>
+      <menuitem action='ToggleKey'/>
+      <menuitem action='AddCel'/>
     </menu>
     <menu action='HelpMenu'>
       <menuitem action='Docu'/>
