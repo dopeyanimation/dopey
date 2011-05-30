@@ -178,7 +178,7 @@ class ToolWidget(gtk.VBox):
         
         self.setup_lightbox()
     
-    def update(self, doc):
+    def _update(self):
         if self.ani.cleared:
             self.setup()
             self.ani.cleared = False
@@ -190,6 +190,9 @@ class ToolWidget(gtk.VBox):
         self.queue_draw()
         self._change_buttons()
     
+    def update(self, doc):
+        return self._update()
+
     def create_list(self):
         xsheet_list = list(enumerate(self.ani.frames))
         listmodel = gtk.ListStore(int, object)
@@ -315,9 +318,11 @@ class ToolWidget(gtk.VBox):
             self.ani.select_without_undo(self.beforeplay_frame)
             keep_playing = False
             self._change_penciltest_buttons(keep_playing)
+            self._update()
         if self.penciltest_state == "pause":
             keep_playing = False
             self._change_penciltest_buttons(keep_playing)
+            self._update()
         return keep_playing
 
     def on_penciltest_play(self, button):
