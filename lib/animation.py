@@ -75,6 +75,8 @@ class Animation(object):
         """
         str_data = xsheetfile.read()
         data = json.loads(str_data)
+        self.frames = FrameList(len(data), self.opacities)
+        self.cleared = True
         for i, d in enumerate(data):
             is_key, description, layer_idx = d
             if layer_idx is not None:
