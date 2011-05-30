@@ -50,14 +50,6 @@ class ToolWidget(gtk.VBox):
         self.key_button.connect('clicked', self.on_toggle_key)
         self.key_button.set_tooltip_text(_('Toggle Keyframe'))
         
-        self.previous_button = stock_button(gtk.STOCK_GO_UP)
-        self.previous_button.connect('clicked', self.on_previous_frame)
-        self.previous_button.set_tooltip_text(_('Previous Frame'))
-        
-        self.next_button = stock_button(gtk.STOCK_GO_DOWN)
-        self.next_button.connect('clicked', self.on_next_frame)
-        self.next_button.set_tooltip_text(_('Next Frame'))
-        
         self.chdesc_button = stock_button(gtk.STOCK_ITALIC)
         self.chdesc_button.connect('clicked', self.on_change_description)
         self.chdesc_button.set_tooltip_text(_('Change Cel Description'))
@@ -72,13 +64,19 @@ class ToolWidget(gtk.VBox):
         
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(self.key_button)
-        buttons_hbox.pack_start(self.previous_button)
-        buttons_hbox.pack_start(self.next_button)
         buttons_hbox.pack_start(self.chdesc_button)
         buttons_hbox.pack_start(self.add_button)
         buttons_hbox.pack_start(self.remove_button)
 
         # penciltest controls:
+        
+        self.previous_button = stock_button(gtk.STOCK_GO_UP)
+        self.previous_button.connect('clicked', self.on_previous_frame)
+        self.previous_button.set_tooltip_text(_('Previous Frame'))
+        
+        self.next_button = stock_button(gtk.STOCK_GO_DOWN)
+        self.next_button.connect('clicked', self.on_next_frame)
+        self.next_button.set_tooltip_text(_('Next Frame'))
         
         self.play_button = stock_button(gtk.STOCK_MEDIA_PLAY)
         self.play_button.connect('clicked', self.on_penciltest_play)
@@ -93,6 +91,8 @@ class ToolWidget(gtk.VBox):
         self.stop_button.set_tooltip_text(_('Stop Pencil Test'))
 
         anibuttons_hbox = gtk.HBox()
+        anibuttons_hbox.pack_start(self.previous_button)
+        anibuttons_hbox.pack_start(self.next_button)
         anibuttons_hbox.pack_start(self.play_button)
         anibuttons_hbox.pack_start(self.pause_button)
         anibuttons_hbox.pack_start(self.stop_button)
