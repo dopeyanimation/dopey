@@ -42,7 +42,7 @@ class ToolWidget(gtk.VBox):
         
         layers_scroll = gtk.ScrolledWindow()
         layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        layers_scroll.add_with_viewport(self.treeview)
+        layers_scroll.add(self.treeview)
 
         # xsheet controls:
         
@@ -186,6 +186,7 @@ class ToolWidget(gtk.VBox):
         frame = self.ani.frames.get_selected()
         path = self._get_path_from_frame(frame)
         self.treeview.get_selection().select_path(path)
+        self.treeview.scroll_to_cell(path)
         self.queue_draw()
         self._change_buttons()
     
