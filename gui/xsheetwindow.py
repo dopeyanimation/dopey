@@ -112,6 +112,17 @@ class ToolWidget(gtk.VBox):
         editbuttons_hbox.pack_start(pop_button)
         
         # lightbox controls:
+
+        adj = gtk.Adjustment(lower=0, upper=100, step_incr=1, page_incr=10)
+        self.opacity_scale = gtk.HScale(adj)
+        opa = self.app.preferences.get('lightbox.factor', 100)
+        self.opacity_scale.set_value(opa)
+        self.opacity_scale.set_value_pos(gtk.POS_LEFT)
+        opacity_lbl = gtk.Label(_('Opacity:'))
+        opacity_hbox = gtk.HBox()
+        opacity_hbox.pack_start(opacity_lbl, expand=False)
+        opacity_hbox.pack_start(self.opacity_scale, expand=True)
+        self.opacity_scale.connect('value-changed', self.on_opacityfactor_changed)
         
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
@@ -121,9 +132,9 @@ class ToolWidget(gtk.VBox):
             cb.connect('toggled', self.on_opacity_toggled, attr)
             if tooltip is not None:
                 cb.set_tooltip_text(tooltip)
-            opacity_vbox.pack_start(cb, expand=False)
+            opacityopts_vbox.pack_start(cb, expand=False)
         
-        opacity_vbox = gtk.VBox()
+        opacityopts_vbox = gtk.VBox()
         opacity_checkbox('nextprev', _('Inmediate'), _("Show the inmediate next and previous cels."))
         opacity_checkbox('key', _('Inmediate keys'), _("Show the cel keys that are after and before the current cel."))
         opacity_checkbox('inbetweens', _('Inbetweens'), _("Show the cels that are between the inmediate key cels."))
@@ -134,7 +145,8 @@ class ToolWidget(gtk.VBox):
         self.pack_start(buttons_hbox, expand=False)
         self.pack_start(anibuttons_hbox, expand=False)
         self.pack_start(editbuttons_hbox, expand=False)
-        self.pack_start(opacity_vbox, expand=False)
+        self.pack_start(opacity_hbox, expand=False)
+        self.pack_start(opacityopts_vbox, expand=False)
         
         self.show_all()
         self._change_penciltest_buttons(is_playing=False)
@@ -343,6 +355,12 @@ class ToolWidget(gtk.VBox):
 
     def on_penciltest_stop(self, button):
         self.ani.stop_penciltest()
+
+    def on_opacityfactor_changed(self, *ignore):
+        opa = self.opacity_scale.get_value()
+        self.app.preferences["lightbox.factor"] = opa
+        self.ani.change_opacityfactor(opa/100.0)
+        self.queue_draw()
 
     def on_opacity_toggled(self, checkbox, attr):
         pref = "lightbox.%s" % (attr,)
