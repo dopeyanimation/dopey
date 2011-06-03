@@ -36,7 +36,6 @@ class AnimationCel(object):
 class Animation(object):
     
     opacities = {
-    'current':    1.0,
     'nextprev':   0.5,
     'key':        0.4,
     'inbetweens': 0.2,

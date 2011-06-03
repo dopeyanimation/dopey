@@ -7,7 +7,6 @@
 # (at your option) any later version.
 
 DEFAULT_OPACITIES = {
-    'current':    1.0,  # The current cel
     'nextprev':   1./2, # The inmediate next and previous cels
     'key':        1./2, # The cel keys that are after and before the current cel 
     'inbetweens': 1./4, # The cels that are between the keys mentioned above
@@ -16,7 +15,6 @@ DEFAULT_OPACITIES = {
 }
 
 DEFAULT_ACTIVE_CELS = {
-    'current':    True,
     'nextprev':   True,
     'key':        True,
     'inbetweens': True,
@@ -63,18 +61,17 @@ class FrameList(list):
         self.setup_opacities(opacities)
         self.setup_active_cels(active_cels)
         
-    def setup_opacityfactor(self, factor):
-        self.convert_opacities(factor)
-
     def setup_opacities(self, opacities):
         self.opacities.update(opacities)
         self.convert_opacities()
+
+    def set_opacityfactor(self, factor):
+        self.convert_opacities(factor)
 
     def convert_opacities(self, factor=1):
         self.converted_opacities = {}
         for k, v in self.opacities.items():
             self.converted_opacities[k] = v * factor
-        print self.converted_opacities
 
     def setup_active_cels(self, active_cels):
         self.active_cels.update(active_cels)
@@ -235,12 +232,12 @@ class FrameList(list):
         
         def get_opa(c):
             if self.active_cels[c]:
-                return self.opacities[c]
+                return self.converted_opacities[c]
             return 0
         
         cel = self.cel_for_frame(self.get_selected())
         if cel:
-            opacities[cel] = get_opa('current')
+            opacities[cel] = 1
         
         cel = self.get_previous_cel()
         if cel and cel not in opacities.keys():
@@ -406,7 +403,7 @@ IndexError: Trying to go to inexistent next keyframe.
 Testing opacities
 -----------------
 
->>> active_cels = {'current': True, 'nextprev': True, 'key': False, \
+>>> active_cels = {'nextprev': True, 'key': False, \
                    'inbetweens': False, 'other keys': False, \
                    'other': False}
 
