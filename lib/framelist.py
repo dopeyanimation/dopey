@@ -63,9 +63,19 @@ class FrameList(list):
         self.setup_opacities(opacities)
         self.setup_active_cels(active_cels)
         
+    def setup_opacityfactor(self, factor):
+        self.convert_opacities(factor)
+
     def setup_opacities(self, opacities):
         self.opacities.update(opacities)
-    
+        self.convert_opacities()
+
+    def convert_opacities(self, factor=1):
+        self.converted_opacities = {}
+        for k, v in self.opacities.items():
+            self.converted_opacities[k] = v * factor
+        print self.converted_opacities
+
     def setup_active_cels(self, active_cels):
         self.active_cels.update(active_cels)
     
