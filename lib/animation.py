@@ -185,6 +185,10 @@ class Animation(object):
         
     def change_opacityfactor(self, opacityfactor):
         self.frames.set_opacityfactor(opacityfactor)
+        opacities = self.frames.get_opacities()
+        for cel, opa in opacities.items():
+            cel.opacity = opa
+            self._notify_canvas_observers(cel)
 
     def toggle_opacity(self, attr, is_active):
         self.doc.do(anicommand.ToggleOpacity(self.doc, self.frames,
