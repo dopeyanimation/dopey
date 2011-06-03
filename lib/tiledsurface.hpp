@@ -1,5 +1,5 @@
 /* This file is part of MyPaint.
- * Copyright (C) 2008 by Martin Renold <martinxyz@gmx.ch>
+ * Copyright (C) 2008-2011 by Martin Renold <martinxyz@gmx.ch>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ private:
   TileMemory tileMemory[TILE_MEMORY_SIZE];
   int tileMemoryValid;
   int tileMemoryWrite;
-
+  
 public:
   TiledSurface(PyObject * self_) {
     self = self_; // no need to incref
@@ -106,8 +106,32 @@ public:
                  float radius, 
                  float color_r, float color_g, float color_b,
                  float opaque, float hardness = 0.5,
-                 float eraser_target_alpha = 1.0,
-                 float aspect_ratio = 1.0, float angle = 0.0) {
+                 float color_a = 1.0,
+                 float aspect_ratio = 1.0, float angle = 0.0,
+                 float lock_alpha = 0.0
+                 ) {
+
+    opaque = CLAMP(opaque, 0.0, 1.0);
+    hardness = CLAMP(hardness, 0.0, 1.0);
+    lock_alpha = CLAMP(lock_alpha, 0.0, 1.0);
+    if (radius < 0.1) return false; // don't bother with dabs smaller than 0.1 pixel
+    if (hardness == 0.0) return false; // infintly small center point, fully transparent outside
+    if (opaque == 0.0) return false;
+    assert(atomic > 0);
+
+    color_r = CLAMP(color_r, 0.0, 1.0);
+    color_g = CLAMP(color_g, 0.0, 1.0);
+    color_b = CLAMP(color_b, 0.0, 1.0);
+    color_a = CLAMP(color_a, 0.0, 1.0);
+
+    uint16_t color_r_ = color_r * (1<<15);
+    uint16_t color_g_ = color_g * (1<<15);
+    uint16_t color_b_ = color_b * (1<<15);
+
+    // blending mode preparation
+    float normal = 1.0;
+
+    normal *= 1.0-lock_alpha;
 
 	if (aspect_ratio<1.0) aspect_ratio=1.0;
 
@@ -115,22 +139,6 @@ public:
     int xp, yp;
     float xx, yy, rr;
     float one_over_radius2;
-
-    eraser_target_alpha = CLAMP(eraser_target_alpha, 0.0, 1.0);
-    uint32_t color_r_ = color_r * (1<<15);
-    uint32_t color_g_ = color_g * (1<<15);
-    uint32_t color_b_ = color_b * (1<<15);
-    color_r = CLAMP(color_r, 0, (1<<15));
-    color_g = CLAMP(color_g, 0, (1<<15));
-    color_b = CLAMP(color_b, 0, (1<<15));
-
-    opaque = CLAMP(opaque, 0.0, 1.0);
-    hardness = CLAMP(hardness, 0.0, 1.0);
-    if (opaque == 0.0) return false;
-    if (radius < 0.1) return false;
-    if (hardness == 0.0) return false; // infintly small point, rest transparent
-
-    assert(atomic > 0);
 
     r_fringe = radius + 1;
     rr = radius*radius;
@@ -143,12 +151,6 @@ public:
     int tx, ty;
     for (ty = ty1; ty <= ty2; ty++) {
       for (tx = tx1; tx <= tx2; tx++) {
-        uint16_t * rgba_p = get_tile_memory(tx, ty, false);
-        if (!rgba_p) {
-          printf("Python exception during draw_dab()!\n");
-          return true;
-        }
-
         float xc = x - tx*TILE_SIZE;
         float yc = y - ty*TILE_SIZE;
 
@@ -165,8 +167,17 @@ public:
 		float cs=cos(angle_rad);
 		float sn=sin(angle_rad);
 
+        // first, we calculate the mask (opacity for each pixel)
+        static uint16_t mask[TILE_SIZE*TILE_SIZE+2*TILE_SIZE];
+        // we do run length encoding: if opacity is zero, the next
+        // value in the mask is the number of pixels that can be skipped.
+        uint16_t * mask_p = mask;
+        int skip=0;
+
+        skip += y0*TILE_SIZE;
         for (yp = y0; yp <= y1; yp++) {
           yy = (yp + 0.5 - yc);
+          skip += x0;
           for (xp = x0; xp <= x1; xp++) {
             xx = (xp + 0.5 - xc);
             // code duplication, see brush::count_dabs_to()
@@ -175,8 +186,9 @@ public:
             rr = (yyr*yyr + xxr*xxr) * one_over_radius2;
             // rr is in range 0.0..1.0*sqrt(2)
 
+            float opa = 0;
             if (rr <= 1.0) {
-              float opa = opaque;
+              opa = 1.0;
               if (hardness < 1.0) {
                 if (rr < hardness) {
                   opa *= rr + 1-(rr/hardness);
@@ -194,31 +206,56 @@ public:
               // resultAlpha = topAlpha + (1.0 - topAlpha) * bottomAlpha
               // resultColor = topColor + (1.0 - topAlpha) * bottomColor
               //
-              // (at least for the normal case where eraser_target_alpha == 1.0)
-              // OPTIMIZE: separate function for the standard case without erasing?
               // OPTIMIZE: don't use floats here in the inner loop?
 
 #ifdef HEAVY_DEBUG
               assert(opa >= 0.0 && opa <= 1.0);
-              assert(eraser_target_alpha >= 0.0 && eraser_target_alpha <= 1.0);
 #endif
-
-              uint32_t opa_a = (1<<15)*opa;   // topAlpha
-              uint32_t opa_b = (1<<15)-opa_a; // bottomAlpha
-              
-              // only for eraser, or for painting with translucent-making colors
-              opa_a *= eraser_target_alpha;
-              
-              int idx = (yp*TILE_SIZE + xp)*4;
-              rgba_p[idx+3] = opa_a + (opa_b*rgba_p[idx+3])/(1<<15);
-              rgba_p[idx+0] = (opa_a*color_r_ + opa_b*rgba_p[idx+0])/(1<<15);
-              rgba_p[idx+1] = (opa_a*color_g_ + opa_b*rgba_p[idx+1])/(1<<15);
-              rgba_p[idx+2] = (opa_a*color_b_ + opa_b*rgba_p[idx+2])/(1<<15);
+            }
+            uint16_t opa_ = opa * (1<<15);
+            if (!opa_) {
+              skip++;
+            } else {
+              if (skip) {
+                *mask_p++ = 0;
+                *mask_p++ = skip*4;
+                skip = 0;
+              }
+              *mask_p++ = opa_;
             }
           }
+          skip += TILE_SIZE-xp;
+        }
+        *mask_p++ = 0;
+        *mask_p++ = 0;
+
+        // second, we use the mask to stamp a dab for each activated blend mode
+
+        uint16_t * rgba_p = get_tile_memory(tx, ty, false);
+        if (!rgba_p) {
+          printf("Python exception during draw_dab()!\n");
+          return true;
+        }
+
+
+        if (normal) {
+          if (color_a == 1.0) {
+            draw_dab_pixels_BlendMode_Normal(mask, rgba_p,
+                                             color_r_, color_g_, color_b_, normal*opaque*(1<<15));
+          } else {
+            // normal case for brushes that use smudging (eg. watercolor)
+            draw_dab_pixels_BlendMode_Normal_and_Eraser(mask, rgba_p,
+                                                        color_r_, color_g_, color_b_, color_a*(1<<15), normal*opaque*(1<<15));
+          }
+        }
+
+        if (lock_alpha) {
+          draw_dab_pixels_BlendMode_LockAlpha(mask, rgba_p,
+                                              color_r_, color_g_, color_b_, lock_alpha*opaque*(1<<15));
         }
       }
     }
+
 
     {
       // expand the bounding box to include the region we just drawed

@@ -25,7 +25,7 @@ class TiledDrawWidget(gtk.DrawingArea):
 
     CANNOT_DRAW_CURSOR = gdk.Cursor(gdk.CIRCLE)
 
-    def __init__(self, document):
+    def __init__(self, app, document):
         gtk.DrawingArea.__init__(self)
         self.connect("expose-event", self.expose_cb)
         self.connect("enter-notify-event", self.enter_notify_cb)
@@ -57,9 +57,10 @@ class TiledDrawWidget(gtk.DrawingArea):
 
         self.set_extension_events (gdk.EXTENSION_EVENTS_ALL)
 
+        self.app = app
         self.doc = document
         self.doc.canvas_observers.append(self.canvas_modified_cb)
-        self.doc.brush.settings_observers.append(self.brush_modified_cb)
+        self.doc.brush.brushinfo.observers.append(self.brush_modified_cb)
 
         self.cursor_info = None
 
@@ -405,8 +406,12 @@ class TiledDrawWidget(gtk.DrawingArea):
         self.get_model_coordinates_cairo_context(cr)
 
         # choose best mipmap
-        mipmap_level = max(0, int(ceil(log(1/self.scale,2))))
-        #mipmap_level = max(0, int(floor(log(1.0/self.scale,2)))) # slightly better quality but clearly slower
+        if self.app.preferences['view.high_quality_zoom']:
+            # can cause a very clear slowdown on some hardware
+            # (we probably could avoid this by doing rendering differently)
+            mipmap_level = max(0, int(floor(log(1.0/self.scale,2))))
+        else:
+            mipmap_level = max(0, int(ceil(log(1/self.scale,2))))
         # OPTIMIZE: if we would render tile scanlines, we could probably use the better one above...
         mipmap_level = min(mipmap_level, tiledsurface.MAX_MIPMAP_LEVEL)
         cr.scale(2**mipmap_level, 2**mipmap_level)
@@ -610,7 +615,7 @@ class TiledDrawWidget(gtk.DrawingArea):
         self.translation_y += (cy_user - desired_cy_user)*self.scale
         self.queue_draw()
 
-    def brush_modified_cb(self):
+    def brush_modified_cb(self, settings):
         self.update_cursor()
 
     def update_cursor(self):
@@ -623,9 +628,9 @@ class TiledDrawWidget(gtk.DrawingArea):
         elif self.doc.layer.locked or not self.doc.layer.visible:
             c = self.CANNOT_DRAW_CURSOR
         else:
-            b = self.doc.brush
-            radius = b.get_actual_radius()*self.scale
-            c = cursor.get_brush_cursor(radius, b.is_eraser())
+            b = self.doc.brush.brushinfo
+            radius = b.get_effective_radius()*self.scale
+            c = cursor.get_brush_cursor(radius, b.is_eraser(), b.get_base_value('lock_alpha') > 0.9)
         self.window.set_cursor(c)
 
     def set_override_cursor(self, cursor):

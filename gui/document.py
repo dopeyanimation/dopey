@@ -22,19 +22,14 @@ from brushmanager import ManagedBrush
 
 import animation
 
-# This value allows the user to go back to the exact original size with brush_smaller_cb().
-ERASER_MODE_RADIUS_CHANGE_DEFAULT = 3*(0.3)
-ERASER_MODE_RADIUS_CHANGE_PREF = 'document.eraser_mode_radius_change'
-
 class Document(object):
     def __init__(self, app):
         self.app = app
-        self.model = lib.document.Document()
-        self.model.set_brush(self.app.brush)
+        self.model = lib.document.Document(self.app.brush)
         self.ani = animation.Animation(self)
 
         # View
-        self.tdw = tileddrawwidget.TiledDrawWidget(self.model)
+        self.tdw = tileddrawwidget.TiledDrawWidget(self.app, self.model)
         self.model.frame_observers.append(self.frame_changed_cb)
 
         # FIXME: hack, to be removed
@@ -55,18 +50,10 @@ class Document(object):
         self.tdw.zoom_min = min(self.zoomlevel_values)
         self.tdw.zoom_max = max(self.zoomlevel_values)
 
-        # Brush
-        self.app.brush.settings_observers.append(self.brush_modified_cb)
-        self.app.brushmanager.selected_brush_observers.append(self.brush_selected_cb)
-
         # Device change management & pen-stroke watching
         self.tdw.device_observers.append(self.device_changed_cb)
         self.input_stroke_ended_observers.append(self.input_stroke_ended_cb)
         self.last_pen_device = None
-        self.last_used_devbrush_was_eraser = None
-
-        # Eraser mode
-        self.eraser_mode_original_settings = None
 
         self.init_actions()
         self.init_context_actions()
@@ -86,7 +73,6 @@ class Document(object):
             ('Smaller',      None, _('Smaller'), 'd', None, self.brush_smaller_cb),
             ('MoreOpaque',   None, _('More Opaque'), 's', None, self.more_opaque_cb),
             ('LessOpaque',   None, _('Less Opaque'), 'a', None, self.less_opaque_cb),
-            ('Eraser',       None, _('Toggle Eraser Mode'), 'e', None, self.eraser_cb), # TODO: make toggle action
             ('PickContext',  None, _('Pick Context (layer, brush and color)'), 'w', None, self.pick_context_cb),
 
             ('Darker',       None, _('Darker'), None, None, self.darker_cb),
@@ -128,6 +114,11 @@ class Document(object):
             ('MirrorVertical', None, _('Mirror Vertical'), 'u', None, self.mirror_vertical_cb),
             ('SoloLayer',    None, _('Layer Solo'), 'Home', None, self.solo_layer_cb), # TODO: make toggle action
             ('ToggleAbove',  None, _('Hide Layers Above Current'), 'End', None, self.toggle_layers_above_cb), # TODO: make toggle action
+
+            ('BlendMode',    None, _('Blend Mode')),
+            ('BlendModeNormal', None, _('Normal'), 'n', None, self.blend_mode_normal_cb),
+            ('BlendModeEraser', None, _('Eraser'), 'e', None, self.blend_mode_eraser_cb),
+            ('BlendModeLockAlpha', None, _('Lock alpha channel'), '<shift>l', None, self.blend_mode_lock_alpha_cb),
         ]
         ag = self.action_group = gtk.ActionGroup('DocumentActions')
         ag.add_actions(actions)
@@ -245,13 +236,6 @@ class Document(object):
             self.model.load_layer_from_pixbuf(pixbuf, x, y)
         cb.request_image(callback)
 
-    def brush_modified_cb(self):
-        # called at every brush setting modification, should return fast
-        self.model.set_brush(self.app.brush)
-
-    def brush_selected_cb(self, brush):
-        self.forget_eraser_mode()
-
     def pick_context_cb(self, action):
         x, y = self.tdw.get_cursor_in_model_coordinates()
         for idx, layer in reversed(list(enumerate(self.model.layers))):
@@ -270,10 +254,10 @@ class Document(object):
                 si = self.model.layer.get_stroke_info_at(x, y)
 
                 if si:
-                    picked_brush = ManagedBrush(self.app.brushmanager)
-                    picked_brush.brushinfo.parse(si.brush_string)
-                    self.app.brushmanager.select_brush(picked_brush)
-                    self.forget_eraser_mode()
+                    mb = ManagedBrush(self.app.brushmanager)
+                    mb.brushinfo.load_from_string(si.brush_string)
+                    self.app.brushmanager.select_brush(mb)
+                    self.app.brushmodifier.restore_context_of_selected_brush()
                     self.si = si # FIXME: should be a method parameter?
                     self.strokeblink_state.activate(action)
                 return
@@ -365,14 +349,12 @@ class Document(object):
         adj.set_value(adj.get_value() / 1.8)
 
     def brighter_cb(self, action):
-        self.end_eraser_mode()
         h, s, v = self.app.brush.get_color_hsv()
         v += 0.08
         if v > 1.0: v = 1.0
         self.app.brush.set_color_hsv((h, s, v))
 
     def darker_cb(self, action):
-        self.end_eraser_mode()
         h, s, v = self.app.brush.get_color_hsv()
         v -= 0.08
         # stop a little higher than 0.0, to avoid resetting hue to 0
@@ -380,7 +362,6 @@ class Document(object):
         self.app.brush.set_color_hsv((h, s, v))
 
     def warmer_cb(self,action):
-        self.end_eraser_mode()
         h, s, v = self.app.brush.get_color_hsv()
         # using about 40 degrees (0.111 +- e) as warmest and
         # 130 deg (0.611 +- e) as coolest
@@ -394,7 +375,6 @@ class Document(object):
         self.app.brush.set_color_hsv((h, s, v))
 
     def cooler_cb(self,action):
-        self.end_eraser_mode()
         h, s, v = self.app.brush.get_color_hsv()
         e = 0.015
         if 0.111 < h < 0.611 - e:
@@ -406,14 +386,12 @@ class Document(object):
         self.app.brush.set_color_hsv((h, s, v))
 
     def purer_cb(self,action):
-        self.end_eraser_mode()
         h, s, v = self.app.brush.get_color_hsv()
         s += 0.08
         if s > 1.0: s = 1.0
         self.app.brush.set_color_hsv((h, s, v))
 
     def grayer_cb(self,action):
-        self.end_eraser_mode()
         h, s, v = self.app.brush.get_color_hsv()
         s -= 0.08
         # stop a little higher than 0.0, to avoid resetting hue to 0
@@ -438,7 +416,7 @@ class Document(object):
             context = bm.contexts[i]
         bm.selected_context = context
         if store:
-            context.brushinfo = self.app.brush.brushinfo.clone()
+            context.brushinfo = self.app.brush.clone()
             context.preview = bm.selected_brush.preview
             context.save()
         else:
@@ -446,8 +424,6 @@ class Document(object):
             color = self.app.brush.get_color_hsv()
             bm.select_brush(context)
             self.app.brush.set_color_hsv(color)
-            # XXX
-            self.forget_eraser_mode()
 
     # TDW view manipulation
     def dragfunc_translate(self, dx, dy, x, y):
@@ -587,56 +563,10 @@ class Document(object):
     def no_double_buffering_cb(self, action):
         self.tdw.set_double_buffered(not action.get_active())
 
-
-    # ERASER
-    def eraser_cb(self, action):
-        if self.eraser_mode_original_settings:
-            self.end_eraser_mode()
-            return
-        adj = self.app.brush_adjustment['eraser']
-        e = adj.get_value()
-        if e > 0.9:
-            print "can't enter eraser mode if the current brush is an eraser"
-            self.tdw.window.beep()  # TODO: better feedback
-            return
-        # enter eraser mode
-        adj.set_value(1.0)
-        adj2 = self.app.brush_adjustment['radius_logarithmic']
-        r = adj2.get_value()
-        self.eraser_mode_original_settings = (e, r)
-        dr = self.app.preferences.get(ERASER_MODE_RADIUS_CHANGE_PREF, ERASER_MODE_RADIUS_CHANGE_DEFAULT)
-        adj2.set_value(r + dr)
-        # TODO: feedback to the user: "just shrink the brush three steps if this is too big"?
-
-    def end_eraser_mode(self):
-        if not self.eraser_mode_original_settings:
-            return
-        orig_e, orig_r = self.eraser_mode_original_settings
-        adj = self.app.brush_adjustment['eraser']
-        adj.set_value(orig_e)
-        # save eraser mode radius change, restore old radius
-        adj2 = self.app.brush_adjustment['radius_logarithmic']
-        r = adj2.get_value()
-        self.app.preferences[ERASER_MODE_RADIUS_CHANGE_PREF] = r - orig_r
-        adj2.set_value(orig_r)
-        self.forget_eraser_mode()
-
-    def forget_eraser_mode(self):
-        # Forget eraser mode states without altering the current brush.
-        # Do this always after restoring something from a saved brush.
-        self.eraser_mode_original_settings = None
-
+    # BLEND MODES
     def clone_selected_brush_for_saving(self):
-        # Clones the current brush as a new, nameless brush with all eraser
-        # mode settings de-applied.
-        settings_override = {}
-        clone = self.app.brushmanager.clone_selected_brush(name=None)
-        if self.eraser_mode_original_settings:
-            orig_e, orig_r = self.eraser_mode_original_settings
-            i = clone.brushinfo
-            i['eraser']             = (orig_e, i.get('eraser',             (None, {}))[1])
-            i['radius_logarithmic'] = (orig_r, i.get('radius_logarithmic', (None, {}))[1])
-        return clone
+        # Clones the current brush, along with blend mode settings.
+        return self.app.brushmanager.clone_selected_brush(name=None)
 
     def device_is_eraser(self, device):
         if device is None: return False
@@ -658,16 +588,12 @@ class Document(object):
 
         bm = self.app.brushmanager
         if old_device:
-            if self.device_is_eraser(old_device):
-                old_brush = bm.clone_selected_brush(name=None)  # preserve user-chosen eraser mode settings
-            else:
-                old_brush = self.clone_selected_brush_for_saving()  # discard eraser mode settings
+            old_brush = self.clone_selected_brush_for_saving()
             bm.store_brush_for_device(old_device.name, old_brush)
 
         if new_device.source == gdk.SOURCE_MOUSE:
             # Avoid fouling up unrelated devbrushes at stroke end
             self.app.preferences.pop('devbrush.last_used', None)
-            self.last_used_devbrush_was_eraser = None
         else:
             # Select the brush and update the UI.
             # Use a sane default if there's nothing associated
@@ -679,9 +605,7 @@ class Document(object):
                 else:
                     brush = bm.get_default_brush()
             self.app.preferences['devbrush.last_used'] = new_device.name
-            self.last_used_devbrush_was_eraser = self.device_is_eraser(new_device)
             bm.select_brush(brush)
-        self.forget_eraser_mode()
 
     def input_stroke_ended_cb(self, event):
         # Store device-specific brush settings at the end of the stroke, not
@@ -692,17 +616,29 @@ class Document(object):
         device_name = self.app.preferences.get('devbrush.last_used', None)
         if device_name is None:
             return
-        if self.last_used_devbrush_was_eraser:
-            bm = self.app.brushmanager
-            selected_brush = bm.clone_selected_brush(name=None)  # preserve user-chosen eraser mode settings
-        else:
-            selected_brush = self.clone_selected_brush_for_saving()  # discard eraser mode settings
+        selected_brush = self.clone_selected_brush_for_saving()
         self.app.brushmanager.store_brush_for_device(device_name, selected_brush)
         # However it may be better to reflect any brush settings change into
         # the last-used devbrush immediately. The UI idea here is that the
         # pointer (when you're holding the pen) is special, it's the point of a
         # real-world tool that you're dipping into a palette, or modifying
         # using the sliders.
+
+    def blend_mode_normal_cb(self, action):
+        bm = self.app.brushmodifier
+        if bm.eraser_mode.active:
+            bm.eraser_mode.leave()
+        if bm.lock_alpha.active:
+            bm.lock_alpha.leave()
+
+    def blend_mode_eraser_cb(self, action):
+        self.app.brushmodifier.eraser_mode.toggle(action)
+
+    def blend_mode_lock_alpha_cb(self, action):
+        bm = self.app.brushmodifier
+        if bm.eraser_mode.active:
+            bm.eraser_mode.leave()
+        bm.lock_alpha.toggle(action)
 
     def frame_changed_cb(self):
         self.tdw.queue_draw()

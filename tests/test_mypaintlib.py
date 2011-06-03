@@ -38,12 +38,12 @@ def directPaint():
 def brushPaint():
 
     s = tiledsurface.Surface()
-    b = brush.Brush()
-    b.load_from_string(open('brushes/charcoal.myb').read())
+    bi = brush.BrushInfo(open('brushes/charcoal.myb').read())
+    b = brush.Brush(bi)
 
     events = loadtxt('painting30sec.dat.gz')
 
-    b.set_color_rgb((0.0, 0.9, 1.0))
+    bi.set_color_rgb((0.0, 0.9, 1.0))
 
     t0 = time()
     for i in range(10):
@@ -119,14 +119,17 @@ def pngs_equal(a, b):
     return equal
 
 def docPaint():
-    b1 = brush.Brush()
-    b1.load_from_string(open('brushes/s008.myb').read())
-    b2 = brush.Brush()
-    b2.load_from_string(open('brushes/redbrush.myb').read())
+    b1 = brush.BrushInfo(open('brushes/s008.myb').read())
+    b2 = brush.BrushInfo(open('brushes/redbrush.myb').read())
     b2.set_color_hsv((0.3, 0.4, 0.35))
+    b3 = brush.BrushInfo(open('brushes/watercolor.myb').read())
+    b3.set_color_hsv((0.9, 0.2, 0.2))
+
+    b = brush.BrushInfo()
+    b.load_defaults()
 
     # test some actions
-    doc = document.Document()
+    doc = document.Document(b)
     doc.undo() # nop
     events = loadtxt('painting30sec.dat.gz')
     events = events[:len(events)/8]
@@ -138,7 +141,7 @@ def docPaint():
         #print dtime
         doc.stroke_to(dtime, x, y, pressure, 0.0, 0.0)
         if i == n*1/8:
-            doc.set_brush(b2)
+            b.load_from_brushinfo(b2)
         if i == n*2/8:
             doc.clear_layer()
             doc.undo()
@@ -147,16 +150,24 @@ def docPaint():
             assert doc.get_bbox().empty()
         if i == n*3/8:
             doc.undo()
-            doc.set_brush(b1)
+            b.load_from_brushinfo(b3)
         if i == n*4/8:
-            doc.set_brush(b2)
+            b.load_from_brushinfo(b2)
         if i == n*5/8:
             doc.undo()
             doc.redo()
         if i == n*6/8:
-            doc.set_brush(b2)
+            b.load_from_brushinfo(b2)
         if i == n*7/8:
             doc.add_layer(1)
+
+    # If there is an eraser (or smudging) at work, we might be erasing
+    # tiles that are empty. Those tile get memory allocated and affect
+    # the bounding box of the layer. This shouldn't be a big issue, but
+    # they get dropped when loading a document, which makes a
+    # comparision of the PNG files fail. The hack below is to avoid that.
+    for l in doc.layers:
+        l.surface.remove_empty_tiles()
 
     doc.layers[0].surface.save('test_docPaint_a.png')
     doc.layers[0].surface.save('test_docPaint_a1.png')
@@ -167,9 +178,11 @@ def docPaint():
     doc.save('test_f1.ora')
     doc2 = document.Document()
     doc2.load('test_f1.ora')
-    print doc.get_bbox(), doc2.get_bbox()
-    # TODO: fix this one?!
+
+    # (We don't preserve the absolute position of the image, only the size.)
     #assert doc.get_bbox() == doc2.get_bbox()
+    print 'doc / doc2 bbox:', doc.get_bbox(), doc2.get_bbox()
+
     doc2.layers[0].surface.save('test_docPaint_b.png')
     assert pngs_equal('test_docPaint_a.png', 'test_docPaint_b.png')
     doc2.save('test_f2.ora')
