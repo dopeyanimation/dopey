@@ -20,28 +20,16 @@ from lib import backgroundsurface, command, helpers, layer
 import tileddrawwidget, stategroup
 from brushmanager import ManagedBrush
 
-<<<<<<< HEAD
 import animation
 
-# This value allows the user to go back to the exact original size with brush_smaller_cb().
-ERASER_MODE_RADIUS_CHANGE_DEFAULT = 3*(0.3)
-ERASER_MODE_RADIUS_CHANGE_PREF = 'document.eraser_mode_radius_change'
-
-class Document(object):
-    def __init__(self, app):
-        self.app = app
-        self.model = lib.document.Document()
-        self.model.set_brush(self.app.brush)
-        self.ani = animation.Animation(self)
-=======
 class Document(object):
     def __init__(self, app):
         self.app = app
         self.model = lib.document.Document(self.app.brush)
->>>>>>> 962af1436b92fa5032ba254d4b82c79e019196cd
+        self.ani = animation.Animation(self)
 
         # View
-        self.tdw = tileddrawwidget.TiledDrawWidget(self.model)
+        self.tdw = tileddrawwidget.TiledDrawWidget(self.app, self.model)
         self.model.frame_observers.append(self.frame_changed_cb)
 
         # FIXME: hack, to be removed

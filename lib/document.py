@@ -49,6 +49,7 @@ class Document():
             brushinfo = brush.BrushInfo()
             brushinfo.load_defaults()
         self.brush = brush.Brush(brushinfo)
+        self.ani = animation.Animation(self)
         self.stroke = None
         self.canvas_observers = []
         self.stroke_observers = [] # callback arguments: stroke, brush (brush is a temporary read-only convenience object)

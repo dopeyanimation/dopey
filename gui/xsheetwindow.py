@@ -315,15 +315,15 @@ class ToolWidget(gtk.VBox):
                               XSHEET_COLORS['without_cel'][r])
 
     def _call_penciltest(self):
-        has_next_frame = self.ani.penciltest_next()
+        self.ani.penciltest_next()
         keep_playing = True
-        if not has_next_frame or self.ani.penciltest_state == "stop":
+        if self.ani.penciltest_state == "stop":
             self.ani.select_without_undo(self.beforeplay_frame)
             keep_playing = False
             self._change_penciltest_buttons(keep_playing)
             self.ani.penciltest_state = None
             self._update()
-        if self.ani.penciltest_state == "pause":
+        elif self.ani.penciltest_state == "pause":
             keep_playing = False
             self._change_penciltest_buttons(keep_playing)
             self.ani.penciltest_state = None
