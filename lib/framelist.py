@@ -283,7 +283,13 @@ class FrameList(list):
                 else:
                     opacities[cel] = get_opa('other')
         
-        return opacities
+        visible = {}
+        for cel, opa in opacities.items():
+            visible[cel] = True
+            if opa == 0:
+                visible[cel] = False
+
+        return opacities, visible
 
 
 def print_list(frames):

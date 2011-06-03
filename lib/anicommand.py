@@ -15,10 +15,16 @@ class AniAction(Action):
         self.frames = frames 
     
     def update_opacities(self):
-        opacities = self.frames.get_opacities()
+        opacities, visible = self.frames.get_opacities()
+
         for cel, opa in opacities.items():
             cel.opacity = opa
             self._notify_canvas_observers(cel)
+
+        for cel, vis in visible.items():
+            cel.visible = vis
+            self._notify_canvas_observers(cel)
+
         
 
 class SelectFrame(AniAction):

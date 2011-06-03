@@ -119,13 +119,21 @@ class Animation(object):
         for f in self.doc.canvas_observers:
             f(*bbox)
 
-    def select_without_undo(self, idx):
-        """Like the command but without undo/redo."""
-        self.frames.select(idx)
-        opacities = self.frames.get_opacities()
+    def update_opacities(self):
+        opacities, visible = self.frames.get_opacities()
+
         for cel, opa in opacities.items():
             cel.opacity = opa
             self._notify_canvas_observers(cel)
+
+        for cel, vis in visible.items():
+            cel.visible = vis
+            self._notify_canvas_observers(cel)
+
+    def select_without_undo(self, idx):
+        """Like the command but without undo/redo."""
+        self.frames.select(idx)
+        self.update_opacities()
 
     def play_penciltest(self):
         self.penciltest_state = "play"
@@ -149,11 +157,7 @@ class Animation(object):
             self.frames.goto_next()
         else:
             self.frames.select(0)
-        # update opacities:
-        opacities = self.frames.get_opacities()
-        for cel, opa in opacities.items():
-            cel.opacity = opa
-            self._notify_canvas_observers(cel)
+        self.update_opacities()
     
     def toggle_key(self):
         self.doc.do(anicommand.ToggleKey(self.doc, self.frames))
@@ -185,10 +189,7 @@ class Animation(object):
         
     def change_opacityfactor(self, opacityfactor):
         self.frames.set_opacityfactor(opacityfactor)
-        opacities = self.frames.get_opacities()
-        for cel, opa in opacities.items():
-            cel.opacity = opa
-            self._notify_canvas_observers(cel)
+        self.update_opacities()
 
     def toggle_opacity(self, attr, is_active):
         self.doc.do(anicommand.ToggleOpacity(self.doc, self.frames,
