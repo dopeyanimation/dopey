@@ -148,13 +148,13 @@ class Animation(object):
     def penciltest_next(self):
         if self.frames.has_next():
             self.frames.goto_next()
-            # update opacities:
-            opacities = self.frames.get_opacities()
-            for cel, opa in opacities.items():
-                cel.opacity = opa
-                self._notify_canvas_observers(cel)
-            return True
-        return False
+        else:
+            self.frames.select(0)
+        # update opacities:
+        opacities = self.frames.get_opacities()
+        for cel, opa in opacities.items():
+            cel.opacity = opa
+            self._notify_canvas_observers(cel)
     
     def toggle_key(self):
         self.doc.do(anicommand.ToggleKey(self.doc, self.frames))
