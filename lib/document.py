@@ -62,8 +62,6 @@ class Document():
         # Used by move_frame() to accumulate values
         self._frame_dx = 0.0
         self._frame_dy = 0.0
-
-        self.ani = animation.Animation(self)
         
     def get_frame(self):
         return self._frame
