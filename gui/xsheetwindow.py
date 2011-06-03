@@ -124,12 +124,11 @@ class ToolWidget(gtk.VBox):
             opacity_vbox.pack_start(cb, expand=False)
         
         opacity_vbox = gtk.VBox()
-        opacity_checkbox('current', _('Current cel'), _("Show the current cel."))
-        opacity_checkbox('nextprev', _('Inmediate cels'), _("Show the inmediate next and previous cels."))
-        opacity_checkbox('key', _('Show inmediate keys'), _("Show the cel keys that are after and before the current cel."))
+        opacity_checkbox('nextprev', _('Inmediate'), _("Show the inmediate next and previous cels."))
+        opacity_checkbox('key', _('Inmediate keys'), _("Show the cel keys that are after and before the current cel."))
         opacity_checkbox('inbetweens', _('Inbetweens'), _("Show the cels that are between the inmediate key cels."))
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
-        opacity_checkbox('other', _('Other cels'), _("Show the rest of the cels."))
+        opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
         
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
