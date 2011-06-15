@@ -107,9 +107,24 @@ class ToolWidget(gtk.VBox):
         pop_button.connect('clicked', self.on_pop)
         pop_button.set_tooltip_text(_('Remove two frames below selection'))
 
+        cut_button = stock_button(gtk.STOCK_CUT)
+        cut_button.connect('clicked', self.on_cut)
+        cut_button.set_tooltip_text(_('Cut cel'))
+
+        copy_button = stock_button(gtk.STOCK_COPY)
+        copy_button.connect('clicked', self.on_copy)
+        copy_button.set_tooltip_text(_('Copy cel'))
+
+        paste_button = stock_button(gtk.STOCK_PASTE)
+        paste_button.connect('clicked', self.on_paste)
+        paste_button.set_tooltip_text(_('Paste cel'))
+
         editbuttons_hbox = gtk.HBox()
         editbuttons_hbox.pack_start(insert_button)
         editbuttons_hbox.pack_start(pop_button)
+        editbuttons_hbox.pack_start(cut_button)
+        editbuttons_hbox.pack_start(copy_button)
+        editbuttons_hbox.pack_start(paste_button)
         
         # lightbox controls:
 
@@ -373,4 +388,12 @@ class ToolWidget(gtk.VBox):
 
     def on_pop(self, button):
         self.ani.pop_frames()
-        
+
+    def on_cut(self, button):
+        pass
+
+    def on_copy(self, button):
+        pass
+
+    def on_paste(self, button):
+        pass
