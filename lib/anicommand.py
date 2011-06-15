@@ -10,6 +10,13 @@ from command import Action, SelectLayer
 import layer
 
 
+def layername_from_description(description):
+    layername = "CEL"
+    if description != '':
+        layername += " " + description
+    return layername
+
+
 class AniAction(Action):
     def __init__(self, frames):
         self.frames = frames 
@@ -148,15 +155,22 @@ class ChangeDescription(AniAction):
         self.doc = doc
         self.f = self.frames.get_selected()
         self.new_description = new_description
+        if self.f.cel != None:
+            self.old_layername = self.f.cel.name
 
     def redo(self):
         self.prev_value = self.f.description
         self.f.description = self.new_description
         self._notify_document_observers()
+        if self.f.cel != None:
+            layername = layername_from_description(self.f.description)
+            self.f.cel.name = layername
 
     def undo(self):
         self.f.description = self.prev_value
         self._notify_document_observers()
+        if self.f.cel != None:
+            self.f.cel.name = self.old_layername
 
 
 class AddCel(AniAction):
@@ -164,7 +178,8 @@ class AddCel(AniAction):
         AniAction.__init__(self, frames)
         self.doc = doc
         self.f = self.frames.get_selected()
-        self.layer = layer.Layer(self.f.description)
+        layername = layername_from_description(self.f.description)
+        self.layer = layer.Layer(name=layername)
         self.layer.surface.observers.append(self.doc.layer_modified_cb)
     
     def redo(self):
