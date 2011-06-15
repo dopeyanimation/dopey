@@ -289,6 +289,7 @@ class FrameList(list):
             if opa == 0:
                 visible[cel] = False
 
+#        print opacities, visible
         return opacities, visible
 
 
@@ -367,7 +368,7 @@ IndexError: Trying to select inexistent frame.
 >>> frames.index(frames.get_next_key())
 3
 >>> frames.get_opacities()
-{}
+({}, {})
 >>> frames.cel_at(0)
 
 >>> frames.cel_at(2)
@@ -385,7 +386,7 @@ IndexError: Trying to select inexistent frame.
 'c'
 >>> frames.cel_for_frame(frames.get_next_key())
 'c'
->>> set(frames.get_opacities().items()) == set([('a', 0.5), ('b', 1.0), ('c', 0.5)])
+>>> set(frames.get_opacities()[0].items()) == set([('a', 0.5), ('b', 1), ('c', 0.5)])
 True
 >>> frames.goto_previous_key()
 >>> frames.idx
@@ -418,7 +419,7 @@ Testing opacities
 >>> frames[2].add_cel('b')
 >>> frames[4].add_cel('c')
 >>> frames.select(2)
->>> set(frames.get_opacities().items()) == set([('a', 0.5), ('b', 1.0), ('c', 0.5)])
+>>> set(frames.get_opacities()[0].items()) == set([('a', 0.5), ('b', 1), ('c', 0.5)])
 True
 
 Appending more frames
