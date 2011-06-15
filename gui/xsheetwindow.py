@@ -390,10 +390,10 @@ class ToolWidget(gtk.VBox):
         self.ani.pop_frames()
 
     def on_cut(self, button):
-        pass
+        self.ani.cutcopy_cel('cut')
 
     def on_copy(self, button):
-        pass
+        self.ani.cutcopy_cel('copy')
 
     def on_paste(self, button):
-        pass
+        self.ani.paste_cel()

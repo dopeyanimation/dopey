@@ -306,3 +306,55 @@ class PopFrames(AniAction):
         
         self.doc.ani.cleared = True
         self._notify_document_observers()
+
+
+class CutCopyCel(AniAction):
+    def __init__(self, doc, frames, operation):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.operation = operation
+        self.frame = self.frames.get_selected()
+
+    def redo(self):
+        self.prev_edit_operation = self.doc.ani.edit_operation
+        self.prev_edit_frame = self.doc.ani.edit_frame
+        self.doc.ani.edit_operation = self.operation
+        self.doc.ani.edit_frame = self.frame
+
+    def undo(self):
+        self.doc.ani.edit_operation = self.prev_edit_operation
+        self.doc.ani.edit_cel = self.prev_edit_cel
+
+
+class PasteCel(AniAction):
+    def __init__(self, doc, frames):
+        AniAction.__init__(self, frames)
+        self.doc = doc
+        self.frame = self.frames.get_selected()
+
+    def redo(self):
+        self.prev_edit_operation = self.doc.ani.edit_operation
+        self.prev_edit_frame = self.doc.ani.edit_frame
+        self.prev_cel = self.frame.cel
+
+        if self.doc.ani.edit_operation == 'copy':
+            # TODO duplicate layer?
+            self.frame.add_cel(self.doc.ani.edit_frame.cel)
+        elif self.doc.ani.edit_operation == 'cut':
+            self.frame.add_cel(self.doc.ani.edit_frame.cel)
+            self.doc.ani.edit_frame.remove_cel()
+        else:
+            raise Exception 
+
+        self.doc.ani.edit_operation = None
+        self.doc.ani.edit_frame = None
+
+        self.doc.ani.cleared = True
+        self._notify_document_observers()
+
+    def undo(self):
+        self.doc.ani.edit_operation = self.prev_edit_operation
+        self.doc.ani.edit_frame = self.prev_edit_frame
+        self.frame.add_cel(self.prev_cel)
+        self.doc.ani.cleared = True
+        self._notify_document_observers()

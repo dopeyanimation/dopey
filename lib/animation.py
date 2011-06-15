@@ -47,7 +47,11 @@ class Animation(object):
         self.doc = doc
         self.cleared = False
         self.penciltest_state = None
-    
+
+        # For cut/copy/paste operations:
+        self.edit_operation = None
+        self.edit_frame = None
+
     def clear_xsheet(self, init=False):
         self.frames = FrameList(24, self.opacities)
         self.cleared = True
@@ -206,3 +210,9 @@ class Animation(object):
 
     def pop_frames(self):
         self.doc.do(anicommand.PopFrames(self.doc, self.frames, 1))
+
+    def cutcopy_cel(self, edit_operation):
+        self.doc.do(anicommand.CutCopyCel(self.doc, self.frames, edit_operation))
+
+    def paste_cel(self):
+        self.doc.do(anicommand.PasteCel(self.doc, self.frames))
