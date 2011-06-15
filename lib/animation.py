@@ -206,7 +206,7 @@ class Animation(object):
         self.doc.do(anicommand.AppendFrames(self.doc, self.frames, 4))
 
     def insert_frames(self):
-        self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 2))
+        self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 1))
 
     def pop_frames(self):
         self.doc.do(anicommand.PopFrames(self.doc, self.frames, 1))

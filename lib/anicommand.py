@@ -349,12 +349,12 @@ class PasteCel(AniAction):
         self.doc.ani.edit_operation = None
         self.doc.ani.edit_frame = None
 
-        self.doc.ani.cleared = True
+        self.update_opacities()
         self._notify_document_observers()
 
     def undo(self):
         self.doc.ani.edit_operation = self.prev_edit_operation
         self.doc.ani.edit_frame = self.prev_edit_frame
         self.frame.add_cel(self.prev_cel)
-        self.doc.ani.cleared = True
+        self.update_opacities()
         self._notify_document_observers()
