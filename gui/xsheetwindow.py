@@ -8,15 +8,9 @@ from layerswindow import stock_button
 
 from lib.framelist import DEFAULT_ACTIVE_CELS
 
-COLUMNS_NAME = ('frame_index', 'frame_data')
+COLUMNS_NAME = ('frame_index', 'frame_data', 'frame_icon')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
-XSHEET_COLORS = {
-    'key_on': ('#f2f5a9', '#f2f5a9'),
-    'key_off': ('#ffffff', '#ededed'),
-    'with_cel': ('#cdf5ff', '#c3e9f2'),
-    'without_cel': ('#ffffff', '#ededed'),
-}
 
 class ToolWidget(gtk.VBox):
     
@@ -196,6 +190,9 @@ class ToolWidget(gtk.VBox):
         column = self.treeview.get_column(1)
         cell = column.get_cell_renderers()[0]
         column.set_cell_data_func(cell, self.set_description)
+        column = self.treeview.get_column(2)
+        cell = column.get_cell_renderers()[0]
+        column.set_cell_data_func(cell, self.set_icon)
         
         # reconnect treeview:
         self.treeview.set_model(self.listmodel)
@@ -232,25 +229,23 @@ class ToolWidget(gtk.VBox):
     def add_columns(self):
         listmodel = self.treeview.get_model()
         
-        # frame column
+        # frame number column
         
         cell = gtk.CellRendererText()
-        cell.set_property('background-set' , True)
+#        cell.set_property('background-set' , True)
         
         column = gtk.TreeViewColumn(_("Frame"))
         column.pack_start(cell, True)
-        column.set_cell_data_func(cell, self.set_number)
-        
-        # fix column to 50 pixels:
         column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         column.set_fixed_width(50)
+        column.set_cell_data_func(cell, self.set_number)
         
         self.treeview.append_column(column)
         
         # description column
         
         cell = gtk.CellRendererText()
-        cell.set_property('background-set' , True)
+#        cell.set_property('background-set' , True)
         
         column = gtk.TreeViewColumn(_("Description"))
         column.pack_start(cell, True)
@@ -258,6 +253,18 @@ class ToolWidget(gtk.VBox):
 
         self.treeview.append_column(column)
     
+        # icon column
+        
+        cell = gtk.CellRendererPixbuf()
+        column = gtk.TreeViewColumn(_("Status"))
+        column.pack_start(cell, expand=False)
+        column.add_attribute(cell, 'pixbuf', 0)
+        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        column.set_fixed_width(50)
+        column.set_cell_data_func(cell, self.set_icon)
+        
+        self.treeview.append_column(column)
+        
     def _change_penciltest_buttons(self, is_playing):
         if is_playing:
             self.play_button.hide()
@@ -319,26 +326,19 @@ class ToolWidget(gtk.VBox):
         idx = model.get_value(it, COLUMNS_ID['frame_index'])
         cell.set_property('text', idx+1)
         
-        frame = model.get_value(it, COLUMNS_ID['frame_data'])
-        r = self._get_row_class(model, it)
-        if frame.is_key:
-            cell.set_property('background', 
-                              XSHEET_COLORS['key_on'][r])
-        else:
-            cell.set_property('background', 
-                              XSHEET_COLORS['key_off'][r])
-
     def set_description(self, column, cell, model, it):
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
         cell.set_property('text', frame.description)
         
-        r = self._get_row_class(model, it)
+    def set_icon(self, column, cell, model, it):
+        frame = model.get_value(it, COLUMNS_ID['frame_data'])
+        pixname = 'frame'
         if frame.cel is not None:
-            cell.set_property('background',
-                              XSHEET_COLORS['with_cel'][r])
-        else:
-            cell.set_property('background', 
-                              XSHEET_COLORS['without_cel'][r])
+            pixname += '_cel'
+        if frame.is_key:
+            pixname = 'key' + pixname
+        pixbuf = getattr(self.app.pixmaps, pixname)
+        cell.set_property('pixbuf', pixbuf)
 
     def _call_penciltest(self):
         self.ani.penciltest_next()
