@@ -25,7 +25,7 @@ class Animation(object):
             ('NextKeyFrame', None, _('Next Keyframe'), '<control>Down', None, self.next_keyframe_cb),
             ('PlayPausePenciltest', None, _('Play/Pause Penciltest'), '<control>p', None, self.playpause_penciltest_cb),
             ('StopPenciltest', None, _('Stop Penciltest'), None, None, self.stop_penciltest_cb),
-            ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
+            ('AddRemoveCel', None, _('Add/Remove cel to this frame'), 'c', None, self.add_remove_cel_cb),
             ('ToggleKey', gtk.STOCK_JUMP_TO, _('Toggle Keyframe'), 'k', None, self.toggle_key_cb),
             ('InsertFrames', gtk.STOCK_ADD, _('Insert frame'), None, None, self.insert_frames_cb),
             ('PopFrames', gtk.STOCK_REMOVE, _('Remove frame'), None, None, self.pop_frames_cb),
@@ -43,14 +43,18 @@ class Animation(object):
     def previous_keyframe_cb(self, action):
         if self.model.frames.has_previous_key():
             self.model.previous_keyframe()
-    
+
     def next_keyframe_cb(self, action):
         if self.model.frames.has_next_key():
             self.model.next_keyframe()
 
-    def add_cel_cb(self, action):
-        self.model.add_cel()
-    
+    def add_remove_cel_cb(self, action):
+        f = self.model.frames.get_selected()
+        if f.cel is None:
+            self.model.add_cel()
+        else:
+            self.model.remove_cel()
+
     def playpause_penciltest_cb(self, action):
         self.model.playpause_penciltest()
 
