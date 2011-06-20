@@ -11,7 +11,6 @@ from lib.framelist import DEFAULT_ACTIVE_CELS
 COLUMNS_NAME = ('frame_index', 'frame_data', 'frame_icon')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
-
 class ToolWidget(gtk.VBox):
     
     tool_widget_title = _("X Sheet")
@@ -40,6 +39,13 @@ class ToolWidget(gtk.VBox):
 
         # xsheet controls:
         
+        def pixbuf_button(pixbuf):
+            b = gtk.Button()
+            img = gtk.Image()
+            img.set_from_pixbuf(pixbuf)
+            b.add(img)
+            return b
+
         self.key_button = stock_button(gtk.STOCK_JUMP_TO)
         self.key_button.connect('clicked', self.on_toggle_key)
         self.key_button.set_tooltip_text(_('Toggle Keyframe'))
@@ -48,11 +54,13 @@ class ToolWidget(gtk.VBox):
         self.chdesc_button.connect('clicked', self.on_change_description)
         self.chdesc_button.set_tooltip_text(_('Change Cel Description'))
         
-        self.add_button = stock_button(gtk.STOCK_ADD)
+        pixbuf_add = self.app.pixmaps.cel_add
+        self.add_button = pixbuf_button(pixbuf_add)
         self.add_button.connect('clicked', self.on_add_cel)
         self.add_button.set_tooltip_text(_('Add cel to this frame'))
         
-        self.remove_button = stock_button(gtk.STOCK_REMOVE)
+        pixbuf_remove = self.app.pixmaps.cel_remove
+        self.remove_button = pixbuf_button(pixbuf_remove)
         self.remove_button.connect('clicked', self.on_remove_cel)
         self.remove_button.set_tooltip_text(_('Remove cel of this frame'))
         
