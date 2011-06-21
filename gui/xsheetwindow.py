@@ -8,7 +8,7 @@ from layerswindow import stock_button
 
 from lib.framelist import DEFAULT_ACTIVE_CELS
 
-COLUMNS_NAME = ('frame_index', 'frame_data', 'frame_icon')
+COLUMNS_NAME = ('frame_index', 'frame_data')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
 class ToolWidget(gtk.VBox):
@@ -200,10 +200,10 @@ class ToolWidget(gtk.VBox):
         column.set_cell_data_func(cell, self.set_number)
         column = self.treeview.get_column(1)
         cell = column.get_cell_renderers()[0]
-        column.set_cell_data_func(cell, self.set_description)
+        column.set_cell_data_func(cell, self.set_icon)
         column = self.treeview.get_column(2)
         cell = column.get_cell_renderers()[0]
-        column.set_cell_data_func(cell, self.set_icon)
+        column.set_cell_data_func(cell, self.set_description)
         
         # reconnect treeview:
         self.treeview.set_model(self.listmodel)
@@ -239,42 +239,36 @@ class ToolWidget(gtk.VBox):
     
     def add_columns(self):
         listmodel = self.treeview.get_model()
-        
-        # frame number column
-        
-        cell = gtk.CellRendererText()
-#        cell.set_property('background-set' , True)
-        
-        column = gtk.TreeViewColumn(_("Frame"))
-        column.pack_start(cell, True)
-        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-        column.set_fixed_width(50)
-        column.set_cell_data_func(cell, self.set_number)
-        
-        self.treeview.append_column(column)
-        
-        # description column
-        
-        cell = gtk.CellRendererText()
-#        cell.set_property('background-set' , True)
-        
-        column = gtk.TreeViewColumn(_("Description"))
-        column.pack_start(cell, True)
-        column.set_cell_data_func(cell, self.set_description)
 
-        self.treeview.append_column(column)
-    
+        # frame number column
+
+        frameno_cell = gtk.CellRendererText()
+        framenumber_col = gtk.TreeViewColumn(_("Frame"))
+        framenumber_col.pack_start(frameno_cell, True)
+        framenumber_col.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        framenumber_col.set_fixed_width(50)
+        framenumber_col.set_cell_data_func(frameno_cell, self.set_number)
+
         # icon column
-        
-        cell = gtk.CellRendererPixbuf()
-        column = gtk.TreeViewColumn(_("Status"))
-        column.pack_start(cell, expand=False)
-        column.add_attribute(cell, 'pixbuf', 0)
-        column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-        column.set_fixed_width(50)
-        column.set_cell_data_func(cell, self.set_icon)
-        
-        self.treeview.append_column(column)
+
+        icon_cell = gtk.CellRendererPixbuf()
+        icon_col = gtk.TreeViewColumn(_("Status"))
+        icon_col.pack_start(icon_cell, expand=False)
+        icon_col.add_attribute(icon_cell, 'pixbuf', 0)
+        icon_col.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
+        icon_col.set_fixed_width(50)
+        icon_col.set_cell_data_func(icon_cell, self.set_icon)
+
+        # description column
+
+        desc_cell = gtk.CellRendererText()
+        description_col = gtk.TreeViewColumn(_("Description"))
+        description_col.pack_start(desc_cell, True)
+        description_col.set_cell_data_func(desc_cell, self.set_description)
+
+        self.treeview.append_column(framenumber_col)
+        self.treeview.append_column(icon_col)
+        self.treeview.append_column(description_col)
         
     def _change_penciltest_buttons(self, is_playing):
         if is_playing:
