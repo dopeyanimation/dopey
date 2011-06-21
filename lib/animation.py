@@ -183,18 +183,16 @@ class Animation(object):
                                                  new_description))
     
     def add_cel(self):
-        f = self.frames.get_selected()
-        if f.cel is not None:
+        frame = self.frames.get_selected()
+        if frame.cel is not None:
             return
-        cur_index = self.frames.idx
-        self.doc.do(anicommand.AddCel(self.doc, self.frames, cur_index))
+        self.doc.do(anicommand.AddCel(self.doc, self.frames, frame))
 
     def remove_cel(self):
-        f = self.frames.get_selected()
-        if f.cel is None:
+        frame = self.frames.get_selected()
+        if frame.cel is None:
             return
-        cur_index = self.frames.idx
-        self.doc.do(anicommand.RemoveCel(self.doc, self.frames, cur_index))
+        self.doc.do(anicommand.RemoveCel(self.doc, self.frames, frame))
 
     def select_frame(self, idx):
         self.doc.do(anicommand.SelectFrame(self.doc, self.frames, idx))

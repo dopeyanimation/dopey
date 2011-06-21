@@ -174,13 +174,13 @@ class ChangeDescription(AniAction):
 
 
 class AddCel(AniAction):
-    def __init__(self, doc, frames, index):
+    def __init__(self, doc, frames, frame):
         AniAction.__init__(self, frames)
         self.doc = doc
-        self.f = self.frames[index]
+        self.frame = frame
 
         # Create new layer:
-        layername = layername_from_description(self.f.description)
+        layername = layername_from_description(self.frame.description)
         self.layer = layer.Layer(name=layername)
         self.layer.surface.observers.append(self.doc.layer_modified_cb)
     
@@ -189,23 +189,23 @@ class AddCel(AniAction):
         self.prev_idx = self.doc.layer_idx
         self.doc.layer_idx = 0
         
-        self.f.add_cel(self.layer)
+        self.frame.add_cel(self.layer)
         self.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.doc.layers.remove(self.layer)
         self.doc.layer_idx = self.prev_idx
-        self.f.remove_cel()
+        self.frame.remove_cel()
         self.update_opacities()
         self._notify_document_observers()
 
 
 class RemoveCel(AniAction):
-    def __init__(self, doc, frames, index):
+    def __init__(self, doc, frames, frame):
         AniAction.__init__(self, frames)
         self.doc = doc
-        self.f = self.frames[index]
+        self.frame = frame
         self.layer = self.f.cel
     
     def redo(self):
@@ -213,7 +213,7 @@ class RemoveCel(AniAction):
         self.prev_idx = self.doc.layer_idx
         self.doc.layer_idx = 0
         
-        self.f.remove_cel()
+        self.frame.remove_cel()
         self.update_opacities()
         self._notify_document_observers()
     
@@ -221,7 +221,7 @@ class RemoveCel(AniAction):
         self.doc.layers.insert(0, self.layer)
         self.doc.layer_idx = self.prev_idx
 
-        self.f.add_cel(self.layer)
+        self.frame.add_cel(self.layer)
         self.update_opacities()
         self._notify_document_observers()
 
