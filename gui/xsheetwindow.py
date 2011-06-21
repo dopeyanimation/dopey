@@ -46,7 +46,8 @@ class ToolWidget(gtk.VBox):
             b.add(img)
             return b
 
-        self.key_button = stock_button(gtk.STOCK_JUMP_TO)
+        pixbuf_key = self.app.pixmaps.keyframe_add
+        self.key_button = pixbuf_button(pixbuf_key)
         self.key_button.connect('clicked', self.on_toggle_key)
         self.key_button.set_tooltip_text(_('Toggle Keyframe'))
         
