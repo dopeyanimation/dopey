@@ -80,18 +80,29 @@ class FrameList(list):
         for l in range(length):
             self.append(Frame())
     
-    def can_pop(self):
+    def can_remove(self):
         return self.idx+1 < len(self) 
     
-    def frames_to_pop(self, length, at_current=False):
+    def frames_to_remove(self, length, at_current=False):
+        """
+        Return the frames to remove if the same arguments of
+        remove_frames are passed.
+
+        """
         if at_current:
             return list(self[self.idx:self.idx+length])
         else:
             return list(self[-length:])
     
-    def pop_frames(self, length, at_current=False):
-        if not self.can_pop():
-            raise IndexError("Trying to pop at the last frame.")
+    def remove_frames(self, length, at_current=False):
+        """
+        Remove frames from the current position or from the end.
+
+        It raises an error if one of the removed frames have a cel.
+
+        """
+        if not self.can_remove():
+            raise IndexError("Trying to remove at the last frame.")
         
         for l in range(length):
             assert self[len(self)-1].cel == None
@@ -433,7 +444,7 @@ Appending more frames
 >>> len(frames)
 12
 
->>> frames.pop_frames(6)
+>>> frames.remove_frames(6)
 >>> len(frames)
 6
 
@@ -460,7 +471,7 @@ Inserting frames
 >>> frames.cel_at(4)
 'c'
 
->>> frames.pop_frames(2, at_current=True)
+>>> frames.remove_frames(2, at_current=True)
 >>> len(frames)
 4
 
@@ -470,12 +481,12 @@ Inserting frames
 'c'
 
 >>> frames.idx = 3 # at the end
->>> frames.can_pop()
+>>> frames.can_remove()
 False
 
->>> frames.pop_frames(2, at_current=True)
+>>> frames.remove_frames(2, at_current=True)
 Traceback (most recent call last):
-IndexError: Trying to pop at the last frame.
+IndexError: Trying to remove at the last frame.
 
 """)
 

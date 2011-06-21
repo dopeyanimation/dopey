@@ -255,7 +255,7 @@ class AppendFrames(AniAction):
         self._notify_document_observers()
 
     def undo(self):
-        self.frames.pop_frames(self.length)
+        self.frames.remove_frames(self.length)
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
@@ -273,12 +273,12 @@ class InsertFrames(AniAction):
         self._notify_document_observers()
 
     def undo(self):
-        self.frames.pop_frames(self.length, at_current=True)
+        self.frames.remove_frames(self.length, at_current=True)
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
 
-class PopFrames(AniAction):
+class RemoveFrames(AniAction):
 
     # TODO mal!!
     def __init__(self, doc, frames, length):
@@ -286,12 +286,12 @@ class PopFrames(AniAction):
         self.doc = doc
         self.idx = frames.idx
         self.length = length
-        self.frames_to_pop = self.frames.frames_to_pop(self.length,
+        self.frames_to_remove = self.frames.frames_to_remove(self.length,
                                                        at_current=True)
     
     def redo(self):
-        self.frames.pop_frames(self.length, at_current=True)
-        for frame in self.frames_to_pop:
+        self.frames.remove_frames(self.length, at_current=True)
+        for frame in self.frames_to_remove:
             if frame.cel is not None:
                 self.doc.layers.remove(frame.cel)
             
@@ -299,7 +299,7 @@ class PopFrames(AniAction):
         self._notify_document_observers()
         
     def undo(self):
-        for frame in self.frames_to_pop:
+        for frame in self.frames_to_remove:
             self.frames.insert(self.idx+1, frame)
             if frame.cel is not None:
                 self.doc.layers.insert(0, frame.cel)

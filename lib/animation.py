@@ -208,8 +208,8 @@ class Animation(object):
     def insert_frames(self):
         self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 1))
 
-    def pop_frames(self):
-        self.doc.do(anicommand.PopFrames(self.doc, self.frames, 1))
+    def remove_frames(self):
+        self.doc.do(anicommand.RemoveFrames(self.doc, self.frames, 1))
 
     def cutcopy_cel(self, edit_operation):
         self.doc.do(anicommand.CutCopyCel(self.doc, self.frames, edit_operation))

@@ -105,9 +105,9 @@ class ToolWidget(gtk.VBox):
         insert_button.connect('clicked', self.on_insert)
         insert_button.set_tooltip_text(_('Insert two frames below selection'))
 
-        pop_button = stock_button(gtk.STOCK_REMOVE)
-        pop_button.connect('clicked', self.on_pop)
-        pop_button.set_tooltip_text(_('Remove two frames below selection'))
+        remove_button = stock_button(gtk.STOCK_REMOVE)
+        remove_button.connect('clicked', self.on_remove)
+        remove_button.set_tooltip_text(_('Remove two frames below selection'))
 
         cut_button = stock_button(gtk.STOCK_CUT)
         cut_button.connect('clicked', self.on_cut)
@@ -123,7 +123,7 @@ class ToolWidget(gtk.VBox):
 
         editbuttons_hbox = gtk.HBox()
         editbuttons_hbox.pack_start(insert_button)
-        editbuttons_hbox.pack_start(pop_button)
+        editbuttons_hbox.pack_start(remove_button)
         editbuttons_hbox.pack_start(cut_button)
         editbuttons_hbox.pack_start(copy_button)
         editbuttons_hbox.pack_start(paste_button)
@@ -394,8 +394,8 @@ class ToolWidget(gtk.VBox):
     def on_insert(self, button):
         self.ani.insert_frames()
 
-    def on_pop(self, button):
-        self.ani.pop_frames()
+    def on_remove(self, button):
+        self.ani.remove_frames()
 
     def on_cut(self, button):
         self.ani.cutcopy_cel('cut')
