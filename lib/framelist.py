@@ -80,9 +80,6 @@ class FrameList(list):
         for l in range(length):
             self.append(Frame())
     
-    def can_remove(self, length):
-        return self.idx+length < len(self) 
-    
     def frames_to_remove(self, length, at_current=False):
         """
         Return the frames to remove if the same arguments of
@@ -489,8 +486,6 @@ True
 'c'
 
 >>> frames.idx = 3 # at the end
->>> frames.can_remove(1)
-False
 
 >>> frames.remove_frames(2, at_current=True)
 Traceback (most recent call last):
