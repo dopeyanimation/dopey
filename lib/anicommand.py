@@ -174,10 +174,12 @@ class ChangeDescription(AniAction):
 
 
 class AddCel(AniAction):
-    def __init__(self, doc, frames):
+    def __init__(self, doc, frames, index):
         AniAction.__init__(self, frames)
         self.doc = doc
-        self.f = self.frames.get_selected()
+        self.f = self.frames[index]
+
+        # Create new layer:
         layername = layername_from_description(self.f.description)
         self.layer = layer.Layer(name=layername)
         self.layer.surface.observers.append(self.doc.layer_modified_cb)
@@ -200,10 +202,10 @@ class AddCel(AniAction):
 
 
 class RemoveCel(AniAction):
-    def __init__(self, doc, frames):
+    def __init__(self, doc, frames, index):
         AniAction.__init__(self, frames)
         self.doc = doc
-        self.f = self.frames.get_selected()
+        self.f = self.frames[index]
         self.layer = self.f.cel
     
     def redo(self):

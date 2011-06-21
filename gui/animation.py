@@ -49,9 +49,7 @@ class Animation(object):
             self.model.next_keyframe()
 
     def add_cel_cb(self, action):
-        f = self.model.frames.get_selected()
-        if f.cel is None:
-            self.model.add_cel()
+        self.model.add_cel()
 
     def playpause_penciltest_cb(self, action):
         self.model.playpause_penciltest()
