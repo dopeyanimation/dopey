@@ -55,20 +55,20 @@ class ToolWidget(gtk.VBox):
         self.chdesc_button.set_tooltip_text(_('Change Cel Description'))
         
         pixbuf_add = self.app.pixmaps.cel_add
-        self.add_button = pixbuf_button(pixbuf_add)
-        self.add_button.connect('clicked', self.on_add_cel)
-        self.add_button.set_tooltip_text(_('Add cel to this frame'))
+        self.add_cel_button = pixbuf_button(pixbuf_add)
+        self.add_cel_button.connect('clicked', self.on_add_cel)
+        self.add_cel_button.set_tooltip_text(_('Add cel to this frame'))
         
         pixbuf_remove = self.app.pixmaps.cel_remove
-        self.remove_button = pixbuf_button(pixbuf_remove)
-        self.remove_button.connect('clicked', self.on_remove_cel)
-        self.remove_button.set_tooltip_text(_('Remove cel of this frame'))
+        self.remove_cel_button = pixbuf_button(pixbuf_remove)
+        self.remove_cel_button.connect('clicked', self.on_remove_cel)
+        self.remove_cel_button.set_tooltip_text(_('Remove cel of this frame'))
         
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(self.key_button)
         buttons_hbox.pack_start(self.chdesc_button)
-        buttons_hbox.pack_start(self.add_button)
-        buttons_hbox.pack_start(self.remove_button)
+        buttons_hbox.pack_start(self.add_cel_button)
+        buttons_hbox.pack_start(self.remove_cel_button)
 
         # penciltest controls:
         
@@ -101,13 +101,15 @@ class ToolWidget(gtk.VBox):
 
         # frames edit controls:
         
-        insert_button = stock_button(gtk.STOCK_ADD)
-        insert_button.connect('clicked', self.on_insert)
-        insert_button.set_tooltip_text(_('Insert two frames below selection'))
+        insert_frame_button = stock_button(gtk.STOCK_ADD)
+        insert_frame_button.connect('clicked', self.on_insert_frame)
+        insert_frame_button.set_tooltip_text(_('Insert frame below selection'))
+        self.insert_frame_button = insert_frame_button
 
-        remove_button = stock_button(gtk.STOCK_REMOVE)
-        remove_button.connect('clicked', self.on_remove)
-        remove_button.set_tooltip_text(_('Remove two frames below selection'))
+        remove_frame_button = stock_button(gtk.STOCK_REMOVE)
+        remove_frame_button.connect('clicked', self.on_remove_frame)
+        remove_frame_button.set_tooltip_text(_('Remove frame below selection'))
+        self.remove_frame_button = remove_frame_button
 
         cut_button = stock_button(gtk.STOCK_CUT)
         cut_button.connect('clicked', self.on_cut)
@@ -122,8 +124,8 @@ class ToolWidget(gtk.VBox):
         paste_button.set_tooltip_text(_('Paste cel'))
 
         editbuttons_hbox = gtk.HBox()
-        editbuttons_hbox.pack_start(insert_button)
-        editbuttons_hbox.pack_start(remove_button)
+        editbuttons_hbox.pack_start(insert_frame_button)
+        editbuttons_hbox.pack_start(remove_frame_button)
         editbuttons_hbox.pack_start(cut_button)
         editbuttons_hbox.pack_start(copy_button)
         editbuttons_hbox.pack_start(paste_button)
@@ -219,7 +221,7 @@ class ToolWidget(gtk.VBox):
         self.treeview.get_selection().select_path(path)
         self.treeview.scroll_to_cell(path)
         self.queue_draw()
-        self._change_buttons()
+        self._update_buttons_sensitive()
         
         if self.ani.penciltest_state == "play":
             self._play_penciltest()
@@ -282,23 +284,24 @@ class ToolWidget(gtk.VBox):
             self.pause_button.hide()
         self.stop_button.set_sensitive(is_playing)
 
-    def _change_buttons(self):
+    def _update_buttons_sensitive(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
         self.next_button.set_sensitive(self.ani.frames.has_next())
+        self.remove_frame_button.set_sensitive(self.ani.frames.can_remove())
         
         f = self.ani.frames.get_selected()
         if f.cel is None:
-            self.add_button.show()
-            self.remove_button.hide()
+            self.add_cel_button.show()
+            self.remove_cel_button.hide()
         else:
-            self.add_button.hide()
-            self.remove_button.show()
+            self.add_cel_button.hide()
+            self.remove_cel_button.show()
     
     def on_row_changed(self, treesel):
         model, it = treesel.get_selected()
         path = model.get_path(it)
         self.ani.select_frame(path[COLUMNS_ID['frame_index']])
-        self._change_buttons()
+        self._update_buttons_sensitive()
         
     def on_toggle_key(self, button):
         self.ani.toggle_key()
@@ -391,10 +394,10 @@ class ToolWidget(gtk.VBox):
         self.ani.toggle_opacity(attr, checkbox.get_active())
         self.queue_draw()
 
-    def on_insert(self, button):
+    def on_insert_frame(self, button):
         self.ani.insert_frames()
 
-    def on_remove(self, button):
+    def on_remove_frame(self, button):
         self.ani.remove_frames()
 
     def on_cut(self, button):
