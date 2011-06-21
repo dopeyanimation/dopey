@@ -201,23 +201,6 @@ class RemoveFrames(Action):
         self._notify_document_observers()
 
 
-class CutCopyCel(Action):
-    def __init__(self, doc, frame, operation):
-        self.doc = doc
-        self.operation = operation
-        self.frame = frame
-
-    def redo(self):
-        self.prev_edit_operation = self.doc.ani.edit_operation
-        self.prev_edit_frame = self.doc.ani.edit_frame
-        self.doc.ani.edit_operation = self.operation
-        self.doc.ani.edit_frame = self.frame
-
-    def undo(self):
-        self.doc.ani.edit_operation = self.prev_edit_operation
-        self.doc.ani.edit_cel = self.prev_edit_cel
-
-
 class PasteCel(Action):
     def __init__(self, doc, frame):
         self.doc = doc
