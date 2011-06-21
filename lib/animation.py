@@ -224,6 +224,7 @@ class Animation(object):
         frame = self.frames.get_selected()
         self.doc.ani.edit_operation = edit_operation
         self.doc.ani.edit_frame = frame
+        self.doc.call_doc_observers()
 
     def paste_cel(self):
         frame = self.frames.get_selected()

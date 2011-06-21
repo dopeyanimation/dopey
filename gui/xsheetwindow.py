@@ -122,6 +122,7 @@ class ToolWidget(gtk.VBox):
         paste_button = stock_button(gtk.STOCK_PASTE)
         paste_button.connect('clicked', self.on_paste)
         paste_button.set_tooltip_text(_('Paste cel'))
+        self.paste_button = paste_button
 
         editbuttons_hbox = gtk.HBox()
         editbuttons_hbox.pack_start(insert_frame_button)
@@ -287,6 +288,8 @@ class ToolWidget(gtk.VBox):
     def _update_buttons_sensitive(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
         self.next_button.set_sensitive(self.ani.frames.has_next())
+        can_paste = self.ani.edit_frame is not None
+        self.paste_button.set_sensitive(can_paste)
         
         f = self.ani.frames.get_selected()
         if f.cel is None:
