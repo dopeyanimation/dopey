@@ -218,7 +218,10 @@ class Animation(object):
         self.doc.do(anicommand.RemoveFrames(self.doc, self.frames, 1))
 
     def cutcopy_cel(self, edit_operation):
-        self.doc.do(anicommand.CutCopyCel(self.doc, self.frames, edit_operation))
+        frame = self.frames.get_selected()
+        self.doc.do(anicommand.CutCopyCel(self.doc, self.frames,
+             frame, edit_operation))
 
     def paste_cel(self):
-        self.doc.do(anicommand.PasteCel(self.doc, self.frames))
+        frame = self.frames.get_selected()
+        self.doc.do(anicommand.PasteCel(self.doc, self.frames, frame))

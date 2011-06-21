@@ -310,11 +310,11 @@ class RemoveFrames(AniAction):
 
 
 class CutCopyCel(AniAction):
-    def __init__(self, doc, frames, operation):
+    def __init__(self, doc, frames, frame, operation):
         AniAction.__init__(self, frames)
         self.doc = doc
         self.operation = operation
-        self.frame = self.frames.get_selected()
+        self.frame = frame
 
     def redo(self):
         self.prev_edit_operation = self.doc.ani.edit_operation
@@ -328,10 +328,10 @@ class CutCopyCel(AniAction):
 
 
 class PasteCel(AniAction):
-    def __init__(self, doc, frames):
+    def __init__(self, doc, frames, frame):
         AniAction.__init__(self, frames)
         self.doc = doc
-        self.frame = self.frames.get_selected()
+        self.frame = frame
 
     def redo(self):
         self.prev_edit_operation = self.doc.ani.edit_operation
