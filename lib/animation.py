@@ -202,15 +202,10 @@ class Animation(object):
         self.update_opacities()
 
     def toggle_opacity(self, attr, is_active):
-        self.doc.do(anicommand.ToggleOpacity(self.doc, self.frames,
-                                             attr, is_active))
+        self.frames.setup_active_cels({attr: is_active})
+        self.update_opacities()
+#        self._notify_document_observers()
     
-    # This is not used actually, it is planned to be used to
-    # automatically append frames when the scroll of the xsheet list
-    # reaches the bottom.
-    def append_frames(self):
-        self.doc.do(anicommand.AppendFrames(self.doc, self.frames, 4))
-
     def insert_frames(self):
         self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 1))
 
