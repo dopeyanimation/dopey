@@ -19,6 +19,8 @@ class ToolWidget(gtk.VBox):
         gtk.VBox.__init__(self)
         self.app = app
         self.ani = app.doc.ani.model
+        self.is_playing = False
+
         self.set_size_request(200, 150)
         
         # create list:
@@ -170,7 +172,7 @@ class ToolWidget(gtk.VBox):
         self.pack_start(opacityopts_vbox, expand=False)
         
         self.show_all()
-        self._change_penciltest_buttons(is_playing=False)
+        self._change_penciltest_buttons()
         self.app.doc.model.doc_observers.append(self.update)
         
     def _get_path_from_frame(self, frame):
@@ -225,7 +227,7 @@ class ToolWidget(gtk.VBox):
         self.queue_draw()
         self._update_buttons_sensitive()
         
-        if self.ani.penciltest_state == "play":
+        if not self.is_playing and self.ani.penciltest_state == "play":
             self._play_penciltest()
     
     def update(self, doc):
@@ -271,14 +273,14 @@ class ToolWidget(gtk.VBox):
         self.treeview.append_column(icon_col)
         self.treeview.append_column(description_col)
         
-    def _change_penciltest_buttons(self, is_playing):
-        if is_playing:
+    def _change_penciltest_buttons(self):
+        if self.is_playing:
             self.play_button.hide()
             self.pause_button.show()
         else:
             self.play_button.show()
             self.pause_button.hide()
-        self.stop_button.set_sensitive(is_playing)
+        self.stop_button.set_sensitive(self.is_playing)
 
     def _update_buttons_sensitive(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
@@ -355,19 +357,22 @@ class ToolWidget(gtk.VBox):
         if self.ani.penciltest_state == "stop":
             self.ani.select_without_undo(self.beforeplay_frame)
             keep_playing = False
-            self._change_penciltest_buttons(keep_playing)
+            self.is_playing = False
+            self._change_penciltest_buttons()
             self.ani.penciltest_state = None
             self._update()
         elif self.ani.penciltest_state == "pause":
             keep_playing = False
-            self._change_penciltest_buttons(keep_playing)
+            self.is_playing = False
+            self._change_penciltest_buttons()
             self.ani.penciltest_state = None
             self._update()
         return keep_playing
 
     def _play_penciltest(self):
+        self.is_playing = True
         self.beforeplay_frame = self.ani.frames.idx
-        self._change_penciltest_buttons(is_playing=True)
+        self._change_penciltest_buttons()
         # add a 24fps (almost 42ms) animation timer:
         gobject.timeout_add(42, self._call_penciltest)
 
