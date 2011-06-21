@@ -17,15 +17,10 @@ def layername_from_description(description):
     return layername
 
 
-class AniAction(Action):
-    def __init__(self, frames):
-        self.frames = frames 
-
-
-class SelectFrame(AniAction):
-    def __init__(self, doc, frames, idx):
-        AniAction.__init__(self, frames)
+class SelectFrame(Action):
+    def __init__(self, doc, idx):
         self.doc = doc
+        self.frames = doc.ani.frames
         self.idx = idx
         self.select_layer = None
     
@@ -51,62 +46,59 @@ class SelectFrame(AniAction):
         self._notify_document_observers()
 
 
-class ToggleKey(AniAction):
-    def __init__(self, doc, frames):
-        AniAction.__init__(self, frames)
+class ToggleKey(Action):
+    def __init__(self, doc, frame):
         self.doc = doc
-        self.f = self.frames.get_selected()
+        self.frame = frame
     
     def redo(self):
-        self.prev_value = self.f.is_key
-        self.f.toggle_key()
+        self.prev_value = self.frame.is_key
+        self.frame.toggle_key()
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
     def undo(self):
-        self.f.is_key = self.prev_value
+        self.frame.is_key = self.prev_value
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
-class GoToPrevious(AniAction):
-    def __init__(self, doc, frames):
-        AniAction.__init__(self, frames)
+class GoToPrevious(Action):
+    def __init__(self, doc):
         self.doc = doc
-        self.f = self.frames.get_selected()
-    
+        self.frames = doc.ani.frames
+
     def redo(self):
         self.frames.goto_previous()
         self.doc.ani.update_opacities()
         self._notify_document_observers()
-    
+
     def undo(self):
         self.frames.goto_next()
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
-class GoToNext(AniAction):
-    def __init__(self, doc, frames):
-        AniAction.__init__(self, frames)
+class GoToNext(Action):
+    def __init__(self, doc):
         self.doc = doc
-        self.f = self.frames.get_selected()
-    
+        self.frames = doc.ani.frames
+
     def redo(self):
         self.frames.goto_next()
         self.doc.ani.update_opacities()
         self._notify_document_observers()
-    
+
     def undo(self):
         self.frames.goto_previous()
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
-class GoToPrevKey(AniAction):
-    def __init__(self, doc, frames):
-        AniAction.__init__(self, frames)
+class GoToPrevKey(Action):
+    def __init__(self, doc):
         self.doc = doc
+        self.frames = doc.ani.frames
         self.idx = self.frames.idx
     
     def redo(self):
@@ -120,10 +112,10 @@ class GoToPrevKey(AniAction):
         self._notify_document_observers()
 
 
-class GoToNextKey(AniAction):
-    def __init__(self, doc, frames):
-        AniAction.__init__(self, frames)
+class GoToNextKey(Action):
+    def __init__(self, doc):
         self.doc = doc
+        self.frames = doc.ani.frames
         self.idx = self.frames.idx
     
     def redo(self):
@@ -137,10 +129,10 @@ class GoToNextKey(AniAction):
         self._notify_document_observers()
 
 
-class ChangeDescription(AniAction):
-    def __init__(self, doc, frames, new_description):
-        AniAction.__init__(self, frames)
+class ChangeDescription(Action):
+    def __init__(self, doc, new_description):
         self.doc = doc
+        self.frames = doc.ani.frames
         self.f = self.frames.get_selected()
         self.new_description = new_description
         if self.f.cel != None:
@@ -161,9 +153,8 @@ class ChangeDescription(AniAction):
             self.f.cel.name = self.old_layername
 
 
-class AddCel(AniAction):
-    def __init__(self, doc, frames, frame):
-        AniAction.__init__(self, frames)
+class AddCel(Action):
+    def __init__(self, doc, frame):
         self.doc = doc
         self.frame = frame
 
@@ -189,12 +180,11 @@ class AddCel(AniAction):
         self._notify_document_observers()
 
 
-class RemoveCel(AniAction):
-    def __init__(self, doc, frames, frame):
-        AniAction.__init__(self, frames)
+class RemoveCel(Action):
+    def __init__(self, doc, frame):
         self.doc = doc
         self.frame = frame
-        self.layer = self.f.cel
+        self.layer = self.frame.cel
     
     def redo(self):
         self.doc.layers.remove(self.layer)
@@ -214,10 +204,10 @@ class RemoveCel(AniAction):
         self._notify_document_observers()
 
 
-class AppendFrames(AniAction):
-    def __init__(self, doc, frames, length):
-        AniAction.__init__(self, frames)
+class AppendFrames(Action):
+    def __init__(self, doc, length):
         self.doc = doc
+        self.frames = doc.ani.frames
         self.length = length
 
     def redo(self):
@@ -231,11 +221,11 @@ class AppendFrames(AniAction):
         self._notify_document_observers()
 
 
-class InsertFrames(AniAction):
-    def __init__(self, doc, frames, length):
-        AniAction.__init__(self, frames)
+class InsertFrames(Action):
+    def __init__(self, doc, length):
         self.doc = doc
-        self.idx = frames.idx
+        self.frames = doc.ani.frames
+        self.idx = doc.ani.frames.idx
         self.length = length
 
     def redo(self):
@@ -249,11 +239,11 @@ class InsertFrames(AniAction):
         self._notify_document_observers()
 
 
-class RemoveFrames(AniAction):
-    def __init__(self, doc, frames, length):
-        AniAction.__init__(self, frames)
+class RemoveFrames(Action):
+    def __init__(self, doc, length):
         self.doc = doc
-        self.idx = frames.idx
+        self.frames = doc.ani.frames
+        self.idx = doc.ani.frames.idx
         self.length = length
         self.frames_to_remove = self.frames.frames_to_remove(self.length)
     
@@ -278,9 +268,8 @@ class RemoveFrames(AniAction):
         self._notify_document_observers()
 
 
-class CutCopyCel(AniAction):
-    def __init__(self, doc, frames, frame, operation):
-        AniAction.__init__(self, frames)
+class CutCopyCel(Action):
+    def __init__(self, doc, frame, operation):
         self.doc = doc
         self.operation = operation
         self.frame = frame
@@ -296,9 +285,8 @@ class CutCopyCel(AniAction):
         self.doc.ani.edit_cel = self.prev_edit_cel
 
 
-class PasteCel(AniAction):
-    def __init__(self, doc, frames, frame):
-        AniAction.__init__(self, frames)
+class PasteCel(Action):
+    def __init__(self, doc, frame):
         self.doc = doc
         self.frame = frame
 

@@ -164,38 +164,37 @@ class Animation(object):
         self.update_opacities()
     
     def toggle_key(self):
-        self.doc.do(anicommand.ToggleKey(self.doc, self.frames))
+        self.doc.do(anicommand.ToggleKey(self.doc))
     
     def previous_frame(self):
-        self.doc.do(anicommand.GoToPrevious(self.doc, self.frames))
+        self.doc.do(anicommand.GoToPrevious(self.doc))
     
     def next_frame(self):
-        self.doc.do(anicommand.GoToNext(self.doc, self.frames))
+        self.doc.do(anicommand.GoToNext(self.doc))
     
     def previous_keyframe(self):
-        self.doc.do(anicommand.GoToPrevKey(self.doc, self.frames))
+        self.doc.do(anicommand.GoToPrevKey(self.doc))
     
     def next_keyframe(self):
-        self.doc.do(anicommand.GoToNextKey(self.doc, self.frames))
+        self.doc.do(anicommand.GoToNextKey(self.doc))
     
     def change_description(self, new_description):
-        self.doc.do(anicommand.ChangeDescription(self.doc, self.frames,
-                                                 new_description))
+        self.doc.do(anicommand.ChangeDescription(self.doc, new_description))
     
     def add_cel(self):
         frame = self.frames.get_selected()
         if frame.cel is not None:
             return
-        self.doc.do(anicommand.AddCel(self.doc, self.frames, frame))
+        self.doc.do(anicommand.AddCel(self.doc, frame))
 
     def remove_cel(self):
         frame = self.frames.get_selected()
         if frame.cel is None:
             return
-        self.doc.do(anicommand.RemoveCel(self.doc, self.frames, frame))
+        self.doc.do(anicommand.RemoveCel(self.doc, frame))
 
     def select_frame(self, idx):
-        self.doc.do(anicommand.SelectFrame(self.doc, self.frames, idx))
+        self.doc.do(anicommand.SelectFrame(self.doc, idx))
         
     def change_opacityfactor(self, opacityfactor):
         self.frames.set_opacityfactor(opacityfactor)
@@ -206,16 +205,16 @@ class Animation(object):
         self.update_opacities()
     
     def insert_frames(self):
-        self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 1))
+        self.doc.do(anicommand.InsertFrames(self.doc, 1))
 
     def remove_frames(self):
-        self.doc.do(anicommand.RemoveFrames(self.doc, self.frames, 1))
+        self.doc.do(anicommand.RemoveFrames(self.doc, 1))
 
     def cutcopy_cel(self, edit_operation):
         frame = self.frames.get_selected()
-        self.doc.do(anicommand.CutCopyCel(self.doc, self.frames,
+        self.doc.do(anicommand.CutCopyCel(self.doc,
              frame, edit_operation))
 
     def paste_cel(self):
         frame = self.frames.get_selected()
-        self.doc.do(anicommand.PasteCel(self.doc, self.frames, frame))
+        self.doc.do(anicommand.PasteCel(self.doc, frame))
