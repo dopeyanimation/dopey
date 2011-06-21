@@ -297,9 +297,10 @@ class RemoveFrames(AniAction):
         self._notify_document_observers()
         
     def undo(self):
+        self.frames.insert_frames(self.frames_to_remove)
         for frame in self.frames_to_remove:
-            self.frames.insert(self.idx+1, frame)
             if frame.cel is not None:
+                # TODO reuse RemoveCel.undo ?
                 self.doc.layers.insert(0, frame.cel)
         
         self.doc.ani.cleared = True

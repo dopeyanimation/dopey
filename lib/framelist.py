@@ -103,6 +103,10 @@ class FrameList(list):
                 removed.append(self.pop(self.idx))
         return removed
 
+    def insert_frames(self, frames):
+        for f in frames:
+            self.insert(self.idx, f)
+
     def insert_empty_frames(self, length):
         for l in range(length):
             self.insert(self.idx, Frame())
@@ -489,7 +493,11 @@ True
 >>> frames.cel_at(2)
 'c'
 
->>> frames.idx = 3 # at the end
+>>> frames.insert_frames(rem)
+>>> len(frames)
+6
+
+>>> frames.idx = 5 # at the end
 
 >>> frames.remove_frames(2)
 Traceback (most recent call last):
