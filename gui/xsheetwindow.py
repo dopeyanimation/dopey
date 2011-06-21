@@ -287,7 +287,6 @@ class ToolWidget(gtk.VBox):
     def _update_buttons_sensitive(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
         self.next_button.set_sensitive(self.ani.frames.has_next())
-        self.remove_frame_button.set_sensitive(self.ani.frames.can_remove(1))
         
         f = self.ani.frames.get_selected()
         if f.cel is None:
