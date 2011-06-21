@@ -164,7 +164,8 @@ class Animation(object):
         self.update_opacities()
     
     def toggle_key(self):
-        self.doc.do(anicommand.ToggleKey(self.doc))
+        frame = self.frames.get_selected()
+        self.doc.do(anicommand.ToggleKey(self.doc, frame))
     
     def previous_frame(self):
         self.frames.goto_previous()
@@ -187,7 +188,8 @@ class Animation(object):
         self.doc.call_doc_observers()
     
     def change_description(self, new_description):
-        self.doc.do(anicommand.ChangeDescription(self.doc, new_description))
+        frame = self.frames.get_selected()
+        self.doc.do(anicommand.ChangeDescription(self.doc, frame, new_description))
     
     def add_cel(self):
         frame = self.frames.get_selected()

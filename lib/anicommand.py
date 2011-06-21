@@ -64,10 +64,9 @@ class ToggleKey(Action):
 
 
 class ChangeDescription(Action):
-    def __init__(self, doc, new_description):
+    def __init__(self, doc, frame, new_description):
         self.doc = doc
-        self.frames = doc.ani.frames
-        self.f = self.frames.get_selected()
+        self.frame = frame
         self.new_description = new_description
         if self.f.cel != None:
             self.old_layername = self.f.cel.name
