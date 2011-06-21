@@ -20,19 +20,7 @@ def layername_from_description(description):
 class AniAction(Action):
     def __init__(self, frames):
         self.frames = frames 
-    
-    def update_opacities(self):
-        opacities, visible = self.frames.get_opacities()
 
-        for cel, opa in opacities.items():
-            cel.opacity = opa
-            self._notify_canvas_observers(cel)
-
-        for cel, vis in visible.items():
-            cel.visible = vis
-            self._notify_canvas_observers(cel)
-
-        
 
 class SelectFrame(AniAction):
     def __init__(self, doc, frames, idx):
@@ -51,7 +39,7 @@ class SelectFrame(AniAction):
         
         self.prev_value = self.frames.idx
         self.frames.select(self.idx)
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
@@ -59,7 +47,7 @@ class SelectFrame(AniAction):
             self.select_layer.undo()
         
         self.frames.select(self.prev_value)
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -72,12 +60,12 @@ class ToggleKey(AniAction):
     def redo(self):
         self.prev_value = self.f.is_key
         self.f.toggle_key()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
     def undo(self):
         self.f.is_key = self.prev_value
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -89,12 +77,12 @@ class GoToPrevious(AniAction):
     
     def redo(self):
         self.frames.goto_previous()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.frames.goto_next()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -106,12 +94,12 @@ class GoToNext(AniAction):
     
     def redo(self):
         self.frames.goto_next()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.frames.goto_previous()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -123,12 +111,12 @@ class GoToPrevKey(AniAction):
     
     def redo(self):
         self.frames.goto_previous_key()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.frames.idx = self.idx
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -140,12 +128,12 @@ class GoToNextKey(AniAction):
     
     def redo(self):
         self.frames.goto_next_key()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.frames.idx = self.idx
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -190,14 +178,14 @@ class AddCel(AniAction):
         self.doc.layer_idx = 0
         
         self.frame.add_cel(self.layer)
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.doc.layers.remove(self.layer)
         self.doc.layer_idx = self.prev_idx
         self.frame.remove_cel()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -214,7 +202,7 @@ class RemoveCel(AniAction):
         self.doc.layer_idx = 0
         
         self.frame.remove_cel()
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
@@ -222,7 +210,7 @@ class RemoveCel(AniAction):
         self.doc.layer_idx = self.prev_idx
 
         self.frame.add_cel(self.layer)
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -236,12 +224,12 @@ class ToggleOpacity(AniAction):
     
     def redo(self):
         self.frames.setup_active_cels({self.attr: self.is_active})
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
         self.frames.setup_active_cels({self.attr: self.prev_value})
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
 
@@ -350,12 +338,12 @@ class PasteCel(AniAction):
         self.doc.ani.edit_operation = None
         self.doc.ani.edit_frame = None
 
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
 
     def undo(self):
         self.doc.ani.edit_operation = self.prev_edit_operation
         self.doc.ani.edit_frame = self.prev_edit_frame
         self.frame.add_cel(self.prev_cel)
-        self.update_opacities()
+        self.doc.ani.update_opacities()
         self._notify_document_observers()
