@@ -279,8 +279,6 @@ class InsertFrames(AniAction):
 
 
 class RemoveFrames(AniAction):
-
-    # TODO mal!!
     def __init__(self, doc, frames, length):
         AniAction.__init__(self, frames)
         self.doc = doc
@@ -290,10 +288,11 @@ class RemoveFrames(AniAction):
                                                        at_current=True)
     
     def redo(self):
-        self.frames.remove_frames(self.length, at_current=True)
         for frame in self.frames_to_remove:
             if frame.cel is not None:
+                # TODO reuse RemoveCel.redo ?
                 self.doc.layers.remove(frame.cel)
+        self.frames.remove_frames(self.length, at_current=True)
             
         self.doc.ani.cleared = True
         self._notify_document_observers()

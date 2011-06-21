@@ -80,8 +80,8 @@ class FrameList(list):
         for l in range(length):
             self.append(Frame())
     
-    def can_remove(self):
-        return self.idx+1 < len(self) 
+    def can_remove(self, length):
+        return self.idx+length < len(self) 
     
     def frames_to_remove(self, length, at_current=False):
         """
@@ -97,23 +97,16 @@ class FrameList(list):
     def remove_frames(self, length, at_current=False):
         """
         Remove frames from the current position or from the end.
-
-        It raises an error if one of the removed frames have a cel.
-
         """
-        if not self.can_remove():
-            raise IndexError("Trying to remove at the last frame.")
-        
         for l in range(length):
-            assert self[len(self)-1].cel == None
             if at_current:
-                self.pop(self.idx+1)
+                self.pop(self.idx)
             else:
                 self.pop()
     
     def insert_frames(self, length):
         for l in range(length):
-            self.insert(self.idx+1, Frame())
+            self.insert(self.idx, Frame())
     
     def get_selected(self):
         return self[self.idx]
@@ -452,16 +445,22 @@ Inserting frames
 ----------------
 
 >>> frames = FrameList(4)
+>>> frames.idx = 2
+
 >>> len(frames)
 4
 
 >>> frames[0].add_cel('a')
 >>> frames[2].add_cel('c')
 
->>> frames.idx = 1
 >>> frames.insert_frames(2)
 >>> len(frames)
 6
+
+>>> frames.cel_at(2)
+'a'
+>>> frames.cel_at(4)
+'c'
 
 >>> frames[2].add_cel('b')
 >>> frames.cel_at(0)
@@ -470,6 +469,15 @@ Inserting frames
 'b'
 >>> frames.cel_at(4)
 'c'
+
+>>> frames.idx
+2
+
+>>> rem = frames.frames_to_remove(2, at_current=True)
+>>> rem[0].cel == 'b'
+True
+>>> rem[1].cel == None
+True
 
 >>> frames.remove_frames(2, at_current=True)
 >>> len(frames)
@@ -481,12 +489,12 @@ Inserting frames
 'c'
 
 >>> frames.idx = 3 # at the end
->>> frames.can_remove()
+>>> frames.can_remove(1)
 False
 
 >>> frames.remove_frames(2, at_current=True)
 Traceback (most recent call last):
-IndexError: Trying to remove at the last frame.
+IndexError: pop index out of range
 
 """)
 
