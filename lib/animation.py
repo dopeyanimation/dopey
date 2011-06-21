@@ -167,16 +167,24 @@ class Animation(object):
         self.doc.do(anicommand.ToggleKey(self.doc))
     
     def previous_frame(self):
-        self.doc.do(anicommand.GoToPrevious(self.doc))
+        self.frames.goto_previous()
+        self.doc.ani.update_opacities()
+        self.doc.call_doc_observers()
     
     def next_frame(self):
-        self.doc.do(anicommand.GoToNext(self.doc))
-    
+        self.frames.goto_next()
+        self.doc.ani.update_opacities()
+        self.doc.call_doc_observers()
+
     def previous_keyframe(self):
-        self.doc.do(anicommand.GoToPrevKey(self.doc))
-    
+        self.frames.goto_previous_key()
+        self.doc.ani.update_opacities()
+        self.doc.call_doc_observers()
+
     def next_keyframe(self):
-        self.doc.do(anicommand.GoToNextKey(self.doc))
+        self.frames.goto_next_key()
+        self.doc.ani.update_opacities()
+        self.doc.call_doc_observers()
     
     def change_description(self, new_description):
         self.doc.do(anicommand.ChangeDescription(self.doc, new_description))
