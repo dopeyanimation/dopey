@@ -80,28 +80,30 @@ class FrameList(list):
         for l in range(length):
             self.append(Frame())
     
-    def frames_to_remove(self, length, at_current=False):
+    def frames_to_remove(self, length, at_end=False):
         """
         Return the frames to remove if the same arguments of
         remove_frames are passed.
 
         """
-        if at_current:
-            return list(self[self.idx:self.idx+length])
-        else:
+        if at_end:
             return list(self[-length:])
+        else:
+            return list(self[self.idx:self.idx+length])
     
-    def remove_frames(self, length, at_current=False):
+    def remove_frames(self, length, at_end=False):
         """
         Remove frames from the current position or from the end.
         """
+        removed = []
         for l in range(length):
-            if at_current:
-                self.pop(self.idx)
+            if at_end:
+                removed.append(self.pop())
             else:
-                self.pop()
-    
-    def insert_frames(self, length):
+                removed.append(self.pop(self.idx))
+        return removed
+
+    def insert_empty_frames(self, length):
         for l in range(length):
             self.insert(self.idx, Frame())
     
@@ -434,7 +436,7 @@ Appending more frames
 >>> len(frames)
 12
 
->>> frames.remove_frames(6)
+>>> rem = frames.remove_frames(6)
 >>> len(frames)
 6
 
@@ -450,7 +452,7 @@ Inserting frames
 >>> frames[0].add_cel('a')
 >>> frames[2].add_cel('c')
 
->>> frames.insert_frames(2)
+>>> frames.insert_empty_frames(2)
 >>> len(frames)
 6
 
@@ -470,13 +472,15 @@ Inserting frames
 >>> frames.idx
 2
 
->>> rem = frames.frames_to_remove(2, at_current=True)
+>>> rem = frames.frames_to_remove(2)
 >>> rem[0].cel == 'b'
 True
 >>> rem[1].cel == None
 True
 
->>> frames.remove_frames(2, at_current=True)
+>>> rem2 = frames.remove_frames(2)
+>>> rem == rem2
+True
 >>> len(frames)
 4
 
@@ -487,7 +491,7 @@ True
 
 >>> frames.idx = 3 # at the end
 
->>> frames.remove_frames(2, at_current=True)
+>>> frames.remove_frames(2)
 Traceback (most recent call last):
 IndexError: pop index out of range
 

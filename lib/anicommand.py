@@ -268,12 +268,12 @@ class InsertFrames(AniAction):
         self.length = length
 
     def redo(self):
-        self.frames.insert_frames(self.length)
+        self.frames.insert_empty_frames(self.length)
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
     def undo(self):
-        self.frames.remove_frames(self.length, at_current=True)
+        self.frames.remove_frames(self.length)
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
@@ -284,15 +284,14 @@ class RemoveFrames(AniAction):
         self.doc = doc
         self.idx = frames.idx
         self.length = length
-        self.frames_to_remove = self.frames.frames_to_remove(self.length,
-                                                       at_current=True)
+        self.frames_to_remove = self.frames.frames_to_remove(self.length)
     
     def redo(self):
         for frame in self.frames_to_remove:
             if frame.cel is not None:
                 # TODO reuse RemoveCel.redo ?
                 self.doc.layers.remove(frame.cel)
-        self.frames.remove_frames(self.length, at_current=True)
+        self.frames.remove_frames(self.length)
             
         self.doc.ani.cleared = True
         self._notify_document_observers()
