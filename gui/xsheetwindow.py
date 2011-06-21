@@ -296,7 +296,8 @@ class ToolWidget(gtk.VBox):
     def on_row_changed(self, treesel):
         model, it = treesel.get_selected()
         path = model.get_path(it)
-        self.ani.select_frame(path[COLUMNS_ID['frame_index']])
+        frame_idx = path[COLUMNS_ID['frame_index']]
+        self.ani.select_frame(frame_idx)
         self._update_buttons_sensitive()
         
     def on_toggle_key(self, button):
