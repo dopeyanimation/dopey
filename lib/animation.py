@@ -204,7 +204,6 @@ class Animation(object):
     def toggle_opacity(self, attr, is_active):
         self.frames.setup_active_cels({attr: is_active})
         self.update_opacities()
-#        self._notify_document_observers()
     
     def insert_frames(self):
         self.doc.do(anicommand.InsertFrames(self.doc, self.frames, 1))
