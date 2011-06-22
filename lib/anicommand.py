@@ -68,22 +68,22 @@ class ChangeDescription(Action):
         self.doc = doc
         self.frame = frame
         self.new_description = new_description
-        if self.f.cel != None:
-            self.old_layername = self.f.cel.name
+        if self.frame.cel != None:
+            self.old_layername = self.frame.cel.name
 
     def redo(self):
-        self.prev_value = self.f.description
-        self.f.description = self.new_description
+        self.prev_value = self.frame.description
+        self.frame.description = self.new_description
         self._notify_document_observers()
-        if self.f.cel != None:
-            layername = layername_from_description(self.f.description)
-            self.f.cel.name = layername
+        if self.frame.cel != None:
+            layername = layername_from_description(self.frame.description)
+            self.frame.cel.name = layername
 
     def undo(self):
-        self.f.description = self.prev_value
+        self.frame.description = self.prev_value
         self._notify_document_observers()
-        if self.f.cel != None:
-            self.f.cel.name = self.old_layername
+        if self.frame.cel != None:
+            self.frame.cel.name = self.old_layername
 
 
 class AddCel(Action):
