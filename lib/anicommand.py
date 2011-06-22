@@ -22,26 +22,26 @@ class SelectFrame(Action):
         self.doc = doc
         self.frames = doc.ani.frames
         self.idx = idx
-        self.select_layer = None
-    
+        self.prev_layer_idx = None
+
     def redo(self):
         cel = self.frames.cel_at(self.idx)
         if cel is not None:
             # Select the corresponding layer:
             layer_idx = self.doc.layers.index(cel)
-            self.select_layer = SelectLayer(self.doc, layer_idx)
-            self.select_layer.redo()
+            self.prev_layer_idx = self.doc.layer_idx
+            self.doc.layer_idx = layer_idx
         
-        self.prev_value = self.frames.idx
+        self.prev_frame_idx = self.frames.idx
         self.frames.select(self.idx)
         self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
-        if self.select_layer is not None:
-            self.select_layer.undo()
+        if self.prev_layer_idx is not None:
+            self.doc.layer_idx = self.prev_layer_idx
         
-        self.frames.select(self.prev_value)
+        self.frames.select(self.prev_frame_idx)
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
@@ -102,6 +102,7 @@ class AddCel(Action):
         self.doc.layer_idx = 0
         
         self.frame.add_cel(self.layer)
+        self._notify_canvas_observers(self.layer)
         self.doc.ani.update_opacities()
         self._notify_document_observers()
     
@@ -109,6 +110,7 @@ class AddCel(Action):
         self.doc.layers.remove(self.layer)
         self.doc.layer_idx = self.prev_idx
         self.frame.remove_cel()
+        self._notify_canvas_observers(self.layer)
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
@@ -125,6 +127,7 @@ class RemoveCel(Action):
         self.doc.layer_idx = 0
         
         self.frame.remove_cel()
+        self._notify_canvas_observers(self.layer)
         self.doc.ani.update_opacities()
         self._notify_document_observers()
     
@@ -133,6 +136,7 @@ class RemoveCel(Action):
         self.doc.layer_idx = self.prev_idx
 
         self.frame.add_cel(self.layer)
+        self._notify_canvas_observers(self.layer)
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 

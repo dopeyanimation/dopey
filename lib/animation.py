@@ -169,22 +169,22 @@ class Animation(object):
     
     def previous_frame(self):
         self.frames.goto_previous()
-        self.doc.ani.update_opacities()
+        self.update_opacities()
         self.doc.call_doc_observers()
     
     def next_frame(self):
         self.frames.goto_next()
-        self.doc.ani.update_opacities()
+        self.update_opacities()
         self.doc.call_doc_observers()
 
     def previous_keyframe(self):
         self.frames.goto_previous_key()
-        self.doc.ani.update_opacities()
+        self.update_opacities()
         self.doc.call_doc_observers()
 
     def next_keyframe(self):
         self.frames.goto_next_key()
-        self.doc.ani.update_opacities()
+        self.update_opacities()
         self.doc.call_doc_observers()
     
     def change_description(self, new_description):
@@ -204,14 +204,7 @@ class Animation(object):
         self.doc.do(anicommand.RemoveCel(self.doc, frame))
 
     def select_frame(self, idx):
-        cel = self.frames.cel_at(idx)
-        active_layer = self.doc.layers[self.doc.layer_idx]
-        if cel is not None and cel != active_layer:
-            self.doc.do(anicommand.SelectFrame(self.doc, idx))
-        else:
-            self.frames.select(idx)
-            self.update_opacities()
-            self.doc.call_doc_observers()
+        self.doc.do(anicommand.SelectFrame(self.doc, idx))
 
     def change_opacityfactor(self, opacityfactor):
         self.frames.set_opacityfactor(opacityfactor)
