@@ -162,18 +162,18 @@ class Animation(object):
         else:
             self.frames.select(0)
         self.update_opacities()
-    
+
     def toggle_key(self):
         frame = self.frames.get_selected()
         self.doc.do(anicommand.ToggleKey(self.doc, frame))
-    
-    def previous_frame(self):
-        self.frames.goto_previous()
+
+    def previous_frame(self, with_cel=False):
+        self.frames.goto_previous(with_cel)
         self.update_opacities()
         self.doc.call_doc_observers()
-    
-    def next_frame(self):
-        self.frames.goto_next()
+
+    def next_frame(self, with_cel=False):
+        self.frames.goto_next(with_cel)
         self.update_opacities()
         self.doc.call_doc_observers()
 

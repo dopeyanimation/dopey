@@ -134,7 +134,7 @@ class ToolWidget(gtk.VBox):
         editbuttons_hbox.pack_start(cut_button)
         editbuttons_hbox.pack_start(copy_button)
         editbuttons_hbox.pack_start(paste_button)
-        
+
         # lightbox controls:
 
         adj = gtk.Adjustment(lower=0, upper=100, step_incr=1, page_incr=10)
@@ -147,7 +147,7 @@ class ToolWidget(gtk.VBox):
         opacity_hbox.pack_start(opacity_lbl, expand=False)
         opacity_hbox.pack_start(self.opacity_scale, expand=True)
         self.opacity_scale.connect('value-changed', self.on_opacityfactor_changed)
-        
+
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
             pref = "lightbox.%s" % (attr,)
@@ -157,28 +157,28 @@ class ToolWidget(gtk.VBox):
             if tooltip is not None:
                 cb.set_tooltip_text(tooltip)
             opacityopts_vbox.pack_start(cb, expand=False)
-        
+
         opacityopts_vbox = gtk.VBox()
         opacity_checkbox('nextprev', _('Inmediate'), _("Show the inmediate next and previous cels."))
         opacity_checkbox('key', _('Inmediate keys'), _("Show the cel keys that are after and before the current cel."))
         opacity_checkbox('inbetweens', _('Inbetweens'), _("Show the cels that are between the inmediate key cels."))
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
-        
+
         self.pack_start(layers_scroll)
         self.pack_start(buttons_hbox, expand=False)
         self.pack_start(anibuttons_hbox, expand=False)
         self.pack_start(editbuttons_hbox, expand=False)
         self.pack_start(opacity_hbox, expand=False)
         self.pack_start(opacityopts_vbox, expand=False)
-        
+
         self.show_all()
         self._change_penciltest_buttons()
         self.app.doc.model.doc_observers.append(self.update)
-        
+
     def _get_path_from_frame(self, frame):
         return (self.ani.frames.idx, )
-    
+
     def setup_lightbox(self):
         active_cels = {}
         for attr, default in DEFAULT_ACTIVE_CELS.items():
@@ -186,19 +186,19 @@ class ToolWidget(gtk.VBox):
             default = DEFAULT_ACTIVE_CELS[attr]
             active_cels[attr] = self.app.preferences.get(pref, default)
         self.ani.frames.setup_active_cels(active_cels)
-    
+
     def setup(self):
         treesel = self.treeview.get_selection()
         treesel.handler_block(self.changed_handler)
 
         # disconnect treeview so it doesn't update for each row added:
         self.treeview.set_model(None)
-        
+
         self.listmodel.clear()
         xsheet_list = list(enumerate(self.ani.frames))
         for i, frame in xsheet_list:
             self.listmodel.append((i, frame))
-        
+
         column = self.treeview.get_column(0)
         cell = column.get_cell_renderers()[0]
         column.set_cell_data_func(cell, self.set_number)
@@ -208,29 +208,29 @@ class ToolWidget(gtk.VBox):
         column = self.treeview.get_column(2)
         cell = column.get_cell_renderers()[0]
         column.set_cell_data_func(cell, self.set_description)
-        
+
         # reconnect treeview:
         self.treeview.set_model(self.listmodel)
-        
+
         treesel.handler_unblock(self.changed_handler)
-        
+
         self.setup_lightbox()
-    
+
     def _update(self):
         if self.ani.cleared:
             self.setup()
             self.ani.cleared = False
-        
+
         frame = self.ani.frames.get_selected()
         path = self._get_path_from_frame(frame)
         self.treeview.get_selection().select_path(path)
         self.treeview.scroll_to_cell(path)
         self.queue_draw()
         self._update_buttons_sensitive()
-        
+
         if not self.is_playing and self.ani.penciltest_state == "play":
             self._play_penciltest()
-    
+
     def update(self, doc):
         return self._update()
 

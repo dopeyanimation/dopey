@@ -21,8 +21,10 @@ class Animation(object):
         actions = [
             ('PrevFrame', gtk.STOCK_GO_UP, _('Previous Frame'), 'Up', None, self.previous_frame_cb),
             ('NextFrame', gtk.STOCK_GO_DOWN, _('Next Frame'), 'Down', None, self.next_frame_cb),
-            ('PrevKeyFrame', None, _('Previous Keyframe'), '<control>Up', None, self.previous_keyframe_cb),
-            ('NextKeyFrame', None, _('Next Keyframe'), '<control>Down', None, self.next_keyframe_cb),
+            ('PrevFrameWithCel', None, _('Previous frame with cel'), '<control>Up', None, self.previous_celframe_cb),
+            ('NextFrameWithCel', None, _('Next frame with cel'), '<control>Down', None, self.next_celframe_cb),
+            ('PrevKeyFrame', None, _('Previous Keyframe'), '<shift>Up', None, self.previous_keyframe_cb),
+            ('NextKeyFrame', None, _('Next Keyframe'), '<shift>Down', None, self.next_keyframe_cb),
             ('PlayPausePenciltest', None, _('Play/Pause Penciltest'), '<control>p', None, self.playpause_penciltest_cb),
             ('StopPenciltest', None, _('Stop Penciltest'), None, None, self.stop_penciltest_cb),
             ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
@@ -39,6 +41,14 @@ class Animation(object):
     def next_frame_cb(self, action):
         if self.model.frames.has_next():
             self.model.next_frame()
+
+    def previous_celframe_cb(self, action):
+        if self.model.frames.has_previous(with_cel=True):
+            self.model.previous_frame(with_cel=True)
+
+    def next_celframe_cb(self, action):
+        if self.model.frames.has_next(with_cel=True):
+            self.model.next_frame(with_cel=True)
 
     def previous_keyframe_cb(self, action):
         if self.model.frames.has_previous_key():
