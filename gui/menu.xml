@@ -138,17 +138,22 @@
     <menu action='AnimationMenu'>
       <menuitem action='XSheetWindow'/>
       <separator/>
-      <menuitem action='ToggleKey'/>
       <menuitem action='AddCel'/>
+      <menuitem action='ToggleKey'/>
       <separator/>
       <menuitem action='PrevFrame'/>
       <menuitem action='NextFrame'/>
+      <menuitem action='PrevFrameWithCel'/>
+      <menuitem action='NextFrameWithCel'/>
       <menuitem action='PrevKeyFrame'/>
       <menuitem action='NextKeyFrame'/>
       <menuitem action='PlayPausePenciltest'/>
       <separator/>
-      <menuitem action='InsertFrames'/>
-      <menuitem action='PopFrames'/>
+      <menuitem action='InsertFrame'/>
+      <menuitem action='RemoveFrame'/>
+      <menuitem action='CutCel'/>
+      <menuitem action='CopyCel'/>
+      <menuitem action='PasteCel'/>
     </menu>
     <menu action='HelpMenu'>
       <menuitem action='Docu'/>

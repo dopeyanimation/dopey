@@ -226,6 +226,9 @@ class Animation(object):
         self.doc.ani.edit_frame = frame
         self.doc.call_doc_observers()
 
+    def can_paste(self):
+        return self.edit_frame is not None
+
     def paste_cel(self):
         frame = self.frames.get_selected()
         self.doc.do(anicommand.PasteCel(self.doc, frame))

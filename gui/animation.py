@@ -29,8 +29,11 @@ class Animation(object):
             ('StopPenciltest', None, _('Stop Penciltest'), None, None, self.stop_penciltest_cb),
             ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
             ('ToggleKey', gtk.STOCK_JUMP_TO, _('Toggle Keyframe'), 'k', None, self.toggle_key_cb),
-            ('InsertFrames', gtk.STOCK_ADD, _('Insert frame'), None, None, self.insert_frames_cb),
-            ('PopFrames', gtk.STOCK_REMOVE, _('Remove frame'), None, None, self.pop_frames_cb),
+            ('InsertFrame', gtk.STOCK_ADD, _('Insert frame'), None, None, self.insert_frame_cb),
+            ('RemoveFrame', gtk.STOCK_REMOVE, _('Remove frame'), None, None, self.remove_frame_cb),
+            ('CutCel', gtk.STOCK_REMOVE, _('Cut cel at frame'), None, None, self.cut_cel_cb),
+            ('CopyCel', gtk.STOCK_REMOVE, _('Copy cel at frame'), None, None, self.copy_cel_cb),
+            ('PasteCel', gtk.STOCK_REMOVE, _('Paste cel at frame'), None, None, self.paste_cel_cb),
         ]
         return actions
 
@@ -71,8 +74,18 @@ class Animation(object):
     def toggle_key_cb(self, action):
         self.model.toggle_key()
 
-    def insert_frames_cb(self, action):
+    def insert_frame_cb(self, action):
         self.model.insert_frames()
 
-    def pop_frames_cb(self, action):
-        self.model.pop_frames()
+    def remove_frame_cb(self, action):
+        self.model.remove_frames()
+
+    def cut_cel_cb(self, action):
+        self.model.cutcopy_cel('cut')
+
+    def copy_cel_cb(self, action):
+        self.model.cutcopy_cel('copy')
+
+    def paste_cel_cb(self, action):
+        if self.model.can_paste():
+            self.model.paste_cel()
