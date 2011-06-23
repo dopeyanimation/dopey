@@ -37,6 +37,7 @@ class ToolWidget(gtk.VBox):
         
         layers_scroll = gtk.ScrolledWindow()
         layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        layers_scroll.set_placement(gtk.CORNER_TOP_RIGHT)
         layers_scroll.add(self.treeview)
 
         # xsheet controls:
