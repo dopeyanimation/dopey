@@ -119,22 +119,38 @@ class FrameList(list):
             raise IndexError("Trying to select inexistent frame.")
         self.idx = n
     
-    def goto_next(self):
+    def goto_next(self, with_cel=False):
+        if with_cel:
+            next_frame = self._get_next_frame_with_cel()
+            if next_frame is None:
+                raise IndexError("There is no next frame with cel.")
+            self.idx = self.index(next_frame)
+            return
         if not self.has_next():
             raise IndexError("Trying to go to next at the last frame.")
         self.idx += 1
     
-    def goto_previous(self):
+    def goto_previous(self, with_cel=False):
+        if with_cel:
+            prev_frame = self._get_previous_frame_with_cel()
+            if prev_frame is None:
+                raise IndexError("There is no previous frame with cel.")
+            self.idx = self.index(prev_frame)
+            return
         if not self.has_previous():
             raise IndexError("Trying to go to previous at the first frame.")
         self.idx -= 1
     
-    def has_next(self):
+    def has_next(self, with_cel=False):
+        if with_cel:
+            return self._get_next_frame_with_cel() is not None
         if self.idx == len(self)-1:
             return False
         return True
     
-    def has_previous(self):
+    def has_previous(self, with_cel=False):
+        if with_cel:
+            return self._get_previous_frame_with_cel() is not None
         if self.idx == 0:
             return False
         return True
@@ -193,18 +209,40 @@ class FrameList(list):
         current frame.
         
         """
+        prev_frame = self._get_previous_frame_with_cel()
+        if prev_frame is not None:
+            return prev_frame.cel
+        return None
+
+    def get_next_cel(self):
+        """
+        Return the next cel that is different than the cel of the
+        current frame.
+        
+        """
+        next_frame = self._get_next_frame_with_cel()
+        if next_frame is not None:
+            return next_frame.cel
+        return None
+
+    def _get_previous_frame_with_cel(self):
+        """
+        Return the previous frame with a cel that is different than
+        the cel of the current frame.
+        
+        """
         cur_cel = self.cel_at(self.idx)
         if not cur_cel:
             return None
         for f in reversed(self[:self.idx]):
             if f.cel is not None and f.cel != cur_cel:
-                return f.cel
+                return f
         return None
     
-    def get_next_cel(self):
+    def _get_next_frame_with_cel(self):
         """
-        Return the next cel that is different than the cel of the
-        current frame.
+        Return the next frame with a cel that is different than the
+        cel of the current frame.
         
         """
         cur_cel = self.cel_at(self.idx)
@@ -212,7 +250,7 @@ class FrameList(list):
             return None
         for f in (self[self.idx+1:]):
             if f.cel is not None and f.cel != cur_cel:
-                return f.cel
+                return f
         return None
     
     def cel_for_frame(self, frame):
@@ -344,6 +382,9 @@ Traceback (most recent call last):
 IndexError: Trying to go to previous at the first frame.
 
 >>> frames.goto_next()
+>>> frames.idx
+1
+
 >>> frames.has_previous()
 True
 
@@ -459,6 +500,48 @@ True
 >>> frames[3].set_key()
 >>> frames.cel_for_frame(frames.get_next_key())
 'c'
+
+>>> frames.idx
+0
+
+Moving through frames with cels
+-------------------------------
+
+>>> frames.goto_next(with_cel=True)
+>>> frames.idx
+1
+
+>>> frames.has_next(with_cel=True)
+True
+
+>>> frames.goto_next(with_cel=True)
+>>> frames.idx
+3
+
+>>> frames.has_next(with_cel=True)
+False
+
+>>> frames.goto_next(with_cel=True)
+Traceback (most recent call last):
+IndexError: There is no next frame with cel.
+
+>>> frames.goto_previous(with_cel=True)
+>>> frames.idx
+1
+
+>>> frames.has_previous(with_cel=True)
+True
+
+>>> frames.goto_previous(with_cel=True)
+>>> frames.idx
+0
+
+>>> frames.has_previous(with_cel=True)
+False
+
+>>> frames.goto_previous(with_cel=True)
+Traceback (most recent call last):
+IndexError: There is no previous frame with cel.
 
 Testing opacities
 -----------------
