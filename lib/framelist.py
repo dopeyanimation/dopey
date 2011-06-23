@@ -325,94 +325,140 @@ def print_list(frames):
 
 
 __test__ = dict(allem="""
+
+Moving through frames
+---------------------
+
 >>> frames = FrameList(4)
+>>> frames.idx
+0
+
 >>> frames.index(frames.get_selected()) # same as frames.idx
 0
+
+>>> frames.has_previous()
+False
+
 >>> frames.goto_previous()
 Traceback (most recent call last):
 IndexError: Trying to go to previous at the first frame.
->>> frames.has_previous()
-False
+
 >>> frames.goto_next()
 >>> frames.has_previous()
 True
+
 >>> frames.has_next()
 True
+
 >>> frames.goto_next()
 >>> frames.idx
 2
+
 >>> frames.goto_previous()
 >>> frames.goto_previous()
 >>> frames.idx
 0
->>> frames.select(len(frames)-1)
+
+>>> frames.select(0)
+>>> frames.idx
+0
+
+>>> frames.select(len(frames)-1) # last frame
 >>> frames.idx
 3
+
 >>> frames.has_next()
 False
+
 >>> frames.goto_next()
 Traceback (most recent call last):
 IndexError: Trying to go to next at the last frame.
+
 >>> frames.select(100)
 Traceback (most recent call last):
 IndexError: Trying to select inexistent frame.
->>> frames.select(0)
->>> frames.get_previous_key()
 
->>> frames.get_next_key()
+Using key frames
+----------------
+
+>>> frames = FrameList(4)
+>>> frames.get_previous_key() == None
+True
+
+>>> frames.get_next_key() == None
+True
 
 >>> frames[0].set_key()
 >>> frames[3].set_key()
->>> frames.get_previous_key()
+>>> frames.get_previous_key() == None
+True
 
 >>> frames.index(frames.get_next_key())
 3
+
 >>> frames.select(2)
->>> frames.idx
-2
 >>> frames.index(frames.get_previous_key())
 0
+
 >>> frames.index(frames.get_next_key())
 3
->>> frames.get_opacities()
-({}, {})
->>> frames.cel_at(0)
 
->>> frames.cel_at(2)
+>>> frames.has_previous_key()
+True
 
->>> frames.cel_at(3)
+>>> frames.goto_previous_key()
+>>> frames.idx
+0
+
+>>> frames.has_previous_key()
+False
+
+>>> frames.goto_previous_key()
+Traceback (most recent call last):
+IndexError: Trying to go to inexistent previous keyframe.
+
+>>> frames.goto_next_key()
+>>> frames.has_previous_key()
+True
+
+>>> frames.has_next_key()
+False
+
+>>> frames.goto_next_key()
+Traceback (most recent call last):
+IndexError: Trying to go to inexistent next keyframe.
+
+>>> frames.idx
+3
+
+Adding cels to frames
+---------------------
+
+>>> frames = FrameList(4)
+>>> frames.cel_at(0) == None
+True
+
+>>> frames.cel_at(2) == None
+True
+
+>>> frames.cel_at(3) == None
+True
 
 >>> frames[0].add_cel('a')
 >>> frames[1].add_cel('b')
 >>> frames[3].add_cel('c')
 >>> frames.cel_at(0)
 'a'
+
 >>> frames.cel_at(2)
 'b'
+
 >>> frames.cel_at(3)
 'c'
+
+>>> frames[3].set_key()
 >>> frames.cel_for_frame(frames.get_next_key())
 'c'
->>> set(frames.get_opacities()[0].items()) == set([('a', 0.5), ('b', 1), ('c', 0.5)])
-True
->>> frames.goto_previous_key()
->>> frames.idx
-0
->>> frames.goto_previous_key()
-Traceback (most recent call last):
-IndexError: Trying to go to inexistent previous keyframe.
->>> frames.has_previous_key()
-False
->>> frames.goto_next_key()
->>> frames.has_previous_key()
-True
->>> frames.has_next_key()
-False
->>> frames.goto_next_key()
-Traceback (most recent call last):
-IndexError: Trying to go to inexistent next keyframe.
->>> frames.idx
-3
 
 Testing opacities
 -----------------
@@ -422,6 +468,9 @@ Testing opacities
                    'other': False}
 
 >>> frames = FrameList(6, active_cels=active_cels)
+>>> frames.get_opacities()
+({}, {})
+
 >>> frames[0].add_cel('a')
 >>> frames[2].add_cel('b')
 >>> frames[4].add_cel('c')
@@ -449,27 +498,28 @@ Inserting frames
 
 >>> frames = FrameList(4)
 >>> frames.idx = 2
-
 >>> len(frames)
 4
 
 >>> frames[0].add_cel('a')
 >>> frames[2].add_cel('c')
-
 >>> frames.insert_empty_frames(2)
 >>> len(frames)
 6
 
 >>> frames.cel_at(2)
 'a'
+
 >>> frames.cel_at(4)
 'c'
 
 >>> frames[2].add_cel('b')
 >>> frames.cel_at(0)
 'a'
+
 >>> frames.cel_at(2)
 'b'
+
 >>> frames.cel_at(4)
 'c'
 
@@ -479,17 +529,20 @@ Inserting frames
 >>> rem = frames.frames_to_remove(2)
 >>> rem[0].cel == 'b'
 True
+
 >>> rem[1].cel == None
 True
 
 >>> rem2 = frames.remove_frames(2)
 >>> rem == rem2
 True
+
 >>> len(frames)
 4
 
 >>> frames.cel_at(0)
 'a'
+
 >>> frames.cel_at(2)
 'c'
 
@@ -498,7 +551,6 @@ True
 6
 
 >>> frames.idx = 5 # at the end
-
 >>> frames.remove_frames(2)
 Traceback (most recent call last):
 IndexError: pop index out of range
