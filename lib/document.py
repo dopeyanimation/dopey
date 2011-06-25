@@ -386,16 +386,15 @@ class Document():
         doc_bbox = self.get_effective_bbox()
         if multifile:
             self.save_multifile_png(filename, **kwargs)
-        if animation:
+        elif animation:
             self.ani.save_png(filename, **kwargs)
+        if alpha:
+            tmp_layer = layer.Layer()
+            for l in self.layers:
+                l.merge_into(tmp_layer)
+            tmp_layer.surface.save(filename, *doc_bbox)
         else:
-            if alpha:
-                tmp_layer = layer.Layer()
-                for l in self.layers:
-                    l.merge_into(tmp_layer)
-                tmp_layer.surface.save(filename, *doc_bbox)
-            else:
-                pixbufsurface.save_as_png(self, filename, *doc_bbox, alpha=False, **kwargs)
+            pixbufsurface.save_as_png(self, filename, *doc_bbox, alpha=False, **kwargs)
 
     def save_multifile_png(self, filename, alpha=False, **kwargs):
         prefix, ext = os.path.splitext(filename)
