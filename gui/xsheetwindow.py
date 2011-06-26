@@ -15,6 +15,7 @@ import gobject
 import dialogs
 import anidialogs
 from layerswindow import stock_button
+from layout import ElasticExpander
 
 from lib.framelist import DEFAULT_ACTIVE_CELS
 
@@ -159,6 +160,9 @@ class ToolWidget(gtk.VBox):
         self.opacity_scale.connect('value-changed',
                                    self.on_opacityfactor_changed)
 
+        self.expander_prefs_loaded = False
+        self.connect("show", self.show_cb)
+
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
             pref = "lightbox.%s" % (attr,)
@@ -176,12 +180,20 @@ class ToolWidget(gtk.VBox):
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
 
+        controls_vbox = gtk.VBox()
+        controls_vbox.pack_start(buttons_hbox, expand=False)
+        controls_vbox.pack_start(anibuttons_hbox, expand=False)
+        controls_vbox.pack_start(editbuttons_hbox, expand=False)
+        controls_vbox.pack_start(opacity_hbox, expand=False)
+        controls_vbox.pack_start(opacityopts_vbox, expand=False)
+
+        self.expander = ElasticExpander(_('Controls'))
+        self.expander.set_spacing(6)
+        self.expander.add(controls_vbox)
+        self.expander.connect("notify::expanded", self.expanded_cb)
+
         self.pack_start(layers_scroll)
-        self.pack_start(buttons_hbox, expand=False)
-        self.pack_start(anibuttons_hbox, expand=False)
-        self.pack_start(editbuttons_hbox, expand=False)
-        self.pack_start(opacity_hbox, expand=False)
-        self.pack_start(opacityopts_vbox, expand=False)
+        self.pack_start(self.expander, expand=False)
 
         self.show_all()
         self._change_penciltest_buttons()
@@ -458,3 +470,16 @@ class ToolWidget(gtk.VBox):
 
     def on_paste(self, button):
         self.ani.paste_cel()
+
+    def show_cb(self, widget):
+        assert not self.expander_prefs_loaded
+        if self.app.preferences.get("xsheet.controls", False):
+            self.expander_controls.set_expanded(True)
+        self.expander_prefs_loaded = True
+
+    def expanded_cb(self, expander, junk):
+        # Save the expander state
+        if not self.expander_prefs_loaded:
+            return
+        expanded = bool(expander.get_expanded())
+        self.app.preferences['xsheet.controls'] = expanded
