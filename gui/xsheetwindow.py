@@ -1,9 +1,18 @@
+# This file is part of MyPaint.
+# Copyright (C) 2009 by Martin Renold <martinxyz@gmx.ch>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
 import gtk
 
 from gettext import gettext as _
 import gobject
 
 import dialogs
+import anidialogs
 from layerswindow import stock_button
 
 from lib.framelist import DEFAULT_ACTIVE_CELS
@@ -106,13 +115,13 @@ class ToolWidget(gtk.VBox):
         # frames edit controls:
         
         insert_frame_button = stock_button(gtk.STOCK_ADD)
-        insert_frame_button.connect('clicked', self.on_insert_frame)
-        insert_frame_button.set_tooltip_text(_('Insert frame below selection'))
+        insert_frame_button.connect('clicked', self.on_insert_frames)
+        insert_frame_button.set_tooltip_text(_('Insert frames'))
         self.insert_frame_button = insert_frame_button
 
         remove_frame_button = stock_button(gtk.STOCK_REMOVE)
-        remove_frame_button.connect('clicked', self.on_remove_frame)
-        remove_frame_button.set_tooltip_text(_('Remove frame below selection'))
+        remove_frame_button.connect('clicked', self.on_remove_frames)
+        remove_frame_button.set_tooltip_text(_('Remove frames'))
         self.remove_frame_button = remove_frame_button
 
         cut_button = stock_button(gtk.STOCK_CUT)
@@ -317,8 +326,8 @@ class ToolWidget(gtk.VBox):
         model, it = treesel.get_selected()
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
         
-        description = dialogs.ask_for_name(self, _("Description"),
-                                           frame.description)
+        description = anidialogs.ask_for(self, _("Change description"),
+            _("Description"), frame.description)
         if description:
             self.ani.change_description(description)
     
@@ -400,11 +409,37 @@ class ToolWidget(gtk.VBox):
         self.ani.toggle_opacity(attr, checkbox.get_active())
         self.queue_draw()
 
-    def on_insert_frame(self, button):
-        self.ani.insert_frames()
+    def on_insert_frames(self, button):
+        ammount = anidialogs.ask_for(self, _("Insert frames"),
+            _("Ammount of frames to insert:"), "1")
+        try:
+            ammount = int(ammount)
+        except TypeError:
+            return
+        except ValueError:
+            dialogs.error(self, _("Ammount of frames must be integer"))
+            return
+        if ammount < 1:
+            dialogs.error(self, 
+                _("Ammount of frames must be bigger than one"))
+            return
+        self.ani.insert_frames(ammount)
 
-    def on_remove_frame(self, button):
-        self.ani.remove_frames()
+    def on_remove_frames(self, button):
+        ammount = anidialogs.ask_for(self, _("Remove frames"),
+            _("Ammount of frames to remove:"), "1")
+        try:
+            ammount = int(ammount)
+        except TypeError:
+            return
+        except ValueError:
+            dialogs.error(self, _("Ammount of frames must be integer"))
+            return
+        if ammount < 1:
+            dialogs.error(self, 
+                _("Ammount of frames must be bigger than one"))
+            return
+        self.ani.remove_frames(ammount)
 
     def on_cut(self, button):
         self.ani.cutcopy_cel('cut')

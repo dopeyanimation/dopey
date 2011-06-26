@@ -276,11 +276,11 @@ class Animation(object):
         self.frames.setup_active_cels({attr: is_active})
         self.update_opacities()
     
-    def insert_frames(self):
-        self.doc.do(anicommand.InsertFrames(self.doc, 1))
+    def insert_frames(self, ammount=1):
+        self.doc.do(anicommand.InsertFrames(self.doc, ammount))
 
-    def remove_frames(self):
-        self.doc.do(anicommand.RemoveFrames(self.doc, 1))
+    def remove_frames(self, ammount=1):
+        self.doc.do(anicommand.RemoveFrames(self.doc, ammount))
 
     def cutcopy_cel(self, edit_operation):
         frame = self.frames.get_selected()
