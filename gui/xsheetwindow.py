@@ -7,6 +7,7 @@
 # (at your option) any later version.
 
 import gtk
+import pango
 
 from gettext import gettext as _
 import gobject
@@ -254,10 +255,12 @@ class ToolWidget(gtk.VBox):
     
     def add_columns(self):
         listmodel = self.treeview.get_model()
+        font = pango.FontDescription('normal 8')
 
         # frame number column
 
         frameno_cell = gtk.CellRendererText()
+        frameno_cell.set_property('font-desc', font)
         framenumber_col = gtk.TreeViewColumn(_("Frame"))
         framenumber_col.pack_start(frameno_cell, True)
         framenumber_col.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
@@ -277,6 +280,7 @@ class ToolWidget(gtk.VBox):
         # description column
 
         desc_cell = gtk.CellRendererText()
+        desc_cell.set_property('font-desc', font)
         description_col = gtk.TreeViewColumn(_("Description"))
         description_col.pack_start(desc_cell, True)
         description_col.set_cell_data_func(desc_cell, self.set_description)
@@ -359,6 +363,9 @@ class ToolWidget(gtk.VBox):
             pixname += '_cel'
         if frame.is_key:
             pixname = 'key' + pixname
+        small_icons = self.app.preferences.get("small_icons", False)
+        if small_icons:
+            pixname += '_small'
         pixbuf = getattr(self.app.pixmaps, pixname)
         cell.set_property('pixbuf', pixbuf)
 
