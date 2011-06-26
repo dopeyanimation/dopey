@@ -186,15 +186,21 @@ class ToolWidget(gtk.VBox):
         icons_cb.connect('toggled', self.on_smallicons_toggled)
         icons_cb.set_tooltip_text(_("Use smaller icons, better to see more rows."))
 
+        play_lightbox_cb = gtk.CheckButton(_("Play with lightbox on"))
+        play_lightbox_cb.set_active(self.app.preferences.get("xsheet.play_lightbox", False))
+        play_lightbox_cb.connect('toggled', self.on_playlightbox_toggled)
+        play_lightbox_cb.set_tooltip_text(_("Show other frames while playing, this is slower."))
+
         controls_vbox = gtk.VBox()
         controls_vbox.pack_start(buttons_hbox, expand=False)
         controls_vbox.pack_start(anibuttons_hbox, expand=False)
         controls_vbox.pack_start(editbuttons_hbox, expand=False)
 
         preferences_vbox = gtk.VBox()
+        preferences_vbox.pack_start(icons_cb, expand=False)
+        preferences_vbox.pack_start(play_lightbox_cb, expand=False)
         preferences_vbox.pack_start(opacity_hbox, expand=False)
         preferences_vbox.pack_start(opacityopts_vbox, expand=False)
-        preferences_vbox.pack_start(icons_cb, expand=False)
 
         self.controls_expander = ElasticExpander(_('Controls'))
         self.controls_expander.set_spacing(6)
@@ -270,7 +276,9 @@ class ToolWidget(gtk.VBox):
         self._update_buttons_sensitive()
 
         if not self.is_playing and self.ani.penciltest_state == "play":
-            self._play_penciltest()
+            use_lightbox = self.app.preferences.get("xsheet.play_lightbox",
+                                                    False)
+            self._play_penciltest(use_lightbox=use_lightbox)
 
     def update(self, doc):
         return self._update()
@@ -453,6 +461,9 @@ class ToolWidget(gtk.VBox):
         # height
         self.setup()
         
+    def on_playlightbox_toggled(self, checkbox):
+        self.app.preferences["xsheet.play_lightbox"] = checkbox.get_active()
+
     def on_insert_frames(self, button):
         ammount = anidialogs.ask_for(self, _("Insert frames"),
             _("Ammount of frames to insert:"), "1")
