@@ -40,6 +40,7 @@ class ToolWidget(gtk.VBox):
         # create tree view:
         self.treeview = gtk.TreeView(self.listmodel)
         self.treeview.set_rules_hint(True)
+        self.treeview.set_headers_visible(False)
         treesel = self.treeview.get_selection()
         treesel.set_mode(gtk.SELECTION_SINGLE)
         self.changed_handler = treesel.connect('changed', self.on_row_changed)
@@ -180,20 +181,36 @@ class ToolWidget(gtk.VBox):
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
 
+        icons_cb = gtk.CheckButton(_("Small icons"))
+        icons_cb.set_active(self.app.preferences.get("xsheet.small_icons", False))
+        icons_cb.connect('toggled', self.on_smallicons_toggled)
+        icons_cb.set_tooltip_text(_("Use smaller icons, better to see more rows."))
+
         controls_vbox = gtk.VBox()
         controls_vbox.pack_start(buttons_hbox, expand=False)
         controls_vbox.pack_start(anibuttons_hbox, expand=False)
         controls_vbox.pack_start(editbuttons_hbox, expand=False)
-        controls_vbox.pack_start(opacity_hbox, expand=False)
-        controls_vbox.pack_start(opacityopts_vbox, expand=False)
 
-        self.expander = ElasticExpander(_('Controls'))
-        self.expander.set_spacing(6)
-        self.expander.add(controls_vbox)
-        self.expander.connect("notify::expanded", self.expanded_cb)
+        preferences_vbox = gtk.VBox()
+        preferences_vbox.pack_start(opacity_hbox, expand=False)
+        preferences_vbox.pack_start(opacityopts_vbox, expand=False)
+        preferences_vbox.pack_start(icons_cb, expand=False)
+
+        self.controls_expander = ElasticExpander(_('Controls'))
+        self.controls_expander.set_spacing(6)
+        self.controls_expander.add(controls_vbox)
+        self.controls_expander.connect("notify::expanded",
+            self.expanded_cb, 'controls')
+
+        self.prefs_expander = ElasticExpander(_('Preferences'))
+        self.prefs_expander.set_spacing(6)
+        self.prefs_expander.add(preferences_vbox)
+        self.prefs_expander.connect("notify::expanded",
+            self.expanded_cb, 'preferences')
 
         self.pack_start(layers_scroll)
-        self.pack_start(self.expander, expand=False)
+        self.pack_start(self.controls_expander, expand=False)
+        self.pack_start(self.prefs_expander, expand=False)
 
         self.show_all()
         self._change_penciltest_buttons()
@@ -375,7 +392,7 @@ class ToolWidget(gtk.VBox):
             pixname += '_cel'
         if frame.is_key:
             pixname = 'key' + pixname
-        small_icons = self.app.preferences.get("small_icons", False)
+        small_icons = self.app.preferences.get("xsheet.small_icons", False)
         if small_icons:
             pixname += '_small'
         pixbuf = getattr(self.app.pixmaps, pixname)
@@ -430,6 +447,12 @@ class ToolWidget(gtk.VBox):
         self.ani.toggle_opacity(attr, checkbox.get_active())
         self.queue_draw()
 
+    def on_smallicons_toggled(self, checkbox):
+        self.app.preferences["xsheet.small_icons"] = checkbox.get_active()
+        # TODO, this is a quick fix, better is to update only the rows
+        # height
+        self.setup()
+        
     def on_insert_frames(self, button):
         ammount = anidialogs.ask_for(self, _("Insert frames"),
             _("Ammount of frames to insert:"), "1")
@@ -473,13 +496,15 @@ class ToolWidget(gtk.VBox):
 
     def show_cb(self, widget):
         assert not self.expander_prefs_loaded
-        if self.app.preferences.get("xsheet.controls", False):
+        if self.app.preferences.get("xsheet.expander-controls", False):
             self.expander_controls.set_expanded(True)
+        if self.app.preferences.get("xsheet.expander-preferences", False):
+            self.expander_preferences.set_expanded(True)
         self.expander_prefs_loaded = True
 
-    def expanded_cb(self, expander, junk):
+    def expanded_cb(self, expander, junk, cfg_stem):
         # Save the expander state
         if not self.expander_prefs_loaded:
             return
         expanded = bool(expander.get_expanded())
-        self.app.preferences['xsheet.controls'] = expanded
+        self.app.preferences['xsheet.expander-%s' % cfg_stem] = expanded
