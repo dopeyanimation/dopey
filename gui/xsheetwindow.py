@@ -155,7 +155,8 @@ class ToolWidget(gtk.VBox):
         opacity_hbox = gtk.HBox()
         opacity_hbox.pack_start(opacity_lbl, expand=False)
         opacity_hbox.pack_start(self.opacity_scale, expand=True)
-        self.opacity_scale.connect('value-changed', self.on_opacityfactor_changed)
+        self.opacity_scale.connect('value-changed',
+                                   self.on_opacityfactor_changed)
 
         def opacity_checkbox(attr, label, tooltip=None):
             cb = gtk.CheckButton(label)
@@ -223,6 +224,7 @@ class ToolWidget(gtk.VBox):
 
         treesel.handler_unblock(self.changed_handler)
 
+        self.on_opacityfactor_changed()
         self.setup_lightbox()
 
     def _update(self):
