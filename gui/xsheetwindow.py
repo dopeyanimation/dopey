@@ -369,9 +369,11 @@ class ToolWidget(gtk.VBox):
             self._update()
         return keep_playing
 
-    def _play_penciltest(self):
+    def _play_penciltest(self, from_first_frame=True):
         self.is_playing = True
         self.beforeplay_frame = self.ani.frames.idx
+        if from_first_frame:
+            self.ani.frames.select(0)
         self._change_penciltest_buttons()
         # add a 24fps (almost 42ms) animation timer:
         gobject.timeout_add(42, self._call_penciltest)
