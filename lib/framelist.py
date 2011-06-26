@@ -225,6 +225,13 @@ class FrameList(list):
             return next_frame.cel
         return None
 
+    def get_all_cels(self):
+        cels = []
+        for f in self:
+            if f.cel is not None and f.cel not in cels:
+                cels.append(f.cel)
+        return cels
+
     def _get_previous_frame_with_cel(self):
         """
         Return the previous frame with a cel that is different than

@@ -351,8 +351,8 @@ class ToolWidget(gtk.VBox):
         pixbuf = getattr(self.app.pixmaps, pixname)
         cell.set_property('pixbuf', pixbuf)
 
-    def _call_penciltest(self):
-        self.ani.penciltest_next()
+    def _call_penciltest(self, use_lightbox=False):
+        self.ani.penciltest_next(use_lightbox)
         keep_playing = True
         if self.ani.penciltest_state == "stop":
             self.ani.select_without_undo(self.beforeplay_frame)
@@ -369,14 +369,15 @@ class ToolWidget(gtk.VBox):
             self._update()
         return keep_playing
 
-    def _play_penciltest(self, from_first_frame=True):
+    def _play_penciltest(self, from_first_frame=True, use_lightbox=False):
         self.is_playing = True
         self.beforeplay_frame = self.ani.frames.idx
         if from_first_frame:
             self.ani.frames.select(0)
         self._change_penciltest_buttons()
+        self.ani.hide_all_frames()
         # add a 24fps (almost 42ms) animation timer:
-        gobject.timeout_add(42, self._call_penciltest)
+        gobject.timeout_add(42, self._call_penciltest, use_lightbox)
 
     def on_penciltest_play(self, button):
         self.ani.play_penciltest()

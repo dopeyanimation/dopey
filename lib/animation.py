@@ -164,6 +164,23 @@ class Animation(object):
         for f in self.doc.canvas_observers:
             f(*bbox)
 
+    def hide_all_frames(self):
+        cels = []
+        for cel in self.frames.get_all_cels():
+            cel.visible = False
+            self._notify_canvas_observers(cel)
+
+    def change_visible_frame(self, prev_idx, cur_idx):
+        prev_cel = self.frames.cel_at(prev_idx)
+        cur_cel = self.frames.cel_at(cur_idx)
+        if prev_cel == cur_cel:
+            return
+        prev_cel.visible = False
+        cur_cel.opacity = 1
+        cur_cel.visible = True
+        self._notify_canvas_observers(prev_cel)
+        self._notify_canvas_observers(cur_cel)
+
     def update_opacities(self):
         opacities, visible = self.frames.get_opacities()
 
@@ -197,12 +214,16 @@ class Animation(object):
     def stop_penciltest(self):
         self.penciltest_state = "stop"
 
-    def penciltest_next(self):
+    def penciltest_next(self, use_lightbox=False):
+        prev_idx = self.frames.idx
         if self.frames.has_next():
             self.frames.goto_next()
         else:
             self.frames.select(0)
-        self.update_opacities()
+        if use_lightbox:
+            self.update_opacities()
+        else:
+            self.change_visible_frame(prev_idx, self.frames.idx)
 
     def toggle_key(self):
         frame = self.frames.get_selected()
