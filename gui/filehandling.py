@@ -102,7 +102,8 @@ class FileHandler(object):
         (_("PNG transparent (*.png)"), '.png', {'alpha': True}), #3
         (_("Multiple PNG transparent (*.XXX.png)"), '.png', {'multifile': True}), #4
         (_("JPEG 90% quality (*.jpg; *.jpeg)"), '.jpg', {'quality': 90}), #5
-        (_("One PNG image for animation frame"), '.png', {'animation': True}), #6
+        (_("One PNG image for animation frame (*-XXX.png)"), '.png', {'animation': True}), #6
+        (_("Animation video (*.avi)"), '.avi', {}), #7
         ]
         self.ext2saveformat = {
         '.ora': SAVE_FORMAT_ORA, 

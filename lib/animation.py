@@ -7,6 +7,7 @@
 # (at your option) any later version.
 
 import os
+import glob
 from gettext import gettext as _
 import json
 import tempfile
@@ -117,7 +118,47 @@ class Animation(object):
             filename = '%s-%03d%s' % (prefix, i+1, ext)
             cel = self.frames.cel_at(i)
             cel.surface.save(filename, *doc_bbox, **kwargs)
-    
+
+    def save_avi(self, filename, vid_width=800, vid_fps=24, **kwargs):
+        """
+        Save video file with codec mpeg4.
+
+        Requires command tools imagemagick and ffmpeg .
+
+        """
+        tempdir = tempfile.mkdtemp()
+        jpgs_tempdir = os.path.join(tempdir, 'jpgs')
+        os.mkdir(jpgs_tempdir)
+        base_filename = os.path.basename(filename)
+        prefix, ext = os.path.splitext(base_filename)
+        out_filename = os.path.join(os.path.dirname(filename), prefix + '.avi')
+
+        pngs_filename = os.path.join(tempdir, 'tempani.png')
+        self.save_png(pngs_filename)
+
+        # convert pngs to jpegs with imagemagick command:
+        pngs_list = glob.glob(tempdir + os.path.sep + '*png')
+        pngs_list.sort()
+        for png_file in pngs_list:
+            f_basename = os.path.basename(png_file)
+            name, ext = os.path.splitext(f_basename)
+            jpg_file = os.path.join(jpgs_tempdir, name + '.jpg')
+            print "converting %s to %s..." % (png_file, jpg_file)
+            call(["convert",
+                  "-resize", str(vid_width),
+                  "-quality", "100",
+                  "-background", "white",
+                  "-flatten",
+                  png_file, jpg_file])
+
+        # convert the previous jpgs to video with ffmpeg command:
+        jpgs = jpgs_tempdir + os.path.sep + 'tempani-%03d.jpg'
+        call(["ffmpeg",
+              "-r", str(vid_fps),
+              "-b", "1800",
+              "-y", "-i",
+              jpgs, out_filename])
+
     def _notify_canvas_observers(self, affected_layer):
         bbox = affected_layer.surface.get_bbox()
         for f in self.doc.canvas_observers:

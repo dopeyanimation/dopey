@@ -396,6 +396,9 @@ class Document():
         else:
             pixbufsurface.save_as_png(self, filename, *doc_bbox, alpha=False, **kwargs)
 
+    def save_avi(self, filename, **kwargs):
+        return self.ani.save_avi(filename, **kwargs)
+
     def save_multifile_png(self, filename, alpha=False, **kwargs):
         prefix, ext = os.path.splitext(filename)
         # if we have a number already, strip it
