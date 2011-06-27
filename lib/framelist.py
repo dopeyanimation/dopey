@@ -87,20 +87,22 @@ class FrameList(list):
 
         """
         if at_end:
-            return list(self[-length:])
+            idx = len(self) - 1
         else:
-            return list(self[self.idx:self.idx+length])
+            idx = self.idx
+        return list(self[self.idx:self.idx+length])
     
     def remove_frames(self, length, at_end=False):
         """
         Remove frames from the current position or from the end.
         """
         removed = []
+        if at_end:
+            idx = len(self) - 1
+        else:
+            idx = self.idx
         for l in range(length):
-            if at_end:
-                removed.append(self.pop())
-            else:
-                removed.append(self.pop(self.idx))
+            removed.append(self.pop(idx))
         if self.idx > len(self) - 1:
             self.idx = len(self) - 1
         return removed
