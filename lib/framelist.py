@@ -101,6 +101,8 @@ class FrameList(list):
             idx = len(self) - 1
         else:
             idx = self.idx
+        if idx + length > len(self):
+            length = len(self) - idx
         for l in range(length):
             removed.append(self.pop(idx))
         if self.idx > len(self) - 1:
@@ -646,13 +648,22 @@ True
 
 >>> frames.idx = 5 # at the end
 >>> rem3 = frames.remove_frames(1)
+>>> len(rem3)
+1
 
+>>> len(frames)
+5
 >>> frames.idx
 4
 
->>> frames.remove_frames(2)
-Traceback (most recent call last):
-IndexError: pop index out of range
+>>> rem4 = frames.remove_frames(2)
+>>> len(rem4)
+1
+
+>>> len(frames)
+4
+>>> frames.idx
+3
 
 """)
 
