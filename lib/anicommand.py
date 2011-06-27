@@ -9,7 +9,6 @@
 from command import Action, SelectLayer
 import layer
 
-
 def layername_from_description(description):
     layername = "CEL"
     if description != '':
@@ -97,9 +96,9 @@ class AddCel(Action):
         self.layer.surface.observers.append(self.doc.layer_modified_cb)
     
     def redo(self):
-        self.doc.layers.insert(0, self.layer)
+        self.doc.layers.append(self.layer)
         self.prev_idx = self.doc.layer_idx
-        self.doc.layer_idx = 0
+        self.doc.layer_idx = len(self.doc.layers) - 1
         
         self.frame.add_cel(self.layer)
         self._notify_canvas_observers(self.layer)
@@ -124,7 +123,7 @@ class RemoveCel(Action):
     def redo(self):
         self.doc.layers.remove(self.layer)
         self.prev_idx = self.doc.layer_idx
-        self.doc.layer_idx = 0
+        self.doc.layer_idx = len(self.doc.layers) - 1
         
         self.frame.remove_cel()
         self._notify_canvas_observers(self.layer)
@@ -132,7 +131,7 @@ class RemoveCel(Action):
         self._notify_document_observers()
     
     def undo(self):
-        self.doc.layers.insert(0, self.layer)
+        self.doc.layers.append(self.layer)
         self.doc.layer_idx = self.prev_idx
 
         self.frame.add_cel(self.layer)
@@ -199,7 +198,7 @@ class RemoveFrames(Action):
         for frame in self.frames_to_remove:
             if frame.cel is not None:
                 # TODO reuse RemoveCel.undo ?
-                self.doc.layers.insert(0, frame.cel)
+                self.doc.layers.append(frame.cel)
         
         self.doc.ani.cleared = True
         self._notify_document_observers()
