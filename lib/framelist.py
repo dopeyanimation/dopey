@@ -101,6 +101,8 @@ class FrameList(list):
                 removed.append(self.pop())
             else:
                 removed.append(self.pop(self.idx))
+        if self.idx > len(self) - 1:
+            self.idx = len(self) - 1
         return removed
 
     def insert_frames(self, frames):
@@ -641,6 +643,11 @@ True
 6
 
 >>> frames.idx = 5 # at the end
+>>> rem3 = frames.remove_frames(1)
+
+>>> frames.idx
+4
+
 >>> frames.remove_frames(2)
 Traceback (most recent call last):
 IndexError: pop index out of range
