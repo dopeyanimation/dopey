@@ -7,19 +7,24 @@
 # (at your option) any later version.
 
 DEFAULT_OPACITIES = {
-    'nextprev':   1./2, # The inmediate next and previous cels
-    'key':        1./2, # The cel keys that are after and before the current cel 
+    'cel': 1./2, # The inmediate next and previous cels
+    'key': 1./2, # The cel keys that are after and before the current cel 
     'inbetweens': 1./4, # The cels that are between the keys mentioned above
     'other keys': 1./4, # The other keys
-    'other':      0,    # The rest of the cels
+    'other': 0,    # The rest of the cels
 }
 
 DEFAULT_ACTIVE_CELS = {
-    'nextprev':   True,
-    'key':        True,
+    'cel': True,
+    'key': True,
     'inbetweens': True,
     'other keys': True,
-    'other':      False,
+    'other': False,
+}
+
+DEFAULT_NEXTPREV = {
+    'next': True,
+    'previous': True,
 }
 
 class Frame(object):
@@ -49,7 +54,7 @@ class FrameList(list):
     The list of frames that constitutes an animation.
     
     """
-    def __init__(self, length, opacities=None, active_cels=None):
+    def __init__(self, length, opacities=None, active_cels=None, nextprev=None):
         self.append_frames(length)
         self.idx = 0
         if opacities is None:
@@ -58,8 +63,12 @@ class FrameList(list):
         if active_cels is None:
             active_cels = {}
         self.active_cels = dict(DEFAULT_ACTIVE_CELS)
+        if nextprev is None:
+            nextprev = {}
+        self.nextprev = dict(DEFAULT_NEXTPREV)
         self.setup_opacities(opacities)
         self.setup_active_cels(active_cels)
+        self.setup_nextprev(nextprev)
         
     def setup_opacities(self, opacities):
         self.opacities.update(opacities)
@@ -76,6 +85,9 @@ class FrameList(list):
     def setup_active_cels(self, active_cels):
         self.active_cels.update(active_cels)
     
+    def setup_nextprev(self, nextprev):
+        self.nextprev.update(nextprev)
+
     def append_frames(self, length):
         for l in range(length):
             self.append(Frame())
@@ -280,66 +292,85 @@ class FrameList(list):
     def get_opacities(self):
         """
         Return a map of cels and the opacity they should have.
-        
+
         To draw the current cel, the artist have to see it 100%
         opaque, and she may want to see the neighbour cels
         transparented.
-        
+
         """
         opacities = {}
         
-        def get_opa(c):
-            if self.active_cels[c]:
+        def get_opa(nextprev, c):
+            can_nextprev = self.nextprev[nextprev]
+            if can_nextprev and self.active_cels[c]:
                 return self.converted_opacities[c]
             return 0
-        
+
         cel = self.cel_for_frame(self.get_selected())
         if cel:
             opacities[cel] = 1
-        
+
+        # next:
         cel = self.get_previous_cel()
         if cel and cel not in opacities.keys():
-            opacities[cel] = get_opa('nextprev')
-        
+            opacities[cel] = get_opa('previous', 'cel')
+
+        # previous:
         cel = self.get_next_cel()
         if cel and cel not in opacities.keys():
-            opacities[cel] = get_opa('nextprev')
-        
+            opacities[cel] = get_opa('next', 'cel')
+
+        # previous key:
         prevkey_idx = 0
         if self.has_previous_key():
             prevkey = self.get_previous_key()
             prevkey_idx = self.index(prevkey)
             cel = self.cel_for_frame(prevkey)
             if cel and cel not in opacities.keys():
-                opacities[cel] = get_opa('key')
+                opacities[cel] = get_opa('previous', 'key')
         
+        # next key:
         nextkey_idx = len(self)-1
         if self.has_next_key():
             nextkey = self.get_next_key()
             nextkey_idx = self.index(nextkey)
             cel = self.cel_for_frame(nextkey)
             if cel and cel not in opacities.keys():
-                opacities[cel] = get_opa('key')
+                opacities[cel] = get_opa('next', 'key')
         
         def has_cel(f):
             return f.cel is not None
         
         # inbetweens:
-        inbetweens_range = self[prevkey_idx:nextkey_idx]
-        for frame in filter(has_cel, inbetweens_range):
+        next_inbetweens_range = self[self.idx:nextkey_idx]
+        for frame in filter(has_cel, next_inbetweens_range):
             cel = frame.cel
             if cel not in opacities.keys():
-                opacities[cel] = get_opa('inbetweens')
+                opacities[cel] = get_opa('next', 'inbetweens')
+        prev_inbetweens_range = self[prevkey_idx:self.idx]
+        for frame in filter(has_cel, prev_inbetweens_range):
+            cel = frame.cel
+            if cel not in opacities.keys():
+                opacities[cel] = get_opa('previous', 'inbetweens')
         
         # frames outside inmediate keys:
-        outside_range = self[:prevkey_idx] + self[nextkey_idx:]
-        for frame in filter(has_cel, outside_range):
+        next_outside_range = self[nextkey_idx:]
+        for frame in filter(has_cel, next_outside_range):
             cel = frame.cel
             if cel not in opacities.keys():
                 if frame.is_key:
-                    opacities[cel] = get_opa('other keys')
+                    opacities[cel] = get_opa('next', 'other keys')
                 else:
-                    opacities[cel] = get_opa('other')
+                    opacities[cel] = get_opa('next', 'other')
+
+        prev_outside_range = self[:prevkey_idx]
+        for frame in filter(has_cel, prev_outside_range):
+            cel = frame.cel
+            if cel not in opacities.keys():
+                if frame.is_key:
+                    opacities[cel] = get_opa('previous', 'other keys')
+                else:
+                    opacities[cel] = get_opa('previous', 'other')
         
         visible = {}
         for cel, opa in opacities.items():
@@ -559,7 +590,8 @@ IndexError: There is no previous frame with cel.
 Testing opacities
 -----------------
 
->>> active_cels = {'nextprev': True, 'key': False, \
+>>> active_cels = {'next': True, 'previous': True, \
+                   'next key': False, 'previous key': False, \
                    'inbetweens': False, 'other keys': False, \
                    'other': False}
 

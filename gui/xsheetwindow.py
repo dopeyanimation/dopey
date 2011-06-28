@@ -175,7 +175,7 @@ class ToolWidget(gtk.VBox):
             opacityopts_vbox.pack_start(cb, expand=False)
 
         opacityopts_vbox = gtk.VBox()
-        opacity_checkbox('nextprev', _('Inmediate'), _("Show the inmediate next and previous cels."))
+        opacity_checkbox('cel', _('Inmediate'), _("Show the inmediate next and previous cels."))
         opacity_checkbox('key', _('Inmediate keys'), _("Show the cel keys that are after and before the current cel."))
         opacity_checkbox('inbetweens', _('Inbetweens'), _("Show the cels that are between the inmediate key cels."))
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
@@ -191,6 +191,16 @@ class ToolWidget(gtk.VBox):
         play_lightbox_cb.connect('toggled', self.on_playlightbox_toggled)
         play_lightbox_cb.set_tooltip_text(_("Show other frames while playing, this is slower."))
 
+        showprev_cb = gtk.CheckButton(_("Lightbox show previous"))
+        showprev_cb.set_active(self.app.preferences.get("xsheet.lightbox_show_previous", True))
+        showprev_cb.connect('toggled', self.on_shownextprev_toggled, 'previous')
+        showprev_cb.set_tooltip_text(_("Show previous cels in the lightbox."))
+
+        shownext_cb = gtk.CheckButton(_("Lightbox show next"))
+        shownext_cb.set_active(self.app.preferences.get("xsheet.lightbox_show_next", False))
+        shownext_cb.connect('toggled', self.on_shownextprev_toggled, 'next')
+        shownext_cb.set_tooltip_text(_("Show next cels in the lightbox."))
+
         controls_vbox = gtk.VBox()
         controls_vbox.pack_start(buttons_hbox, expand=False)
         controls_vbox.pack_start(anibuttons_hbox, expand=False)
@@ -199,6 +209,8 @@ class ToolWidget(gtk.VBox):
         preferences_vbox = gtk.VBox()
         preferences_vbox.pack_start(icons_cb, expand=False)
         preferences_vbox.pack_start(play_lightbox_cb, expand=False)
+        preferences_vbox.pack_start(showprev_cb, expand=False)
+        preferences_vbox.pack_start(shownext_cb, expand=False)
         preferences_vbox.pack_start(opacity_hbox, expand=False)
         preferences_vbox.pack_start(opacityopts_vbox, expand=False)
 
@@ -463,6 +475,10 @@ class ToolWidget(gtk.VBox):
         
     def on_playlightbox_toggled(self, checkbox):
         self.app.preferences["xsheet.play_lightbox"] = checkbox.get_active()
+
+    def on_shownextprev_toggled(self, checkbox, nextprev):
+        self.app.preferences["xsheet.lightbox_show_" + nextprev] = checkbox.get_active()
+        self.ani.toggle_nextprev(nextprev, checkbox.get_active())
 
     def on_insert_frames(self, button):
         ammount = anidialogs.ask_for(self, _("Insert frames"),

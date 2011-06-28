@@ -37,7 +37,7 @@ class AnimationCel(object):
 class Animation(object):
     
     opacities = {
-    'nextprev':   0.5,
+    'cel':   0.5,
     'key':        0.4,
     'inbetweens': 0.2,
     'other keys': 0.3,
@@ -274,6 +274,10 @@ class Animation(object):
 
     def toggle_opacity(self, attr, is_active):
         self.frames.setup_active_cels({attr: is_active})
+        self.update_opacities()
+    
+    def toggle_nextprev(self, nextprev, is_active):
+        self.frames.setup_nextprev({nextprev: is_active})
         self.update_opacities()
     
     def insert_frames(self, ammount=1):
