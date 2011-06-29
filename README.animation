@@ -1,0 +1,70 @@
+===============
+MyPaint X-Sheet
+===============
+
+Traditional, hand-drawn, animation for MyPaint.
+===============================================
+
+In traditional animation industry, there is a tool called exposure
+sheet, that allows animators to planify its job: sync with audio, plan
+the timing, draw the more important (key) drawings first, among other
+things.  An exposure sheet (or x-sheet for short) is a table with one
+row for each frame.
+
+In MyPaint X-Sheet there is a window called X Sheet that is a
+simplified version of the sheet that animation studios used in the old
+days.  You can access it from the Animation menu.
+
+Animation is usually played at 24 frames per second, but animators can
+choose to draw less, using the same drawing for subsecuent frames.  An
+animation drawing is called a cel.  If the animator uses the same cel
+in two subsecuent frames, we say that the animation is on twos.  The
+"exposure" term comes from the old days, when a camera operator had to
+expose the same cel two or more times, reading this information from
+the sheet.
+
+In MyPaint X-Sheet, use the Add Cel button found in the controls of
+the X Sheet window.  You can also use the Animation menu, or press 'c'
+in the keyboard.  Any of these will add a cel to the current frame, if
+there isn't one already.  You can see a gray dot in the frame icon if
+the frame has a cel.  For easy navigation, you can go to the
+previous/next frame with a cel using Ctrl + up/down arrows.
+
+In order to organize the work, animators draw the more important
+drawings first.  The frames with those key drawings are called key
+frames.
+
+In MyPaint X-Sheet, you can mark a frame as a keyframe using the
+button found in the controls of the X Sheet window, using the
+Animation menu, or pressing 'k' in the keyboard.  You can see a yellow
+border in the frame icon if it is marked as keyframe.  For easy
+navigation, you can go to the previous/next keyframe using Shift +
+up/down arrows.
+
+Dependencies
+------------
+
+To export the animation as video, you will need imagemagick and ffmpeg
+installed.  In Debian: apt-get install imagemagick ffmpeg
+
+Known bugs
+----------
+
+MyPaint X-Sheet is a work in progress.
+
+* animation undo/redo is buggy
+
+Planned features
+----------------
+
+* Do rough drawings with a coloured pencil (light blue) that gets
+  removed on save.
+
+* Lightbox preference: show a number of frames before or after the
+  current one.
+
+Nice to have
+------------
+
+* Add row separations: at 24 rows (one second), at 4, 6, or 8 roes (a
+  fraction of second)
