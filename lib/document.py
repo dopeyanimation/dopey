@@ -494,10 +494,15 @@ class Document():
 
         for idx, l in enumerate(reversed(self.layers)):
             if l.surface.is_empty():
-                continue
-            opac = l.opacity
-            x, y, w, h = l.surface.get_bbox()
-            el = add_layer(x-x0, y-y0, opac, l.surface, 'data/layer%03d.png' % idx, l.name, l.visible, rect=(x, y, w, h))
+                # here we add a fake png because otherwise the
+                # animation gets messy:
+                opac = l.opacity
+                x, y, w, h = 0, 0, mypaintlib.TILE_SIZE, mypaintlib.TILE_SIZE
+                el = add_layer(x-x0, y-y0, opac, l.surface, 'data/layer%03d.png' % idx, l.name, l.visible, rect=(x, y, w, h))
+            else:
+                opac = l.opacity
+                x, y, w, h = l.surface.get_bbox()
+                el = add_layer(x-x0, y-y0, opac, l.surface, 'data/layer%03d.png' % idx, l.name, l.visible, rect=(x, y, w, h))
             # strokemap
             sio = StringIO()
             l.save_strokemap_to_file(sio, -x, -y)
