@@ -511,6 +511,9 @@ class Document():
             el.attrib['mypaint_strokemap_v2'] = name
             write_file_str(name, data)
 
+        ani_data = self.ani.xsheet_as_str()
+        write_file_str('animation.xsheet', ani_data)
+
         # save background as layer (solid color or tiled)
         bg = self.background
         # save as fully rendered layer
@@ -541,7 +544,6 @@ class Document():
 
         print '%.3fs save_ora total' % (time.time() - t0)
 
-        self.ani.save_xsheet(filename)
         return thumbnail_pixbuf
 
     def load_ora(self, filename, feedback_cb=None):
@@ -673,6 +675,11 @@ class Document():
             self.remove_layer()
             # this leaves the topmost layer selected
 
+        try:
+            ani_data = z.read('animation.xsheet')
+            self.ani.str_to_xsheet(ani_data)
+        except KeyError:
+            self.ani.load_xsheet(filename)
+
         print '%.3fs load_ora total' % (time.time() - t0)
         
-        self.ani.load_xsheet(filename)

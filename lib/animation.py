@@ -57,10 +57,10 @@ class Animation(object):
         self.frames = FrameList(24, self.opacities)
         self.cleared = True
     
-    def _write_xsheet(self, xsheetfile):
+    def xsheet_as_str(self):
         """
-        Save FrameList to file.
-        
+        Return animation X-Sheet as data in json format.
+
         """
         data = []
         for f in self.frames:
@@ -70,15 +70,22 @@ class Animation(object):
                 layer_idx = None
             data.append((f.is_key, f.description, layer_idx))
         str_data = json.dumps(data, sort_keys=True, indent=4)
+        return str_data
+
+    def _write_xsheet(self, xsheetfile):
+        """
+        Save FrameList to file.
+        
+        """
+        str_data = self.xsheet_as_str()
         xsheetfile.write(str_data)
 
-    def _read_xsheet(self, xsheetfile):
+    def str_to_xsheet(self, ani_data):
         """
-        Update FrameList from file.
+        Update FrameList from animation data.
     
         """
-        str_data = xsheetfile.read()
-        data = json.loads(str_data)
+        data = json.loads(ani_data)
         self.frames = FrameList(len(data), self.opacities)
         self.cleared = True
         for i, d in enumerate(data):
@@ -90,6 +97,14 @@ class Animation(object):
             self.frames[i].is_key = is_key
             self.frames[i].description = description
             self.frames[i].cel = cel
+
+    def _read_xsheet(self, xsheetfile):
+        """
+        Update FrameList from file.
+    
+        """
+        ani_data = xsheetfile.read()
+        self.str_to_xsheet(ani_data)
     
     def save_xsheet(self, filename):
         root, ext = os.path.splitext(filename)
