@@ -190,10 +190,13 @@ class Animation(object):
         cur_cel = self.frames.cel_at(cur_idx)
         if prev_cel == cur_cel:
             return
-        prev_cel.visible = False
+        if prev_cel != None:
+            prev_cel.visible = False
+            self._notify_canvas_observers(prev_cel)
+        if cur_cel == None:
+            return
         cur_cel.opacity = 1
         cur_cel.visible = True
-        self._notify_canvas_observers(prev_cel)
         self._notify_canvas_observers(cur_cel)
 
     def update_opacities(self):
