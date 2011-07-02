@@ -136,7 +136,7 @@
       <menuitem action='DecreaseLayerOpacity'/>
     </menu>
     <menu action='AnimationMenu'>
-      <menuitem action='XSheetWindow'/>
+      <menuitem action='AnimationWindow'/>
       <separator/>
       <menuitem action='AddCel'/>
       <menuitem action='ToggleKey'/>
@@ -147,7 +147,7 @@
       <menuitem action='NextFrameWithCel'/>
       <menuitem action='PrevKeyFrame'/>
       <menuitem action='NextKeyFrame'/>
-      <menuitem action='PlayPausePenciltest'/>
+      <menuitem action='PlayPauseAnimation'/>
       <separator/>
       <menuitem action='InsertFrame'/>
       <menuitem action='RemoveFrame'/>

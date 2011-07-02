@@ -25,8 +25,8 @@ class Animation(object):
             ('NextFrameWithCel', None, _('Next frame with cel'), '<control>Down', None, self.next_celframe_cb),
             ('PrevKeyFrame', None, _('Previous Keyframe'), '<shift>Up', None, self.previous_keyframe_cb),
             ('NextKeyFrame', None, _('Next Keyframe'), '<shift>Down', None, self.next_keyframe_cb),
-            ('PlayPausePenciltest', None, _('Play/Pause Penciltest'), '<control>p', None, self.playpause_penciltest_cb),
-            ('StopPenciltest', None, _('Stop Penciltest'), None, None, self.stop_penciltest_cb),
+            ('PlayPauseAnimation', None, _('Play/Pause animation'), '<control>p', None, self.playpause_animation_cb),
+            ('StopAnimation', None, _('Stop animation'), None, None, self.stop_animation_cb),
             ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
             ('ToggleKey', gtk.STOCK_JUMP_TO, _('Toggle Keyframe'), 'k', None, self.toggle_key_cb),
             ('InsertFrame', gtk.STOCK_ADD, _('Insert frame'), None, None, self.insert_frame_cb),
@@ -64,12 +64,12 @@ class Animation(object):
     def add_cel_cb(self, action):
         self.model.add_cel()
 
-    def playpause_penciltest_cb(self, action):
-        self.model.playpause_penciltest()
+    def playpause_animation_cb(self, action):
+        self.model.playpause_animation()
 
-    def stop_penciltest_cb(self, action):
-        if self.model.penciltest_state == "play":
-            self.model.stop_penciltest()
+    def stop_animation_cb(self, action):
+        if self.model.player_state == "play":
+            self.model.stop_animation()
 
     def toggle_key_cb(self, action):
         self.model.toggle_key()

@@ -47,7 +47,7 @@ class Animation(object):
     def __init__(self, doc):
         self.doc = doc
         self.cleared = False
-        self.penciltest_state = None
+        self.player_state = None
 
         # For cut/copy/paste operations:
         self.edit_operation = None
@@ -215,24 +215,24 @@ class Animation(object):
         self.frames.select(idx)
         self.update_opacities()
 
-    def play_penciltest(self):
-        self.penciltest_state = "play"
+    def play_animation(self):
+        self.player_state = "play"
         self.doc.call_doc_observers()
 
-    def pause_penciltest(self):
-        self.penciltest_state = "pause"
+    def pause_animation(self):
+        self.player_state = "pause"
 
-    def playpause_penciltest(self):
-        if self.penciltest_state != "play":
-            self.penciltest_state = "play"
+    def playpause_animation(self):
+        if self.player_state != "play":
+            self.player_state = "play"
         else:
-            self.penciltest_state = "pause"
+            self.player_state = "pause"
         self.doc.call_doc_observers()
 
-    def stop_penciltest(self):
-        self.penciltest_state = "stop"
+    def stop_animation(self):
+        self.player_state = "stop"
 
-    def penciltest_next(self, use_lightbox=False):
+    def player_next(self, use_lightbox=False):
         prev_idx = self.frames.idx
         if self.frames.has_next():
             self.frames.goto_next()

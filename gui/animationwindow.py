@@ -24,7 +24,7 @@ COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
 class ToolWidget(gtk.VBox):
     
-    tool_widget_title = _("X Sheet")
+    tool_widget_title = _("Animation")
     
     def __init__(self, app):
         gtk.VBox.__init__(self)
@@ -86,7 +86,7 @@ class ToolWidget(gtk.VBox):
         buttons_hbox.pack_start(self.add_cel_button)
         buttons_hbox.pack_start(self.remove_cel_button)
 
-        # penciltest controls:
+        # player controls:
         
         self.previous_button = stock_button(gtk.STOCK_GO_UP)
         self.previous_button.connect('clicked', self.on_previous_frame)
@@ -97,16 +97,16 @@ class ToolWidget(gtk.VBox):
         self.next_button.set_tooltip_text(_('Next Frame'))
         
         self.play_button = stock_button(gtk.STOCK_MEDIA_PLAY)
-        self.play_button.connect('clicked', self.on_penciltest_play)
-        self.play_button.set_tooltip_text(_('Pencil Test'))
+        self.play_button.connect('clicked', self.on_animation_play)
+        self.play_button.set_tooltip_text(_('Play animation'))
         
         self.pause_button = stock_button(gtk.STOCK_MEDIA_PAUSE)
-        self.pause_button.connect('clicked', self.on_penciltest_pause)
-        self.pause_button.set_tooltip_text(_('Pause Pencil Test'))
+        self.pause_button.connect('clicked', self.on_animation_pause)
+        self.pause_button.set_tooltip_text(_('Pause animation'))
 
         self.stop_button = stock_button(gtk.STOCK_MEDIA_STOP)
-        self.stop_button.connect('clicked', self.on_penciltest_stop)
-        self.stop_button.set_tooltip_text(_('Stop Pencil Test'))
+        self.stop_button.connect('clicked', self.on_animation_stop)
+        self.stop_button.set_tooltip_text(_('Stop animation'))
 
         anibuttons_hbox = gtk.HBox()
         anibuttons_hbox.pack_start(self.previous_button)
@@ -231,7 +231,7 @@ class ToolWidget(gtk.VBox):
         self.pack_start(self.prefs_expander, expand=False)
 
         self.show_all()
-        self._change_penciltest_buttons()
+        self._change_player_buttons()
         self.app.doc.model.doc_observers.append(self.update)
 
     def _get_path_from_frame(self, frame):
@@ -287,10 +287,10 @@ class ToolWidget(gtk.VBox):
         self.queue_draw()
         self._update_buttons_sensitive()
 
-        if not self.is_playing and self.ani.penciltest_state == "play":
+        if not self.is_playing and self.ani.player_state == "play":
             use_lightbox = self.app.preferences.get("xsheet.play_lightbox",
                                                     False)
-            self._play_penciltest(use_lightbox=use_lightbox)
+            self._play_animation(use_lightbox=use_lightbox)
 
     def update(self, doc):
         return self._update()
@@ -338,7 +338,7 @@ class ToolWidget(gtk.VBox):
         self.treeview.append_column(icon_col)
         self.treeview.append_column(description_col)
         
-    def _change_penciltest_buttons(self):
+    def _change_player_buttons(self):
         if self.is_playing:
             self.play_button.hide()
             self.pause_button.show()
@@ -418,42 +418,42 @@ class ToolWidget(gtk.VBox):
         pixbuf = getattr(self.app.pixmaps, pixname)
         cell.set_property('pixbuf', pixbuf)
 
-    def _call_penciltest(self, use_lightbox=False):
-        self.ani.penciltest_next(use_lightbox)
+    def _call_player(self, use_lightbox=False):
+        self.ani.player_next(use_lightbox)
         keep_playing = True
-        if self.ani.penciltest_state == "stop":
+        if self.ani.player_state == "stop":
             self.ani.select_without_undo(self.beforeplay_frame)
             keep_playing = False
             self.is_playing = False
-            self._change_penciltest_buttons()
-            self.ani.penciltest_state = None
+            self._change_player_buttons()
+            self.ani.player_state = None
             self._update()
-        elif self.ani.penciltest_state == "pause":
+        elif self.ani.player_state == "pause":
             keep_playing = False
             self.is_playing = False
-            self._change_penciltest_buttons()
-            self.ani.penciltest_state = None
+            self._change_player_buttons()
+            self.ani.player_state = None
             self._update()
         return keep_playing
 
-    def _play_penciltest(self, from_first_frame=True, use_lightbox=False):
+    def _play_animation(self, from_first_frame=True, use_lightbox=False):
         self.is_playing = True
         self.beforeplay_frame = self.ani.frames.idx
         if from_first_frame:
             self.ani.frames.select(0)
-        self._change_penciltest_buttons()
+        self._change_player_buttons()
         self.ani.hide_all_frames()
         # add a 24fps (almost 42ms) animation timer:
-        gobject.timeout_add(42, self._call_penciltest, use_lightbox)
+        gobject.timeout_add(42, self._call_player, use_lightbox)
 
-    def on_penciltest_play(self, button):
-        self.ani.play_penciltest()
+    def on_animation_play(self, button):
+        self.ani.play_animation()
 
-    def on_penciltest_pause(self, button):
-        self.ani.pause_penciltest()
+    def on_animation_pause(self, button):
+        self.ani.pause_animation()
 
-    def on_penciltest_stop(self, button):
-        self.ani.stop_penciltest()
+    def on_animation_stop(self, button):
+        self.ani.stop_animation()
 
     def on_opacityfactor_changed(self, *ignore):
         opa = self.opacity_scale.get_value()

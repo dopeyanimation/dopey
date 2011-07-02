@@ -188,7 +188,7 @@ class Application: # singleton
                 'layersWindow': dict(sbindex=3, floating=True,
                                      x=128, y=-128,
                                      w=200, h=200, sbheight=200),
-                'xSheetWindow': dict(sbindex=4, floating=True,
+                'AnimationWindow': dict(sbindex=4, floating=True,
                                      x=128, y=128,
                                      w=200, h=300, sbheight=300),
 

@@ -125,7 +125,7 @@ class Window (windowing.MainWindow, layout.MainWindow):
             ('BackgroundWindow', gtk.STOCK_PAGE_SETUP, _('Background...'), None, None, self.toggleWindow_cb),
 
             ('AnimationMenu',    None, _('Animation')),
-            ('XSheetWindow', gtk.STOCK_INDEX, _('X Sheet...'), '<control>k', None, self.toggleWindow_cb),
+            ('AnimationWindow', gtk.STOCK_INDEX, _('Animation...'), '<control>k', None, self.toggleWindow_cb),
             ('BrushMenu',    None, _('Brush')),
             ('BrushSelectionWindow',  None, _('Brush List...'), 'b', None, self.toggleWindow_cb),
             ('BrushSettingsWindow',   gtk.STOCK_PROPERTIES, _('Brush Editor...'), '<control>b', None, self.toggleWindow_cb),
