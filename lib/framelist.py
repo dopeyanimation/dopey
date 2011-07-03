@@ -381,6 +381,12 @@ class FrameList(list):
 #        print opacities, visible
         return opacities, visible
 
+    def count_cel(self, item):
+        count = 0
+        for f in self:
+            if f.cel and f.cel == item:
+                count += 1
+        return count
 
 def print_list(frames):
     """
@@ -696,6 +702,22 @@ True
 4
 >>> frames.idx
 3
+
+Count cels occurrencies
+-----------------------
+
+>>> frames = FrameList(4)
+>>> frames[0].add_cel('foo')
+>>> frames[1].add_cel('bar')
+>>> frames[3].add_cel('foo')
+>>> frames.count_cel('foo')
+2
+
+>>> frames.count_cel('bar')
+1
+
+>>> frames.count_cel('qwe')
+0
 
 """)
 

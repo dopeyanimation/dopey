@@ -119,23 +119,29 @@ class RemoveCel(Action):
         self.doc = doc
         self.frame = frame
         self.layer = self.frame.cel
+        self.prev_idx = None
     
     def redo(self):
-        self.doc.layers.remove(self.layer)
-        self.prev_idx = self.doc.layer_idx
-        self.doc.layer_idx = len(self.doc.layers) - 1
-        
+        num = self.doc.ani.frames.count_cel(self.layer)
+        if num == 1:
+            self.doc.layers.remove(self.layer)
+            self.prev_idx = self.doc.layer_idx
+            self.doc.layer_idx = len(self.doc.layers) - 1
+            self._notify_canvas_observers(self.layer)
+
         self.frame.remove_cel()
-        self._notify_canvas_observers(self.layer)
+
         self.doc.ani.update_opacities()
         self._notify_document_observers()
     
     def undo(self):
-        self.doc.layers.append(self.layer)
-        self.doc.layer_idx = self.prev_idx
+        if self.prev_idx is not None:
+            self.doc.layers.append(self.layer)
+            self.doc.layer_idx = self.prev_idx
+            self._notify_canvas_observers(self.layer)
 
         self.frame.add_cel(self.layer)
-        self._notify_canvas_observers(self.layer)
+
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
@@ -185,21 +191,26 @@ class RemoveFrames(Action):
     
     def redo(self):
         for frame in self.frames_to_remove:
-            if frame.cel is not None:
-                # TODO reuse RemoveCel.redo ?
+            if frame.cel is not None and \
+            self.doc.ani.frames.count_cel(frame.cel) == 1:
                 self.doc.layers.remove(frame.cel)
+                self.doc.layer_idx = len(self.doc.layers) - 1
+                self._notify_canvas_observers(frame.cel)
+
         self.frames.remove_frames(self.length)
-            
+
         self.doc.ani.cleared = True
         self._notify_document_observers()
         
     def undo(self):
-        self.frames.insert_frames(self.frames_to_remove)
         for frame in self.frames_to_remove:
-            if frame.cel is not None:
-                # TODO reuse RemoveCel.undo ?
+            if frame.cel is not None and \
+            self.doc.ani.frames.count_cel(frame.cel) == 0:
                 self.doc.layers.append(frame.cel)
-        
+                self._notify_canvas_observers(frame.cel)
+
+        self.frames.insert_frames(self.frames_to_remove)
+
         self.doc.ani.cleared = True
         self._notify_document_observers()
 
