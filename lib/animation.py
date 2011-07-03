@@ -304,6 +304,10 @@ class Animation(object):
     def remove_frames(self, ammount=1):
         self.doc.do(anicommand.RemoveFrames(self.doc, ammount))
 
+    def can_cutcopy(self):
+        frame = self.frames.get_selected()
+        return frame.cel is not None
+
     def cutcopy_cel(self, edit_operation):
         frame = self.frames.get_selected()
         self.doc.ani.edit_operation = edit_operation

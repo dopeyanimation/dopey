@@ -130,10 +130,12 @@ class ToolWidget(gtk.VBox):
         cut_button = stock_button(gtk.STOCK_CUT)
         cut_button.connect('clicked', self.on_cut)
         cut_button.set_tooltip_text(_('Cut cel'))
+        self.cut_button = cut_button
 
         copy_button = stock_button(gtk.STOCK_COPY)
         copy_button.connect('clicked', self.on_copy)
         copy_button.set_tooltip_text(_('Copy cel'))
+        self.copy_button = copy_button
 
         paste_button = stock_button(gtk.STOCK_PASTE)
         paste_button.connect('clicked', self.on_paste)
@@ -350,6 +352,8 @@ class ToolWidget(gtk.VBox):
     def _update_buttons_sensitive(self):
         self.previous_button.set_sensitive(self.ani.frames.has_previous())
         self.next_button.set_sensitive(self.ani.frames.has_next())
+        self.cut_button.set_sensitive(self.ani.can_cutcopy())
+        self.copy_button.set_sensitive(self.ani.can_cutcopy())
         self.paste_button.set_sensitive(self.ani.can_paste())
         
         f = self.ani.frames.get_selected()
