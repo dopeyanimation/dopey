@@ -311,7 +311,10 @@ class Animation(object):
         self.doc.call_doc_observers()
 
     def can_paste(self):
-        return self.edit_frame is not None
+        frame = self.frames.get_selected()
+        return self.edit_frame is not None and \
+            self.edit_frame != frame and \
+            frame.cel == None
 
     def paste_cel(self):
         frame = self.frames.get_selected()
