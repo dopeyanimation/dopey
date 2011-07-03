@@ -81,10 +81,12 @@ class Animation(object):
         self.model.remove_frames()
 
     def cut_cel_cb(self, action):
-        self.model.cutcopy_cel('cut')
+        if self.model.can_cutcopy():
+            self.model.cutcopy_cel('cut')
 
     def copy_cel_cb(self, action):
-        self.model.cutcopy_cel('copy')
+        if self.model.can_cutcopy():
+            self.model.cutcopy_cel('copy')
 
     def paste_cel_cb(self, action):
         if self.model.can_paste():
