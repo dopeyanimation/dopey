@@ -41,6 +41,14 @@ border in the frame icon if it is marked as keyframe.  For easy
 navigation, you can go to the previous/next keyframe using Shift +
 up/down arrows.
 
+Saving the animation
+--------------------
+
+The animation data is saved to the ora file.  Also you can choose to
+export one PNG file for each animation frame in the save dialog,
+selecting "One PNG image for animation frame".  And you can export to
+mpeg video also selecting "Animation video", see Dependencies below.
+
 Dependencies
 ------------
 
