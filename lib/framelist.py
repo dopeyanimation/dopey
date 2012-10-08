@@ -32,6 +32,7 @@ class Frame(object):
         self.is_key = is_key
         self.description = ""
         self.cel = cel
+        self.skip_visible = False
     
     def set_key(self):
         self.is_key = True
@@ -42,6 +43,9 @@ class Frame(object):
     def toggle_key(self):
         self.is_key = not self.is_key
     
+    def toggle_skip_visible(self):
+        self.skip_visible = not self.skip_visible
+
     def add_cel(self, cel):
         self.cel = cel
     
@@ -299,13 +303,19 @@ class FrameList(list):
 
         """
         opacities = {}
-        
+
         def get_opa(nextprev, c):
             can_nextprev = self.nextprev[nextprev]
             if can_nextprev and self.active_cels[c]:
                 return self.converted_opacities[c]
             return 0
 
+        # explicit skip of cels:
+        for frame in self:
+            if frame.skip_visible:
+                opacities[frame.cel] = 0
+
+        # current cel, always full opacity:
         cel = self.cel_for_frame(self.get_selected())
         if cel:
             opacities[cel] = 1
@@ -718,6 +728,42 @@ Count cels occurrencies
 
 >>> frames.count_cel('qwe')
 0
+
+Frames that are not considered for onion-skin
+---------------------------------------------
+
+>>> active_cels = {'next': True, 'previous': True, \
+                   'next key': False, 'previous key': False, \
+                   'inbetweens': False, 'other keys': False, \
+                   'other': False}
+
+>>> frames = FrameList(4, active_cels=active_cels)
+>>> frames[0].add_cel('a')
+>>> frames[1].add_cel('b')
+>>> frames[2].add_cel('c')
+>>> frames.select(1)
+
+>>> frames[0].skip_visible
+False
+
+>>> set(frames.get_opacities()[1].items()) == set([('a', True), ('b', True), ('c', True)])
+True
+
+>>> frames[0].skip_visible = True
+>>> frames[0].skip_visible
+True
+
+>>> set(frames.get_opacities()[1].items()) == set([('a', False), ('b', True), ('c', True)])
+True
+
+>>> frames[2].toggle_skip_visible()
+
+>>> set(frames.get_opacities()[1].items()) == set([('a', False), ('b', True), ('c', False)])
+True
+
+>>> frames[1].toggle_skip_visible()  # don't skip current frame
+>>> set(frames.get_opacities()[1].items()) == set([('a', False), ('b', True), ('c', False)])
+True
 
 """)
 

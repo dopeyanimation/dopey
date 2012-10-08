@@ -62,6 +62,23 @@ class ToggleKey(Action):
         self._notify_document_observers()
 
 
+class ToggleSkipVisible(Action):
+    def __init__(self, doc, frame):
+        self.doc = doc
+        self.frame = frame
+
+    def redo(self):
+        self.prev_value = self.frame.skip_visible
+        self.frame.toggle_skip_visible()
+        self.doc.ani.update_opacities()
+        self._notify_document_observers()
+
+    def undo(self):
+        self.frame.skip_visible = self.prev_value
+        self.doc.ani.update_opacities()
+        self._notify_document_observers()
+
+
 class ChangeDescription(Action):
     def __init__(self, doc, frame, new_description):
         self.doc = doc

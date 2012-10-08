@@ -66,6 +66,11 @@ class ToolWidget(gtk.VBox):
         self.key_button.connect('clicked', self.on_toggle_key)
         self.key_button.set_tooltip_text(_('Toggle Keyframe'))
         
+        pixbuf_skip = self.app.pixmaps.cel_skip
+        self.skip_button = pixbuf_button(pixbuf_skip)
+        self.skip_button.connect('clicked', self.on_toggle_skip)
+        self.skip_button.set_tooltip_text(_('Set/Unset onion skin'))
+
         self.chdesc_button = stock_button(gtk.STOCK_ITALIC)
         self.chdesc_button.connect('clicked', self.on_change_description)
         self.chdesc_button.set_tooltip_text(_('Change Cel Description'))
@@ -82,6 +87,7 @@ class ToolWidget(gtk.VBox):
         
         buttons_hbox = gtk.HBox()
         buttons_hbox.pack_start(self.key_button)
+        buttons_hbox.pack_start(self.skip_button)
         buttons_hbox.pack_start(self.chdesc_button)
         buttons_hbox.pack_start(self.add_cel_button)
         buttons_hbox.pack_start(self.remove_cel_button)
@@ -373,6 +379,9 @@ class ToolWidget(gtk.VBox):
         
     def on_toggle_key(self, button):
         self.ani.toggle_key()
+
+    def on_toggle_skip(self, button):
+        self.ani.toggle_skip_visible()
     
     def on_previous_frame(self, button):
         self.ani.previous_frame()
@@ -414,9 +423,7 @@ class ToolWidget(gtk.VBox):
         pixname = 'frame'
         if frame.cel is not None:
             pixname += '_cel'
-            # FIXME
-            onion = True
-            if onion:
+            if not frame.skip_visible:
                 pixname += '_onion'
         if frame.is_key:
             pixname = 'key' + pixname

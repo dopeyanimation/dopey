@@ -235,6 +235,10 @@ class Animation(object):
         frame = self.frames.get_selected()
         self.doc.do(anicommand.ToggleKey(self.doc, frame))
 
+    def toggle_skip_visible(self):
+        frame = self.frames.get_selected()
+        self.doc.do(anicommand.ToggleSkipVisible(self.doc, frame))
+
     def previous_frame(self, with_cel=False):
         self.frames.goto_previous(with_cel)
         self.update_opacities()
