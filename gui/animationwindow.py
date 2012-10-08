@@ -414,6 +414,10 @@ class ToolWidget(gtk.VBox):
         pixname = 'frame'
         if frame.cel is not None:
             pixname += '_cel'
+            # FIXME
+            onion = True
+            if onion:
+                pixname += '_onion'
         if frame.is_key:
             pixname = 'key' + pixname
         small_icons = self.app.preferences.get("xsheet.small_icons", False)
