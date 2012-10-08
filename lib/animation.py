@@ -31,7 +31,10 @@ class Animation(object):
     
     def __init__(self, doc):
         self.doc = doc
+        self.frames = None
         self.cleared = False
+
+        # For reproduction, "play", "pause", "stop":
         self.player_state = None
 
         # For cut/copy/paste operations:
