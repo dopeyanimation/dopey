@@ -18,21 +18,6 @@ import pixbufsurface
 import anicommand
 from framelist import FrameList
 
-class AnimationCel(object):
-    def __init__(self, description=None, drawing=None, is_key=False):
-        if description is None:
-            description = u""
-        self.description = description
-        self.drawing = drawing
-        self.is_key = is_key
-        self.frame_number = None
-    
-    def __unicode__(self):
-        if self.is_key:
-            return u"%d. * %s" % (self.frame_number, self.description)
-        else:
-            return u"%d. %s" % (self.frame_number, self.description)
-
 
 class Animation(object):
     
