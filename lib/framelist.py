@@ -179,13 +179,13 @@ class FrameList(list):
     
     def get_next_key(self):
         for f in (self[self.idx+1:]):
-            if f.is_key:
+            if f.is_key and not f.skip_visible:
                 return f
         return None
     
     def get_previous_key(self):
         for f in reversed(self[:self.idx]):
-            if f.is_key:
+            if f.is_key and not f.skip_visible:
                 return f
         return None
     
