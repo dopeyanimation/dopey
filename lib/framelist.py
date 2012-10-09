@@ -264,7 +264,7 @@ class FrameList(list):
         if not cur_cel:
             return None
         for f in reversed(self[:self.idx]):
-            if f.cel is not None and f.cel != cur_cel:
+            if f.cel is not None and f.cel != cur_cel and not f.skip_visible:
                 return f
         return None
     
@@ -278,7 +278,7 @@ class FrameList(list):
         if not cur_cel:
             return None
         for f in (self[self.idx+1:]):
-            if f.cel is not None and f.cel != cur_cel:
+            if f.cel is not None and f.cel != cur_cel and not f.skip_visible:
                 return f
         return None
     
