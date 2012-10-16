@@ -28,6 +28,7 @@ class Animation(object):
             ('PlayPauseAnimation', None, _('Play/Pause animation'), '<control>p', None, self.playpause_animation_cb),
             ('StopAnimation', None, _('Stop animation'), None, None, self.stop_animation_cb),
             ('AddCel', gtk.STOCK_ADD, _('Add cel to this frame'), 'c', None, self.add_cel_cb),
+            ('ToggleSkip', None, _('Skip this cel for onion-skin'), '<shift>c', None, self.toggle_skip_cb),
             ('ToggleKey', gtk.STOCK_JUMP_TO, _('Toggle Keyframe'), 'k', None, self.toggle_key_cb),
             ('InsertFrame', gtk.STOCK_ADD, _('Insert frame'), None, None, self.insert_frame_cb),
             ('RemoveFrame', gtk.STOCK_REMOVE, _('Remove frame'), None, None, self.remove_frame_cb),
@@ -63,6 +64,9 @@ class Animation(object):
 
     def add_cel_cb(self, action):
         self.model.add_cel()
+
+    def toggle_skip_cb(self, action):
+        self.model.toggle_skip_visible()
 
     def playpause_animation_cb(self, action):
         self.model.playpause_animation()
