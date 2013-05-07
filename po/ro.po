@@ -1,0 +1,3215 @@
+# MyPaint
+# Copyright (C) 2012 Andrei Branescu
+# This file is distributed under the same license as the MyPaint package.
+# Andrei Brănescu <andreibranescu@gmail.com> 2012
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.7.1-git\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-11-27 18:55+0100\n"
+"PO-Revision-Date: 2012-02-24 23:44+0100\n"
+"Last-Translator: Andrei Brănescu <andreibranescu@gmail.com>\n"
+"Language: Romanian\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Language: ro\n"
+"X-Source-Language: C\n"
+
+#: ../gui/backgroundwindow.py:24
+msgid "Save as Default"
+msgstr "Salvează ca Implicit"
+
+#: ../gui/backgroundwindow.py:26
+msgid "Background"
+msgstr "Fundal"
+
+#: ../gui/backgroundwindow.py:39
+msgid "Pattern"
+msgstr "Tipar"
+
+#: ../gui/backgroundwindow.py:46 ../gui/brushsettingswindow.py:108
+#: ../lib/layer.py:54
+msgid "Color"
+msgstr "Culoare"
+
+#: ../gui/backgroundwindow.py:52
+msgid "Add color to Patterns"
+msgstr "Adaugă culoare la Modele"
+
+#: ../gui/backgroundwindow.py:126
+msgid "Gdk-Pixbuf couldn't load \"{filename}\", and reported \"{error}\""
+msgstr "Gdk-Pixbuf nu a putut încărca \"{filename}\", și a raportat \"{error}\""
+
+#: ../gui/backgroundwindow.py:132
+#, python-format
+msgid ""
+"\"%s\" has an alpha channel. Background images with transparency are not "
+"supported."
+msgstr ""
+"\"%s\" are un canal alfa. Imaginile de fundal cu transparență nu sunt"
+"acceptată."
+
+#: ../gui/backgroundwindow.py:139
+msgid ""
+"{filename} has an unsupported size. Background images must have widths and "
+"heights which are multiples of {number} pixels."
+msgstr ""
+"{filename} are o mărime neacceptată. Imaginile de fundal trebuie să aibă lungimi și "
+"lățimi care sunt multipli de {number} pixeli."
+
+#: ../gui/backgroundwindow.py:155
+msgid "One or more backgrounds could not be loaded"
+msgstr "Una sau mai multe imagini de fundal nu au putut fi încărcate"
+
+#: ../gui/backgroundwindow.py:156
+msgid "Error loading backgrounds"
+msgstr "Eroare la încărcarea imaginilor de fundal"
+
+#: ../gui/backgroundwindow.py:157
+msgid ""
+"Please remove the unloadable files, or check your libgdkpixbuf installation."
+msgstr ""
+"Eliminați fișierele care nu pot fi încărcate, sau verificați instalarea libgdkpixbuf."
+
+#: ../gui/brushcreationwidget.py:44 ../gui/brushcreationwidget.py:67
+msgid "(unnamed brush)"
+msgstr "(pensulă nedenumită)"
+
+#: ../gui/brushcreationwidget.py:52
+msgid "Save Settings"
+msgstr "Salvează preferințe"
+
+#: ../gui/brushcreationwidget.py:53
+msgid "Add As New"
+msgstr "Adaugă ca nou"
+
+#: ../gui/brushcreationwidget.py:54
+msgid "Edit Brush Icon"
+msgstr "Editează icoana pensulei"
+
+#: ../gui/brushcreationwidget.py:55
+msgid "Rename..."
+msgstr "Redenumește..."
+
+#: ../gui/brushcreationwidget.py:56
+msgid "Remove..."
+msgstr "Elimină..."
+
+#: ../gui/brushcreationwidget.py:102 ../gui/brushcreationwidget.py:151
+msgid "No brush selected!"
+msgstr "Nicio pensula selectată!"
+
+#: ../gui/brushcreationwidget.py:105
+msgid "Rename Brush"
+msgstr "Redenumește pensula"
+
+#: ../gui/brushcreationwidget.py:117
+msgid "A brush with this name already exists!"
+msgstr "O pensulă cu acest nume există deja!"
+
+#: ../gui/brushcreationwidget.py:143 ../gui/brushcreationwidget.py:250
+msgid "No brush selected, please use \"Add As New\" instead."
+msgstr "Nicio pensulă nu este selectată, folosiți în schimb \"Adaugă ca nou\"."
+
+#: ../gui/brushcreationwidget.py:153
+msgid "Really delete brush from disk?"
+msgstr "Stergeți efectiv pensula de pe disc?"
+
+#: ../gui/brushcreationwidget.py:210
+msgid "Edit"
+msgstr "Editează"
+
+#: ../gui/brushcreationwidget.py:214
+msgid "Clear"
+msgstr "Curăță"
+
+#: ../gui/brushcreationwidget.py:218
+msgid "Save"
+msgstr "Salvează"
+
+#: ../gui/brushmanager.py:71
+msgid "Lost & Found"
+msgstr "Recuperate"
+
+#: ../gui/brushmanager.py:72
+msgid "Deleted"
+msgstr "Șterse"
+
+#: ../gui/brushmanager.py:73
+msgid "Favorites"
+msgstr "Favorite"
+
+#: ../gui/brushmanager.py:74
+msgid "Ink"
+msgstr "Cerneală"
+
+#: ../gui/brushmanager.py:75
+msgid "Classic"
+msgstr "Clasic"
+
+#: ../gui/brushmanager.py:76
+msgid "Set#1"
+msgstr "Set nr. 1"
+
+#: ../gui/brushmanager.py:77
+msgid "Set#2"
+msgstr "Set nr. 2"
+
+#: ../gui/brushmanager.py:78
+msgid "Set#3"
+msgstr "Set nr. 3"
+
+#: ../gui/brushmanager.py:79
+msgid "Set#4"
+msgstr "Set nr. 4"
+
+#: ../gui/brushmanager.py:80
+msgid "Set#5"
+msgstr "Set nr. 5"
+
+#: ../gui/brushmanager.py:81
+msgid "Experimental"
+msgstr "Experimentale"
+
+#: ../gui/brushmanager.py:721
+msgid "Unknown Brush"
+msgstr "Pensulă necunoscută"
+
+#. (internal-name, display-name, description)
+#: ../gui/brushmodifier.py:53 ../lib/layer.py:17
+msgid "Normal"
+msgstr ""
+
+#: ../gui/brushmodifier.py:54
+msgid "Paint normally"
+msgstr "Pictează normal"
+
+#: ../gui/brushmodifier.py:57
+msgid "Eraser"
+msgstr "Radieră"
+
+#: ../gui/brushmodifier.py:58
+msgid "Eraser Mode: remove strokes using the current brush"
+msgstr "Mod radieră: îndepărtează tușe folosind pensula actuală"
+
+#: ../gui/brushmodifier.py:61
+msgid "Lock Alpha Channel"
+msgstr "Blochează canal alfa"
+
+#: ../gui/brushmodifier.py:62
+msgid "Lock Alpha: paint over existing strokes only, using the current brush"
+msgstr ""
+"Blochează alfa: pictează numai peste tușele existente folosind pensula "
+"actuală"
+
+#: ../gui/brushmodifier.py:65
+msgid "Colorize"
+msgstr "Colorează"
+
+#: ../gui/brushmodifier.py:66
+msgid "Colorize: alter Hue and Saturation with the current brush"
+msgstr "Colorează: alterează nuanța și saturația cu pensula actuală"
+
+#: ../gui/brushselectionwindow.py:35
+msgid "Brushes"
+msgstr "Pensule"
+
+#: ../gui/brushselectionwindow.py:253
+msgid ""
+"Brush Groups: click to select\n"
+"Ctrl: select multiple\n"
+"Middle-click: toggle group\n"
+"Right-click: groups menu"
+msgstr ""
+"Grupuri de pensule: faceți clic pentru a selecta\n"
+"Ctrl: selecție multiplă\n"
+"Clic mijloc: comută grup\n"
+"Clic dreapta: meniu grupuri"
+
+#: ../gui/brushselectionwindow.py:465
+msgid "New Group..."
+msgstr "Grup nou..."
+
+#: ../gui/brushselectionwindow.py:467
+msgid "Rename Group..."
+msgstr "Redenumește grup..."
+
+#: ../gui/brushselectionwindow.py:468
+msgid "Delete Group"
+msgstr "Șterge grup"
+
+#: ../gui/brushselectionwindow.py:469
+msgid "Export Group..."
+msgstr "Exportă grup..."
+
+#: ../gui/brushselectionwindow.py:471
+msgid "Import Brushes..."
+msgstr "Importă pensule..."
+
+#: ../gui/brushselectionwindow.py:473
+msgid "Get More Brushes..."
+msgstr "Obține mai multe pensule..."
+
+#: ../gui/brushselectionwindow.py:493
+msgid "Create Group"
+msgstr "Creează grup"
+
+#: ../gui/brushselectionwindow.py:498
+msgid "Rename Group"
+msgstr "Redenumește grup"
+
+#: ../gui/brushselectionwindow.py:504
+msgid "A group with this name already exists!"
+msgstr "Un grup cu acest nume deja există!"
+
+#: ../gui/brushselectionwindow.py:507
+msgid "Export Brushes"
+msgstr "Exportă pensule"
+
+#: ../gui/brushselectionwindow.py:508 ../gui/drawwindow.py:809
+msgid "MyPaint brush package (*.zip)"
+msgstr "Pachetul de pensule Mypaint(*.zip)"
+
+#: ../gui/brushselectionwindow.py:514
+#, python-format
+msgid "Really delete group %s?"
+msgstr "Ștergeți efectiv grupul %s?"
+
+#: ../gui/brushselectionwindow.py:517
+msgid "This group can not be deleted (try to empty it first)."
+msgstr "Acest grup nu poate fi șters (încercați să-l goliți mai întâi)"
+
+#: ../gui/brushsettingswindow.py:31
+msgid "Brush Settings Editor"
+msgstr "Editor de setări pentru pensule"
+
+#: ../gui/brushsettingswindow.py:56
+msgid "Back to settings"
+msgstr "Înapoi la setări"
+
+#. Live update (goes to the end)
+#: ../gui/brushsettingswindow.py:64
+msgid "Update the last canvas stroke in realtime"
+msgstr "Actualizează ultima tușa pe pânză în timp real"
+
+#: ../gui/brushsettingswindow.py:101
+msgid "Basic"
+msgstr "Simplu"
+
+#: ../gui/brushsettingswindow.py:102
+msgid "Opacity"
+msgstr "Opacitate"
+
+#: ../gui/brushsettingswindow.py:103
+msgid "Dabs"
+msgstr "Tamponări"
+
+#: ../gui/brushsettingswindow.py:104
+msgid "Smudge"
+msgstr "Murdărire"
+
+#: ../gui/brushsettingswindow.py:105
+msgid "Speed"
+msgstr "Viteză"
+
+#: ../gui/brushsettingswindow.py:106
+msgid "Tracking"
+msgstr "Urmărire"
+
+#: ../gui/brushsettingswindow.py:107
+msgid "Stroke"
+msgstr "Tușă"
+
+#: ../gui/brushsettingswindow.py:109
+msgid "Custom"
+msgstr "Personalizat"
+
+#: ../gui/brushsettingswindow.py:138
+msgid "Reset to default value"
+msgstr "Resetează la valoarea implicită"
+
+#: ../gui/brushsettingswindow.py:143
+msgid "No additional configuration"
+msgstr "Fără configurare sumplimentară"
+
+#: ../gui/brushsettingswindow.py:148 ../gui/brushsettingswindow.py:191
+msgid "Add input value mapping"
+msgstr "Adaugă corespondența valorii de intrare"
+
+#: ../gui/brushsettingswindow.py:193
+msgid "Modify input value mapping"
+msgstr "Modifică corespondența valorii de intrare"
+
+#: ../gui/buttonmap.py:262
+msgid "Action"
+msgstr "Acțiune"
+
+#: ../gui/buttonmap.py:277
+msgid "Button press"
+msgstr "Apăsare buton"
+
+#: ../gui/buttonmap.py:296
+msgid "Add a new binding"
+msgstr "Adaugă o nouă legătură"
+
+#: ../gui/buttonmap.py:304
+msgid "Remove the current binding"
+msgstr "Reîncarcă legătura curentă"
+
+#: ../gui/buttonmap.py:426
+#, python-format
+msgid "Edit binding for '%s'"
+msgstr "Editează legătura pentru '%s'"
+
+#: ../gui/buttonmap.py:449
+msgid "Action:"
+msgstr "Acțiune:"
+
+#: ../gui/buttonmap.py:460
+msgid "Button press:"
+msgstr "Apăsare de buton:"
+
+#: ../gui/buttonmap.py:494
+msgid ""
+"Hold down modifier keys, and press a button over this text to set a new "
+"binding."
+msgstr ""
+"Țineți apăsate tastele modificator, apoi apăsați un buton deasupra acestui " 
+"text pentru a seta o nouă legătură."
+
+#: ../gui/buttonmap.py:514
+#, python-format
+msgid "%s cannot be bound by itself, without keyboard modifiers."
+msgstr "%s nu poate fi legat singur fără modificatori de tastatură."
+
+#: ../gui/buttonmap.py:524
+#, python-format
+msgid "%s is already bound to the action '%s'"
+msgstr "%s este deja legat cu acțiunea '%s'"
+
+#: ../gui/colors/adjbases.py:443
+msgid "Color details"
+msgstr "Detalii culoare"
+
+#: ../gui/colors/adjbases.py:587
+msgid "Newly chosen color, and the color most recently used for painting"
+msgstr "Culoarea nou selectată, și culoarea cel mai recent utilizată pentru pictat"
+
+#: ../gui/colors/combined.py:126
+msgid "Add color to Palette"
+msgstr "Adaugă culoare la modele"
+
+#: ../gui/colors/hcywheel.py:40
+msgid ""
+"<b>Gamut mask editor</b>\n"
+"\n"
+"Edit the gamut mask here, or turn it off or on. Gamut masks are like a piece "
+"of\n"
+"tracing paper with cut-out holes, placed over the color wheel to limit the\n"
+"range of colors you can select. This allows you to plan your color schemes "
+"in\n"
+"advance, which is useful for color scripting or to create specific moods. "
+"The\n"
+"theory is that the corners of each mask shape represent a <i>subjective</i>\n"
+"primary color, and that each shape contains all the colors which can be "
+"mixed\n"
+"using those corner primaries. Subjective secondary colors lie at the "
+"midpoints\n"
+"of the shape edges, and the center of the shape is the subjective neutral "
+"tone\n"
+"for the shape.\n"
+"\n"
+"Click to add shapes if the wheel is blank. Shapes can be dragged around and\n"
+"their outlines can be adjusted by adding or moving the control points. Make "
+"a\n"
+"shape too small to be useful to remove it: dragging a shape to the edge of "
+"the\n"
+"disc is a quick way of doing this. You can delete shapes by dragging them\n"
+"inside other shapes too. The entire mask can be rotated by turning the edge "
+"of\n"
+"the disc to generate new and unexpected color schemes.\n"
+"\n"
+"Gamut masks can be saved to GIMP-format palette files, and loaded from "
+"them.\n"
+"The New button lets you choose one of several templates as a starting "
+"point.\n"
+msgstr ""
+
+#: ../gui/colors/hcywheel.py:95
+msgid "Gamut mask active"
+msgstr "Masca gamut activă"
+
+#: ../gui/colors/hcywheel.py:96
+msgid "Limit your palette for specific moods using a gamut mask"
+msgstr "Limitați paleta pentru dispoziții specifice folosing o mască gamut"
+
+#: ../gui/colors/hcywheel.py:374
+msgid "HCY Hue and Chroma"
+msgstr "HCY Hue și Chroma"
+
+#. how many shapes are allowed
+#: ../gui/colors/hcywheel.py:424
+msgid ""
+"Gamut mask editor. Click in the middle to create or manipulate shapes, or "
+"rotate the mask using the edges of the disc."
+msgstr ""
+"Editor de mască gamut. Faceți clic în mijloc pentru a crea sau manipula forme, sau"
+"pentru a roti masca folosind marginile discului."
+
+#: ../gui/colors/hcywheel.py:898
+msgid "Atmospheric Triad"
+msgstr "Triada atmosferică"
+
+#: ../gui/colors/hcywheel.py:899
+msgid ""
+"Moody and subjective, defined by one dominant primary and two primaries "
+"which are less intense."
+msgstr ""
+"În funcție de dispoziție si subiectivă, definită de o primară dominantă și două primare"
+"mai puțin intense."
+
+#: ../gui/colors/hcywheel.py:902
+msgid "Shifted Triad"
+msgstr "Triadă deplasată"
+
+#: ../gui/colors/hcywheel.py:903
+msgid "Weighted more strongly towards the dominant colour."
+msgstr "Înclinat mai puternic către culoarea dominantă."
+
+#: ../gui/colors/hcywheel.py:907
+msgid "Complementary"
+msgstr "Complementar"
+
+#: ../gui/colors/hcywheel.py:908
+msgid ""
+"Contrasting opposites, balanced by having central neutrals between them on "
+"the colour wheel."
+msgstr ""
+"Opuse contrastante, echilibrate având neutre centrale între ele pe "
+"roata de culoare."
+
+#: ../gui/colors/hcywheel.py:917
+msgid "Mood and Accent"
+msgstr "Dispoziție și accent"
+
+#: ../gui/colors/hcywheel.py:918
+msgid ""
+"One main range of colors, with a complementary accent for variation and "
+"highlights."
+msgstr ""
+"O gamă principală de culori, cu un accent complementar pentru variație și "
+"accente."
+
+#. [HCYColor((H+0.483)%1, 0.95, Y),
+#. HCYColor((H+0.517)%1, 0.95, Y),
+#. HCYColor((H+0.52)%1, 0.725, Y),
+#. HCYColor((H+0.48)%1, 0.725, Y) ]] ))
+#: ../gui/colors/hcywheel.py:926
+msgid "Split Complementary"
+msgstr "Separă complementar"
+
+#: ../gui/colors/hcywheel.py:927
+msgid ""
+"Two analogous colours and a complement to them, with no secondary colours "
+"between them."
+msgstr ""
+"Două culori analoage și un complement al lor, fără culori secundare "
+"între ele."
+
+#: ../gui/colors/hcywheel.py:934
+msgid "New gamut mask from template"
+msgstr "Nouă mască gamut după șablon"
+
+#: ../gui/colors/hcywheel.py:986
+msgid "Gamut mask editor"
+msgstr "Editor de mască gamut"
+
+#: ../gui/colors/hcywheel.py:1014
+msgid "Create mask from template"
+msgstr "Creează mască după șablon"
+
+#: ../gui/colors/hcywheel.py:1015
+msgid "Load mask from a GIMP palette file"
+msgstr "Încarcă mască dintr-un fișier paletă GIMP"
+
+#: ../gui/colors/hcywheel.py:1016
+msgid "Save mask to a GIMP palette file"
+msgstr "Salvează mască într-un fișier paletă GIMP"
+
+#: ../gui/colors/hcywheel.py:1017
+msgid "Erase the mask"
+msgstr "Șterge masca"
+
+#: ../gui/colors/hcywheel.py:1065
+msgid "Save mask as a Gimp palette"
+msgstr "Salvează mască ca o paletă GIMP"
+
+#: ../gui/colors/hcywheel.py:1074
+msgid "Load mask from a Gimp palette"
+msgstr "Încarcă mască dintr-o paletă GIMP"
+
+#: ../gui/colors/hcywheel.py:1113
+msgid "Gamut mask editor help"
+msgstr "Ajutor editor de mască gamut"
+
+#: ../gui/colors/hcywheel.py:1147
+msgid "Set gamut mask"
+msgstr "Setează mască gamut"
+
+#: ../gui/colors/hcywheel.py:1162
+msgid "HCY Wheel"
+msgstr "Roată HCY"
+
+#: ../gui/colors/hcywheel.py:1166
+msgid ""
+"Set the color using cylindrical hue/chroma/luma space. The circular slices "
+"are equiluminant."
+msgstr ""
+"Setează culoarea folosind spațiul cilindric hue/croma/luma. Feliile circulare "
+"sunt echivalente din punct de vedere al luminozității."
+
+#. Tooltip mappings, indexed by whatever the slider currently represents
+#: ../gui/colors/hsvcube.py:35 ../gui/colors/sliders.py:178
+msgid "HSV Hue"
+msgstr "Nuanță HSV"
+
+#: ../gui/colors/hsvcube.py:36 ../gui/colors/sliders.py:188
+msgid "HSV Saturation"
+msgstr "Saturație HSV"
+
+#: ../gui/colors/hsvcube.py:37 ../gui/colors/sliders.py:197
+msgid "HSV Value"
+msgstr "Valoare HSV"
+
+#: ../gui/colors/hsvcube.py:38
+msgid "HSV Saturation and Value"
+msgstr "Saturație și valoare HSV"
+
+#: ../gui/colors/hsvcube.py:39
+msgid "HSV Hue and Value"
+msgstr "Nuanță și valoare HSV"
+
+#: ../gui/colors/hsvcube.py:40 ../gui/colors/hsvwheel.py:32
+msgid "HSV Hue and Saturation"
+msgstr "Nuanță și saturație HSV"
+
+#: ../gui/colors/hsvcube.py:52
+msgid "Rotate cube (show different axes)"
+msgstr "Rotește cub (arată axe diferite)"
+
+#: ../gui/colors/hsvcube.py:71
+msgid "HSV Cube"
+msgstr "Cub HSV"
+
+#: ../gui/colors/hsvcube.py:75
+msgid "An HSV cube which can be rotated to show different planar slices."
+msgstr "Un cub HSV care poate fi rotit pentru a arăta diferite felii planare."
+
+#: ../gui/colors/hsvtriangle.py:41
+msgid "HSV Triangle"
+msgstr "Triunghi HSV"
+
+#: ../gui/colors/hsvtriangle.py:45
+msgid "The standard GTK color selector"
+msgstr "Selector de culoare standard GTK"
+
+#: ../gui/colors/hsvwheel.py:91
+msgid "HSV wheel"
+msgstr "Roată HSV"
+
+#: ../gui/colors/hsvwheel.py:95
+msgid "Saturation and Value colour changer."
+msgstr "Schimbă saturație și valoare"
+
+#: ../gui/colors/palette.py:416 ../gui/colors/palette.py:472
+msgid "GIMP palette file (*.gpl)"
+msgstr "Fișier paletă GIMP (*.gpl)"
+
+#: ../gui/colors/palette.py:420 ../gui/colors/palette.py:476
+msgid "All files (*)"
+msgstr "Toate fișierele (*)"
+
+#: ../gui/colors/paletteview.py:62
+msgid "Palette properties"
+msgstr "Proprietăți paletă"
+
+#: ../gui/colors/paletteview.py:72
+msgid "Palette"
+msgstr "Paletă"
+
+#: ../gui/colors/paletteview.py:77
+msgid "Set the color from a loadable, editable palette."
+msgstr "Setează culoare plecând de la o paletă încărcabilă și editabilă."
+
+#: ../gui/colors/paletteview.py:123
+msgid "Palette Editor"
+msgstr "Editor paletă"
+
+#: ../gui/colors/paletteview.py:158
+msgid "Load from a GIMP palette file"
+msgstr "Încarcă dintr-un fișier paletă GIMP"
+
+#: ../gui/colors/paletteview.py:159
+msgid "Save to a GIMP palette file"
+msgstr "Salvează într-un fișier paletă GIMP"
+
+#: ../gui/colors/paletteview.py:160
+msgid "Add a new empty swatch"
+msgstr "Adaugă un nou specimen vid"
+
+#: ../gui/colors/paletteview.py:161
+msgid "Remove the current swatch"
+msgstr "Elimină specimenul curent"
+
+#: ../gui/colors/paletteview.py:162
+msgid "Remove all swatches"
+msgstr "Elimină toate specimenele"
+
+#: ../gui/colors/paletteview.py:172
+msgid "Name:"
+msgstr "Nume:"
+
+#: ../gui/colors/paletteview.py:174
+msgid "Name or description for this palette"
+msgstr "Nume sau descriere pentru această paletă"
+
+#: ../gui/colors/paletteview.py:182
+msgid "Columns:"
+msgstr "Coloane:"
+
+#: ../gui/colors/paletteview.py:183 ../gui/colors/paletteview.py:184
+msgid "Number of columns"
+msgstr "Număr de coloane"
+
+#: ../gui/colors/paletteview.py:197
+msgid "Color name:"
+msgstr "Nume culoare:"
+
+#: ../gui/colors/paletteview.py:198
+msgid "Current colour's name"
+msgstr "Numele culorii curente"
+
+#: ../gui/colors/paletteview.py:295
+msgid "Empty palette slot"
+msgstr "Slot de paletă gol"
+
+#: ../gui/colors/paletteview.py:362
+msgid "Load palette"
+msgstr "Încarcă paletă"
+
+#: ../gui/colors/paletteview.py:373
+msgid "Save palette"
+msgstr "Salvează paletă"
+
+#: ../gui/colors/paletteview.py:541
+msgid ""
+"Color swatch palette. Drop colors here and drag them around to organize."
+msgstr ""
+"Paletă specimene de culoate. Puneți culori aici și deplasați-le pentru a le organiza."
+
+#: ../gui/colors/paletteview.py:676
+msgid "Empty palette slot (drag a color here)"
+msgstr "Golește slot paletă (deplasați o culoare aici)"
+
+#: ../gui/colors/picker.py:69
+msgid "Pick a color from the screen"
+msgstr "Alege o culoare de pe ecran"
+
+#: ../gui/colors/sliders.py:88
+msgid "Component sliders"
+msgstr "Glisoare component"
+
+#: ../gui/colors/sliders.py:92
+msgid "Adjust individual components of the colour."
+msgstr "Ajustează componente individuale ale culorii."
+
+#: ../gui/colors/sliders.py:138
+msgid "RGB Red"
+msgstr "Roșu RGB"
+
+#: ../gui/colors/sliders.py:151
+msgid "RGB Green"
+msgstr "Verde RGB"
+
+#: ../gui/colors/sliders.py:164
+msgid "RGB Blue"
+msgstr "Albastru RGB"
+
+#: ../gui/colors/sliders.py:207
+msgid "HCY Hue"
+msgstr "Nuanță HCY"
+
+#: ../gui/colors/sliders.py:218
+msgid "HCY Chroma"
+msgstr ""
+
+#: ../gui/colors/sliders.py:230
+msgid "HCY Luma (Y')"
+msgstr ""
+
+#: ../gui/colorwindow.py:26
+msgid "Colors"
+msgstr "Culori"
+
+#: ../gui/dialogs.py:54 ../gui/layerswindow.py:78
+msgid "Name"
+msgstr "Nume"
+
+#: ../gui/dialogs.py:89
+msgid "Overwrite brush?"
+msgstr "Suprascrie pensulă?"
+
+#: ../gui/dialogs.py:98 ../gui/dialogs.py:156
+msgid "Replace"
+msgstr "Înlocuiește"
+
+#: ../gui/dialogs.py:101 ../gui/dialogs.py:159
+msgid "Rename"
+msgstr "Redenumește"
+
+#: ../gui/dialogs.py:104
+msgid "Replace all"
+msgstr "Înlocuiește tot"
+
+#: ../gui/dialogs.py:106
+msgid "Rename all"
+msgstr "Redenumește tot"
+
+#: ../gui/dialogs.py:121
+msgid "Imported brush"
+msgstr "Pensula importată"
+
+#: ../gui/dialogs.py:122
+msgid "Existing brush"
+msgstr "Pensulă existentă"
+
+#: ../gui/dialogs.py:124
+#, python-format
+msgid ""
+"<b>A brush named `%s' already exists.</b>\n"
+"Do you want to replace it, or should the new brush be renamed?"
+msgstr ""
+"<b>O pensulă numită `%s' există deja.</b>\n"
+"Doriți să o înlocuiți, sau redenumiți noua pensulă?"
+
+#: ../gui/dialogs.py:147
+msgid "Overwrite brush group?"
+msgstr "Suprascrie grup de pensule?"
+
+#: ../gui/dialogs.py:169
+msgid ""
+"<b>A group named `{groupname}' already exists.</b>\n"
+"Do you want to replace it, or should the new group be renamed?\n"
+"If you replace it, the brushes may be moved to a group called `"
+"{deleted_groupname}'."
+msgstr ""
+"<b>Un grup numit `{groupname}' deja există.</b>\n"
+"Doriți să-l înlocuiți, sau să redenumiți noul grup?\n"
+"Dacă-l înlocuiți, pensulele ar putea fi mutate intr-un grup numit `"
+"{deleted_groupname}'."
+
+#: ../gui/dialogs.py:257
+msgid "Import brush package?"
+msgstr "Importă pachetul de pensule?"
+
+#: ../gui/dialogs.py:269
+#, python-format
+msgid "<b>Do you really want to import package `%s'?</b>"
+msgstr "<b>Doriți să importați pachetul `%s' cu siguranță?</b>"
+
+#. Quick brush changer
+#: ../gui/dialogs.py:359 ../gui/toolbar.py:355
+msgid "Change Brush"
+msgstr "Schimbă pensulă"
+
+#: ../gui/document.py:240
+#, python-format
+msgid "Restore Brush %d"
+msgstr "Restaurează pensula %d"
+
+#: ../gui/document.py:242
+#, python-format
+msgid "Save to Brush %d"
+msgstr "Salvează ca pensulă %d"
+
+#: ../gui/document.py:482
+#, python-format
+msgid "Copy of %s"
+msgstr "Copie a %s"
+
+#: ../gui/document.py:485
+#, python-format
+msgid "Copy of Untitled layer #%d"
+msgstr "Copie a stratului nedenumit #%d"
+
+#: ../gui/document.py:492
+msgid "Layer Name"
+msgstr "Nume strat"
+
+#: ../gui/document.py:837
+#, python-format
+msgid "Undo %s"
+msgstr "Anulează %s"
+
+#: ../gui/document.py:839
+msgid "Undo"
+msgstr "Anulează"
+
+#: ../gui/document.py:846
+#, python-format
+msgid "Redo %s"
+msgstr "Refă %s"
+
+#: ../gui/document.py:848
+msgid "Redo"
+msgstr "Refă"
+
+#: ../gui/drawwindow.py:474
+msgid "Set current color"
+msgstr "Setează culoare curentă"
+
+#: ../gui/drawwindow.py:634
+msgid "Leave Fullscreen Mode"
+msgstr "Părăsește modul ecran întreg"
+
+#: ../gui/drawwindow.py:635
+msgid "UnFullscreen"
+msgstr "Non ecran întreg"
+
+#: ../gui/drawwindow.py:638
+msgid "Enter Fullscreen Mode"
+msgstr "Intră mod ecran complet"
+
+#: ../gui/drawwindow.py:639
+msgid "Fullscreen"
+msgstr "Ecran complet"
+
+#: ../gui/drawwindow.py:727
+msgid "Gimp Palette Format"
+msgstr "Formatul de paletă GIMP"
+
+#: ../gui/drawwindow.py:728
+msgid "All Files"
+msgstr "Toate fișierele"
+
+#. FIXME: should do this periodically, not only on quit
+#: ../gui/drawwindow.py:781
+msgid "Quit"
+msgstr "Ieșire"
+
+#: ../gui/drawwindow.py:781
+msgid "Really Quit?"
+msgstr "Sigur ieșiți?"
+
+#: ../gui/drawwindow.py:808
+msgid "Import brush package..."
+msgstr "Importă pachet de pensule..."
+
+#: ../gui/drawwindow.py:820
+msgid ""
+"Copyright (C) 2005-2012\n"
+"Martin Renold and the MyPaint Development Team"
+msgstr ""
+"Drepturi de autor (C) 2005-2010\n"
+"Martin Renold și echipa de dezvoltare MyPaint"
+
+#: ../gui/drawwindow.py:824
+msgid ""
+"This program is free software; you can redistribute it and/or modify it "
+"under the terms of the GNU General Public License as published by the Free "
+"Software Foundation; either version 2 of the License, or (at your option) "
+"any later version.\n"
+"\n"
+"This program is distributed in the hope that it will be useful, but WITHOUT "
+"ANY WARRANTY. See the COPYING file for more details."
+msgstr ""
+"Acest program este un software liber; puteți să-l redistribuiți și/sau "
+"modificați sub condițiile licenței GNU General Public License publicată de "
+"Free Software Foundation; fie versiunea 2 a licenței, sau (dacă alegeți) "
+"orice versiune ulterioară.\n"
+"\n"
+"Acest program este distribuit în speranța că va fi folositor, dar FĂRĂ NICIO "
+"GARANȚIE. Consultați fișierul COPYING pentru mai multe detalii."
+
+#. (in order of appearance)
+#: ../gui/drawwindow.py:835 ../gui/drawwindow.py:837 ../gui/drawwindow.py:838
+#: ../gui/drawwindow.py:839 ../gui/drawwindow.py:840 ../gui/drawwindow.py:842
+#: ../gui/drawwindow.py:843 ../gui/drawwindow.py:844 ../gui/drawwindow.py:845
+#: ../gui/drawwindow.py:846 ../gui/drawwindow.py:847 ../gui/drawwindow.py:848
+#: ../gui/drawwindow.py:849 ../gui/drawwindow.py:850 ../gui/drawwindow.py:851
+#: ../gui/drawwindow.py:852 ../gui/drawwindow.py:853
+msgid "programming"
+msgstr "programare"
+
+#: ../gui/drawwindow.py:836 ../gui/drawwindow.py:841
+msgid "portability"
+msgstr "portabilitate"
+
+#: ../gui/drawwindow.py:856 ../gui/drawwindow.py:857 ../gui/drawwindow.py:861
+#: ../gui/drawwindow.py:864
+msgid "brushes"
+msgstr "pensule"
+
+#: ../gui/drawwindow.py:858
+msgid "patterns, brushes"
+msgstr "modele, pensule"
+
+#: ../gui/drawwindow.py:859
+msgid "brushes, tool icons"
+msgstr "pensule, iconițe unelte"
+
+#: ../gui/drawwindow.py:860
+msgid "brushes, patterns"
+msgstr "pensule, modele"
+
+#: ../gui/drawwindow.py:862
+msgid "desktop icon"
+msgstr "iconiță desktop"
+
+#: ../gui/drawwindow.py:863 ../gui/drawwindow.py:865
+msgid "patterns"
+msgstr "modele"
+
+#: ../gui/drawwindow.py:866 ../gui/drawwindow.py:867
+msgid "tool icons"
+msgstr "iconițe unelte"
+
+#: ../gui/drawwindow.py:869
+msgid "translator-credits"
+msgstr "Andrei Brănescu"
+
+#: ../gui/drawwindow.py:877
+msgid "Move your mouse over a menu entry, then press the key to assign."
+msgstr ""
+"Deplasați mausul deasupra intrării de meniu, apoi apăsați o tastă pentru a "
+"atribui."
+
+#: ../gui/drawwindow.py:879
+msgid ""
+"Brush shortcut keys are used to quickly save/restore brush settings. You can "
+"paint with one hand and change brushes with the other, even in mid-stroke.\n"
+"\n"
+"There are 10 persistent memory slots available.\n"
+msgstr ""
+"Tastele-pensulă sunt folosite pentru a salva/restabili rapid setările de "
+"pensulă folosind scurtaturile de tastatură. Puteți să pictați cu o mână, și "
+"să schimbați pensulele cu alta, fără întrerupere.\n"
+"\n"
+"Exista 10 locașe de memorie în care se pot ține minte setări de pensulă.\n"
+
+#: ../gui/drawwindow.py:885
+msgid ""
+"There is a tutorial available on the MyPaint homepage. It explains some "
+"features which are hard to discover yourself.\n"
+"\n"
+"Comments about the brush settings (opaque, hardness, etc.) and inputs "
+"(pressure, speed, etc.) are available as tooltips. Put your mouse over a "
+"label to see them. \n"
+msgstr ""
+"Există un ghid de utilizare disponibil pe pagina web MyPaint. Acesta explică "
+"unele caracteristici care sunt greu de descoperit pe cont propriu.\n"
+"\n"
+"Comentariile referitoare la setările pensulelor (opacitate, duritate, etc.) "
+"și intrări (presiune, viteză, etc.) sunt disponibile ca sfaturi (tooltips). "
+"Așezati mausul deasupra etichetei pentru a le vedea. \n"
+
+#: ../gui/filehandling.py:59
+msgid "Open Recent"
+msgstr "Deschide recent"
+
+#: ../gui/filehandling.py:59
+msgid "Open Recent files"
+msgstr "Deschide fișierele recente"
+
+#. (name, patterns)
+#: ../gui/filehandling.py:80
+msgid "All Recognized Formats"
+msgstr "Toate formatele recunoscute"
+
+#. 0
+#: ../gui/filehandling.py:81 ../gui/filehandling.py:87
+msgid "OpenRaster (*.ora)"
+msgstr ""
+
+#: ../gui/filehandling.py:82
+msgid "PNG (*.png)"
+msgstr ""
+
+#: ../gui/filehandling.py:83
+msgid "JPEG (*.jpg; *.jpeg)"
+msgstr ""
+
+#. (name, extension, options)
+#: ../gui/filehandling.py:86
+msgid "By extension (prefer default format)"
+msgstr "După extensie (preferă formatul implicit)"
+
+#. 1
+#: ../gui/filehandling.py:88
+msgid "PNG solid with background (*.png)"
+msgstr "PNG solid cu fundal (*.png)"
+
+#. 2
+#: ../gui/filehandling.py:89
+msgid "PNG transparent (*.png)"
+msgstr ""
+
+#. 3
+#: ../gui/filehandling.py:90
+msgid "Multiple PNG transparent (*.XXX.png)"
+msgstr ""
+
+#. 4
+#: ../gui/filehandling.py:91
+msgid "JPEG 90% quality (*.jpg; *.jpeg)"
+msgstr "JPEG calitate 90% (*.jpg; *.jpeg)"
+
+#: ../gui/filehandling.py:132
+msgid "Save..."
+msgstr "Salvează..."
+
+#: ../gui/filehandling.py:143
+msgid "Format to save as:"
+msgstr "Formatul pentru salvare:"
+
+#: ../gui/filehandling.py:169
+msgid "Confirm"
+msgstr ""
+
+#: ../gui/filehandling.py:169
+msgid "Really continue?"
+msgstr "Confirmă continuare?"
+
+#: ../gui/filehandling.py:178
+#, python-format
+msgid "This will discard %d minute of unsaved painting."
+msgid_plural "This will discard %d minutes of unsaved painting."
+msgstr[0] "Aceasta va anula %d minut de desen nesalvat."
+msgstr[1] "Aceasta va anula %d minute de desen nesalvat."
+
+#: ../gui/filehandling.py:183
+#, python-format
+msgid "This will discard %d second of unsaved painting."
+msgid_plural "This will discard %d seconds of unsaved painting."
+msgstr[0] "Aceasta va anula %d secundă de desen nesalvat."
+msgstr[1] "Aceasta va anula %d secunde de desen nesalvat."
+
+#: ../gui/filehandling.py:191
+msgid "_Save as Scrap"
+msgstr "_Salvează ca rebut"
+
+#: ../gui/filehandling.py:326 ../gui/filehandling.py:343
+msgid "Open..."
+msgstr "Deschide..."
+
+#: ../gui/filehandling.py:375
+msgid "Open Scratchpad..."
+msgstr "Deschide caiet de ciorne..."
+
+#: ../gui/filehandling.py:680
+#, python-format
+msgid "There are no scrap files named \"%s\" yet."
+msgstr "Nu există încă fișiere rebut numite \"%s\"."
+
+#. unit :  (conversion_factor, upper, lower, step_incr, page_incr, digits)
+#: ../gui/framewindow.py:268 ../gui/framewindow.py:280
+#: ../gui/framewindow.py:322 ../gui/framewindow.py:468
+#: ../gui/framewindow.py:479 ../gui/framewindow.py:480
+#: ../gui/framewindow.py:525 ../gui/framewindow.py:530
+msgid "px"
+msgstr ""
+
+#: ../gui/framewindow.py:281
+msgid "Height:"
+msgstr "Înălțime:"
+
+#: ../gui/framewindow.py:283
+msgid "Width:"
+msgstr "Lățime:"
+
+#: ../gui/framewindow.py:285
+msgid "Resolution:"
+msgstr "Rezoluție:"
+
+#: ../gui/framewindow.py:287
+msgid "Color:"
+msgstr "Culoare:"
+
+#: ../gui/framewindow.py:307
+msgid "Frame Color"
+msgstr "Culoare ramă"
+
+#: ../gui/framewindow.py:356
+msgid "Crop to Current Layer"
+msgstr "Decupează stratul curent"
+
+#: ../gui/framewindow.py:357
+msgid "Crop frame to the currently active layer"
+msgstr "Decupează stratul curent după cadru"
+
+#: ../gui/framewindow.py:359
+msgid "Crop to Document"
+msgstr "Decupează documentul"
+
+#: ../gui/framewindow.py:360
+msgid "Crop frame to the combination of all layers"
+msgstr "Decupează toate straturile după cadru"
+
+#: ../gui/framewindow.py:367
+msgid ""
+"While the frame is enabled, it \n"
+"can be adjusted on the canvas"
+msgstr ""
+"Când cadrul este activ, acesta \n"
+"poate fi ajustat pe pânză"
+
+#: ../gui/framewindow.py:374
+msgid "Enabled"
+msgstr "Activat"
+
+#: ../gui/framewindow.py:469
+msgid "inch"
+msgstr ""
+
+#: ../gui/framewindow.py:470
+msgid "cm"
+msgstr ""
+
+#: ../gui/framewindow.py:471
+msgid "mm"
+msgstr ""
+
+#: ../gui/functionwindow.py:37
+msgid "Base Value"
+msgstr "Valoare de bază"
+
+#: ../gui/functionwindow.py:159
+msgid "Details"
+msgstr "Detalii"
+
+#: ../gui/gtkexcepthook.py:127
+msgid "Bug Detected"
+msgstr "Defect detectat"
+
+#. if gtk.check_version (2, 4, 0) is not None:
+#. dialog.set_has_separator (False)
+#: ../gui/gtkexcepthook.py:131
+msgid "<big><b>A programming error has been detected.</b></big>"
+msgstr "<big><b>O eroare de programare a fost detectată.</b></big>"
+
+#: ../gui/gtkexcepthook.py:132
+msgid ""
+"It probably isn't fatal, but the details should be reported to the "
+"developers nonetheless."
+msgstr ""
+"Probabil nu este gravă, dar detaliile ar trebui totuși raportate "
+"dezvoltatorilor."
+
+#: ../gui/gtkexcepthook.py:156
+msgid "Details..."
+msgstr "Detalii..."
+
+#: ../gui/gtkexcepthook.py:177 ../gui/gtkexcepthook.py:180
+msgid "Exception while analyzing the exception."
+msgstr "S-a produs o excepție în timp ce se analiza excepția."
+
+#: ../gui/inputtestwindow.py:20
+msgid "Input Device Test"
+msgstr "Test dispozitiv de intrare"
+
+#: ../gui/inputtestwindow.py:47
+msgid "(no pressure)"
+msgstr "(fără presiune)"
+
+#: ../gui/inputtestwindow.py:48
+msgid "Pressure:"
+msgstr "Presiune:"
+
+#: ../gui/inputtestwindow.py:50
+msgid "(no tilt)"
+msgstr "(fără înclinare)"
+
+#: ../gui/inputtestwindow.py:51
+msgid "Tilt:"
+msgstr "Înclinare:"
+
+#: ../gui/inputtestwindow.py:56
+msgid "(no device)"
+msgstr "(niciun dispozitiv)"
+
+#: ../gui/inputtestwindow.py:57
+msgid "Device:"
+msgstr "Dispozitiv:"
+
+#: ../gui/layerswindow.py:41
+msgid "Layers"
+msgstr "Straturi"
+
+#: ../gui/layerswindow.py:42
+msgid ""
+"<b>{blendingmode_name}</b>\n"
+"{blendingmode_description}"
+msgstr ""
+
+#: ../gui/layerswindow.py:66
+msgid "Visible"
+msgstr "Vizibil"
+
+#: ../gui/layerswindow.py:72
+msgid "Locked"
+msgstr "Blocat"
+
+#: ../gui/layerswindow.py:90
+msgid "Mode:"
+msgstr "Mod:"
+
+#: ../gui/layerswindow.py:92
+msgid ""
+"Blending mode: how the current layer combines with the layers underneath it."
+msgstr ""
+"Mod amestecare: modul în care stratul curent se combină cu straturile de sub acesta."
+
+#: ../gui/layerswindow.py:105
+msgid "Opacity:"
+msgstr "Opacitate:"
+
+#: ../gui/layerswindow.py:107
+msgid ""
+"Layer opacity: how much of the current layer to use. Smaller values make it "
+"more transparent."
+msgstr ""
+"Opacitate strat: procentajul din stratul curent care este folosit. Valori mai mici îl fac "
+"mai transparent."
+
+#: ../gui/layerswindow.py:212
+#, python-format
+msgid "Layer opacity: %d%%"
+msgstr "Opacitate strat: %d%%"
+
+#: ../gui/layerswindow.py:302
+#, python-format
+msgid "Untitled layer #%d"
+msgstr "Strat #%d fără titlu"
+
+#: ../gui/layout.py:628
+msgid "Collapse"
+msgstr "Compactează"
+
+#: ../gui/layout.py:629
+msgid "Expand"
+msgstr "Expandează"
+
+#: ../gui/layout.py:703
+msgid "Snap out"
+msgstr "Desprinde"
+
+#: ../gui/layout.py:705
+msgid "Close"
+msgstr "Închide"
+
+#: ../gui/linemode.py:21
+msgid "Entrance Pressure"
+msgstr "Presiune intrare"
+
+#: ../gui/linemode.py:21
+msgid "Stroke entrance pressure for line tools"
+msgstr "Presiunea de intrare a tușei pentru unelte de linii"
+
+#: ../gui/linemode.py:22
+msgid "Midpoint Pressure"
+msgstr "Presiune la punctul de mijloc"
+
+#: ../gui/linemode.py:22
+msgid "Mid-Stroke pressure for line tools"
+msgstr "Presiune la mijlocul tușei pentru unelte de linii"
+
+#: ../gui/linemode.py:23
+msgid "Exit Pressure"
+msgstr "Presiune de ieșire"
+
+#: ../gui/linemode.py:23
+msgid "Stroke exit pressure for line tools"
+msgstr "Presiunea de ieșire a tușei pentru unelte de linii"
+
+#: ../gui/linemode.py:24
+msgid "Head"
+msgstr "Cap"
+
+#: ../gui/linemode.py:24
+msgid "Stroke lead-in end"
+msgstr "Capătul de intrare al tușei"
+
+#: ../gui/linemode.py:25
+msgid "Tail"
+msgstr "Coadă"
+
+#: ../gui/linemode.py:25
+msgid "Stroke trail-off beginning"
+msgstr "Începutul dârei de tușă"
+
+#: ../gui/overlays.py:147
+#, python-format
+msgid "Zoom: %.01f%%"
+msgstr "Mărire: %.01f%%"
+
+#: ../gui/preferenceswindow.py:23
+msgid "Disabled (no pressure sensitivity)"
+msgstr "Dezactivat (fără sensibilitate la presiune)"
+
+#: ../gui/preferenceswindow.py:24
+msgid "Screen (normal)"
+msgstr "Ecran (normal)"
+
+#: ../gui/preferenceswindow.py:25
+msgid "Window (not recommended)"
+msgstr "Fereastră (nerecomandat)"
+
+#: ../gui/preferenceswindow.py:37
+msgid "Preferences"
+msgstr "Preferințe"
+
+#. TRANSLATORS: Tab label
+#: ../gui/preferenceswindow.py:57
+msgid "Pen Input"
+msgstr "Intrare stilou"
+
+#: ../gui/preferenceswindow.py:63
+msgid "<b>Input Device</b>"
+msgstr "<b>Dispozitiv de intrare</b>"
+
+#: ../gui/preferenceswindow.py:70
+msgid ""
+"Scale input pressure to brush pressure. This is applied to all input "
+"devices. The mouse button has an input pressure of 0.5 when pressed."
+msgstr ""
+"Dimensionează presiunea de intrare în raport cu presiunea pensulei. Aceasta "
+"este aplicată la toate dispozitivele de intrare. Butonul mausului are o "
+"presiune de intrare de 0.5 când este apăsat."
+
+#. TRANSLATORS: Graph y-axis label
+#: ../gui/preferenceswindow.py:80
+msgid "Brush Pressure"
+msgstr "Presiune pensulă"
+
+#. TRANSLATORS: Graph x-axis label
+#: ../gui/preferenceswindow.py:90
+msgid "Input Pressure"
+msgstr "Presiune intrare"
+
+#: ../gui/preferenceswindow.py:99
+msgid "Mode: "
+msgstr "Mod: "
+
+#: ../gui/preferenceswindow.py:128
+msgid ""
+"<small>Space can be used like Button2. Note that some pads have buttons that "
+"cannot be held down.</small>"
+msgstr ""
+"<small>Tasta spațiu poate fi utilizată ca Buton2. Atenție, unele tablete au butoane care "
+"nu pot fi ținute apăsat.</small>"
+
+#: ../gui/preferenceswindow.py:131
+msgid "Buttons"
+msgstr "Butoane"
+
+#: ../gui/preferenceswindow.py:140
+msgid "Saving"
+msgstr "Salvare"
+
+#: ../gui/preferenceswindow.py:146
+msgid "<b>Saving</b>"
+msgstr "<b>Salvare</b>"
+
+#: ../gui/preferenceswindow.py:150
+msgid "Default file format:"
+msgstr "Format implicit de fișier:"
+
+#: ../gui/preferenceswindow.py:165
+msgid "<b>Save Next Scrap</b>"
+msgstr "<b>Salvează următorul rebut</b>"
+
+#: ../gui/preferenceswindow.py:169
+msgid "Path and filename prefix:"
+msgstr "Calea și prefixul fișierului:"
+
+#: ../gui/preferenceswindow.py:184
+msgid "View"
+msgstr "Vizualizare"
+
+#: ../gui/preferenceswindow.py:190
+msgid "<b>Default View</b>"
+msgstr "<b>Vizualizare implicită</b>"
+
+#: ../gui/preferenceswindow.py:194
+msgid "Default zoom:"
+msgstr "Mărime implicită:"
+
+#: ../gui/preferenceswindow.py:207
+msgid "High quality zoom (may result in slow scrolling)"
+msgstr "Mărire de calitate superioară (poate să provoace defilare înceată)"
+
+#: ../gui/preferenceswindow.py:214
+msgid "<b>Fullscreen</b>"
+msgstr "<b>Ecran complet</b>"
+
+#: ../gui/preferenceswindow.py:218
+msgid "Hide menu bar"
+msgstr "Ascunde bara de meniu"
+
+#: ../gui/preferenceswindow.py:223
+msgid "Hide toolbar"
+msgstr "Ascunde bara de instrumente"
+
+#: ../gui/preferenceswindow.py:228
+msgid "Hide tools"
+msgstr "Ascunde unelte"
+
+#: ../gui/scratchwindow.py:28
+msgid "Scratchpad"
+msgstr "Caiet de ciorne"
+
+#: ../gui/scratchwindow.py:41
+msgid "Load Scratchpad"
+msgstr "Încarcă caiet de ciorne"
+
+#: ../gui/scratchwindow.py:43
+msgid "Save Scratchpad as..."
+msgstr "Salvează caiet de ciorne ca..."
+
+#: ../gui/scratchwindow.py:45
+msgid "Revert Scratchpad"
+msgstr "Refă caiet de ciorne"
+
+#: ../gui/scratchwindow.py:47
+msgid "New Scratchpad"
+msgstr "Caiet de ciorne nou"
+
+#: ../gui/spinbox.py:32
+msgid "Previous item"
+msgstr "Elementul precedent"
+
+#: ../gui/spinbox.py:35
+msgid "Next item"
+msgstr "Elementul urmator"
+
+#: ../gui/spinbox.py:97
+msgid "(Nothing to show)"
+msgstr "(Nimic de afișat)"
+
+#: ../gui/toolbar.py:31
+msgid "File handling"
+msgstr "Manipulare fișier"
+
+#: ../gui/toolbar.py:32
+msgid "Scraps switcher"
+msgstr "Comutator rebuturi"
+
+#: ../gui/toolbar.py:33
+msgid "Undo and Redo"
+msgstr "Anulează și refă"
+
+#: ../gui/toolbar.py:34
+msgid "Blend Modes"
+msgstr "Moduri amestecare"
+
+#: ../gui/toolbar.py:35
+msgid "Editing Modes"
+msgstr "Moduri editare"
+
+#: ../gui/toolbar.py:36
+msgid "View (Main)"
+msgstr "Vizualizare (Principal)"
+
+#: ../gui/toolbar.py:37
+msgid "View (Alternative/Secondary)"
+msgstr "Vizualizare (Alternativ/Secundar)"
+
+#: ../gui/toolbar.py:38
+msgid "View (Resetting)"
+msgstr "Vizualizare (Restabilire)"
+
+#: ../gui/toolbar.py:39
+msgid "Subwindows"
+msgstr "Subferestre"
+
+#: ../gui/toolbar.py:69
+msgid "MyPaint"
+msgstr ""
+
+#: ../gui/toolbar.py:84
+msgid "Current Color"
+msgstr "Culoare curentă"
+
+#: ../gui/toolbar.py:86
+msgid "Current Brush"
+msgstr "Pensulă curentă"
+
+#: ../gui/toolbar.py:88
+msgid "Brush Settings"
+msgstr "Opțiuni pensulă"
+
+#: ../gui/toolbar.py:90
+msgid "Line Mode"
+msgstr "Mod amestecare"
+
+#. Pressure settings.
+#: ../gui/toolbar.py:179
+msgid "Line Pressure"
+msgstr "Presiune linie"
+
+#: ../gui/toolbar.py:227
+msgid "Color History and other tools"
+msgstr "Istoric culoare și alte unelte"
+
+#. Colour changing
+#: ../gui/toolbar.py:250
+msgid "Change Color"
+msgstr "Schimbă culoare"
+
+#: ../gui/toolbar.py:288
+msgid "Color Window"
+msgstr "Fereastră culoare"
+
+#. History
+#. Brush history
+#: ../gui/toolbar.py:292 ../gui/toolbar.py:377
+msgid "Recently Used"
+msgstr "Recent utilizate"
+
+#: ../gui/toolbar.py:335
+msgid "Brush history etc."
+msgstr "Istoric pensulă etc."
+
+#. A limited subset of the available brush settings.
+#: ../gui/toolbar.py:465
+msgid "Quick Brush Settings"
+msgstr "Setări rapide de pensulă"
+
+#: ../gui/toolbar.py:491
+#, python-format
+msgid "%s:"
+msgstr ""
+
+#: ../gui/toolbar.py:498
+#, python-format
+msgid "Restore '%s' to this brush's saved value"
+msgstr "Restaurează '%s' la valoarea salvată a acestei pensule"
+
+#. Access to the brush settings window, and a big reset-all button
+#. aligned with the settings above.
+#: ../gui/toolbar.py:516
+msgid "Detailed Brush Settings"
+msgstr "Opțiuni pensulă detaliate"
+
+#: ../gui/toolbar.py:531
+msgid "Restore Saved Settings"
+msgstr "Restaurează opțiuni salvate"
+
+#: ../gui/toolbar.py:533
+msgid "Reset all brush settings to the current brush's saved values"
+msgstr ""
+"Resetează toate opțiunile de pensulă la valorile salvate ale pensulei curente"
+
+#: ../gui/toolbar.py:543
+msgid "Brush Blend Mode"
+msgstr "Mod pensulă amestecare"
+
+#: ../lib/command.py:92
+msgid "Unknown Action"
+msgstr "Acțiune necunoscută"
+
+#: ../lib/command.py:153
+msgid "Painting"
+msgstr "Desen"
+
+#: ../lib/command.py:169
+msgid "Clear Layer"
+msgstr "Curață strat"
+
+#: ../lib/command.py:182
+msgid "Load Layer"
+msgstr "Încarcă strat"
+
+#: ../lib/command.py:196
+msgid "Merge Layers"
+msgstr "Contopește straturi"
+
+#: ../lib/command.py:224
+msgid "Convert Layer Mode"
+msgstr "Strat in mod convertire"
+
+#: ../lib/command.py:246
+msgid "Add Layer"
+msgstr "Adaugă strat"
+
+#: ../lib/command.py:269
+msgid "Remove Layer"
+msgstr "Elimină strat"
+
+#: ../lib/command.py:304
+msgid "Select Layer"
+msgstr "Selectează strat"
+
+#: ../lib/command.py:319
+msgid "Move Layer on Canvas"
+msgstr "Deplasează strat pe pânză"
+
+#: ../lib/command.py:344
+msgid "Reorder Layer in Stack"
+msgstr "Reordonează stratul pe stivă"
+
+#: ../lib/command.py:370
+msgid "Duplicate Layer"
+msgstr "Duplichează stratul"
+
+#: ../lib/command.py:391
+msgid "Reorder Layer Stack"
+msgstr "Reordonează stiva de straturi"
+
+#: ../lib/command.py:412
+msgid "Rename Layer"
+msgstr "Elimină strat"
+
+#: ../lib/command.py:447
+msgid "Make Layer Visible"
+msgstr "Fă stratul vizibil"
+
+#: ../lib/command.py:449
+msgid "Make Layer Invisible"
+msgstr "Fă stratul invizibil"
+
+#: ../lib/command.py:473
+msgid "Lock Layer"
+msgstr "Blochează stratul"
+
+#: ../lib/command.py:475
+msgid "Unlock Layer"
+msgstr "Deblochează stratul"
+
+#: ../lib/command.py:478
+msgid "Change Layer Visibility"
+msgstr "Schimbă vizibilitatea stratului"
+
+#: ../lib/command.py:506
+msgid "Change Layer Blending Mode"
+msgstr "Schimbă mod amestecare strat"
+
+#. add a hint due to a very consfusing error message when there is no space left on device
+#: ../lib/document.py:514
+#, python-format
+msgid ""
+"Unable to save: %s\n"
+"Do you have enough space left on the device?"
+msgstr ""
+"Nu se poate salva: %s\n"
+"Aveți suficient spațiu rămas pe disc?"
+
+#: ../lib/document.py:516 ../lib/document.py:519
+#, python-format
+msgid "Unable to save: %s"
+msgstr "Nu se poate salva: %s"
+
+#: ../lib/document.py:537
+#, python-format
+msgid "File does not exist: %s"
+msgstr "Fișierul nu există: %s"
+
+#: ../lib/document.py:539
+#, python-format
+msgid "You do not have the necessary permissions to open file: %s"
+msgstr "Nu aveți pemisiunea să deschideți fișierul %s"
+
+#: ../lib/document.py:547
+#, python-format
+msgid "Error while loading: GError %s"
+msgstr "Eroare în timpul încarcarii: GError %s"
+
+#: ../lib/document.py:550
+#, python-format
+msgid "Error while loading: IOError %s"
+msgstr "Eroare în timpul încarcarii: IOError %s"
+
+#: ../lib/document.py:557
+#, python-format
+msgid "Unknown file format extension: %s"
+msgstr "Format fișier necunoscut: %s"
+
+#: ../lib/layer.py:18
+msgid "The top layer only, without blending colors."
+msgstr "Numai stratul din vârf, fără culori amestecate."
+
+#: ../lib/layer.py:19
+msgid "Multiply"
+msgstr "Multiplică"
+
+#: ../lib/layer.py:20
+msgid ""
+"Similar to loading multiple slides into a single projector's slot and "
+"projecting the combined result."
+msgstr ""
+"Similar cu încărcarea mai multor diapozitive intr-un singur locaș de proiector și "
+"proiectând rezultatul combinat."
+
+#: ../lib/layer.py:22
+msgid "Screen"
+msgstr "Barieră"
+
+#: ../lib/layer.py:23
+msgid ""
+"Like shining two separate slide projectors onto a screen simultaneously. "
+"This is the inverse of 'Multiply'."
+msgstr ""
+"Ca și luminând cu două proiectoare pe un ecran în același timp. "
+"Acesta este inversul lui 'Multiplică'."
+
+#: ../lib/layer.py:25
+msgid "Overlay"
+msgstr "Acoperire"
+
+#: ../lib/layer.py:26
+msgid ""
+"Overlays the backdrop with the top layer, preserving the backdrop's "
+"highlights and shadows. This is the inverse of 'Hard Light'."
+msgstr ""
+"Acoperă fundalul cu stratul din vârf, păstrând părțile luminoase și umbrele "
+"fundalului. Acesta este inversul lui 'Lumină dură'."
+
+#: ../lib/layer.py:28
+msgid "Darken"
+msgstr "Întunecă"
+
+#: ../lib/layer.py:29
+msgid "The top layer is used only where it is darker than the backdrop."
+msgstr "Stratul din vârf este folosit numai unde acesta este mai întunecat decât fundalul."
+
+#: ../lib/layer.py:30
+msgid "Lighten"
+msgstr "Luminează"
+
+#: ../lib/layer.py:31
+msgid "The top layer is used only where it is lighter than the backdrop."
+msgstr "Stratul din vârf este folosit numai unde acesta este mai luminos decat fundalul."
+
+#: ../lib/layer.py:32
+msgid "Dodge"
+msgstr "Evită"
+
+#: ../lib/layer.py:33
+msgid ""
+"Brightens the backdrop using the top layer. The effect is similar to the "
+"photographic darkroom technique of the same name which is used for improving "
+"contrast in shadows."
+msgstr ""
+"Iluminează fundalul folosind stratul superior. Efectul este similar "
+"cu tehnica fotografică cu același nume folosită în camera obscură "
+"pentru îmbunătățirea contrastului în umbre."
+
+#: ../lib/layer.py:36
+msgid "Burn"
+msgstr "Arde"
+
+#: ../lib/layer.py:37
+msgid ""
+"Darkens the backdrop using the top layer. The effect looks similar to the "
+"photographic darkroom technique of the same name which is used for reducing "
+"over-bright highlights."
+msgstr ""
+"Întunecă fundalul folosind stratul superior. Efectul este similar "
+"cu tehnica fotografică cu același nume folosită în camera obscură "
+"pentru reducerea părților luminoase supra accentuate."
+
+#: ../lib/layer.py:40
+msgid "Hard Light"
+msgstr "Lumină puternică"
+
+#: ../lib/layer.py:41
+msgid "Similar to shining a harsh spotlight onto the backdrop."
+msgstr "Similar cu iluminarea fundalului cu o sursă de lumină puternică."
+
+#: ../lib/layer.py:42
+msgid "Soft Light"
+msgstr "Lumină slabă"
+
+#: ../lib/layer.py:43
+msgid "Like shining a diffuse spotlight onto the backdrop."
+msgstr "Similar cu iluminarea fundalului cu o sursă de lumină difuză."
+
+#: ../lib/layer.py:44
+msgid "Difference"
+msgstr "Diferență"
+
+#: ../lib/layer.py:45
+msgid "Subtracts the darker color from the lighter of the two."
+msgstr ""
+
+#: ../lib/layer.py:46
+msgid "Exclusion"
+msgstr "Excludere"
+
+#: ../lib/layer.py:47
+msgid "Similar to the 'Difference' mode, but lower in contrast."
+msgstr "Similar cu modul 'Diferență', dar mai slab în contrast."
+
+#: ../lib/layer.py:48
+msgid "Hue"
+msgstr "Nuanță"
+
+#: ../lib/layer.py:49
+msgid ""
+"Combines the hue of the top layer with the saturation and luminosity of the "
+"backdrop."
+msgstr ""
+"Combină nuanța stratului superior cu saturația și luminozitatea "
+"fundalului."
+
+#: ../lib/layer.py:51
+msgid "Saturation"
+msgstr "Saurație"
+
+#: ../lib/layer.py:52
+msgid ""
+"Applies the saturation of the top layer's colors to the hue and luminosity "
+"of the backdrop."
+msgstr ""
+"Aplică saturația culorilor stratului superior asupra nuanței și luminozității "
+"fundalului."
+
+#: ../lib/layer.py:55
+msgid ""
+"Applies the hue and saturation of the top layer to the luminosity of the "
+"backdrop."
+msgstr ""
+"Aplică nuanța și saturația stratului superior asupra luminozității "
+"fundalului."
+
+#: ../lib/layer.py:57
+msgid "Luminosity"
+msgstr "Luminozitate"
+
+#: ../lib/layer.py:58
+msgid ""
+"Applies the luminosity of the top layer to the hue and saturation of the "
+"backdrop."
+msgstr ""
+"Aplică luminozitatea stratului superior asupra nuanței și luminozității "
+"fundalului."
+
+#: ../po/tmp/mypaint.xml.h:1
+msgctxt "Menu|File|"
+msgid "New"
+msgstr "Nou"
+
+#: ../po/tmp/mypaint.xml.h:2
+msgid "Start with a new blank canvas"
+msgstr "Incepe cu un nouă pânză goală"
+
+#: ../po/tmp/mypaint.xml.h:3
+msgctxt "Menu|File|"
+msgid "Open..."
+msgstr "Deschide..."
+
+#: ../po/tmp/mypaint.xml.h:4
+msgid "Open a file, replacing the current painting"
+msgstr "Deschide un fișier, înlocuind desenul curent"
+
+#: ../po/tmp/mypaint.xml.h:5
+msgctxt "Menu|File|"
+msgid "Open Most Recent"
+msgstr "Deschide cel mai recent"
+
+#: ../po/tmp/mypaint.xml.h:6
+msgid "Open the last file you saved"
+msgstr "Deschide ultimul fișier salvat"
+
+#: ../po/tmp/mypaint.xml.h:7
+msgctxt "Menu|File|"
+msgid "Revert"
+msgstr "Revino"
+
+#: ../po/tmp/mypaint.xml.h:8
+msgid "Reload the current file"
+msgstr "Reîncarcă fișierul curent"
+
+#: ../po/tmp/mypaint.xml.h:9
+msgctxt "Menu|File|"
+msgid "Save"
+msgstr "Salvează"
+
+#: ../po/tmp/mypaint.xml.h:10
+msgid "Save to a file"
+msgstr "Salvează în fișier"
+
+#: ../po/tmp/mypaint.xml.h:11
+msgctxt "Menu|File|"
+msgid "Save As..."
+msgstr "Salvează ca..."
+
+#: ../po/tmp/mypaint.xml.h:12
+msgid "Save to a file with a new name"
+msgstr "Salvează într-un fișier cu un nou nume"
+
+#: ../po/tmp/mypaint.xml.h:13
+msgctxt "Menu|File|"
+msgid "Export..."
+msgstr "Exportă..."
+
+#: ../po/tmp/mypaint.xml.h:14
+msgid "Export to a file"
+msgstr "Exportă într-un fișier"
+
+#: ../po/tmp/mypaint.xml.h:15
+msgctxt "Menu|File|"
+msgid "Save As Scrap"
+msgstr "Salvează ca rebut"
+
+#: ../po/tmp/mypaint.xml.h:16
+msgid ""
+"Saves to a new scrap file. If the drawing is currently saved as a scrap, "
+"this will write a new revision of it."
+msgstr ""
+"Salvează într-un nou fișier rebut. Dacă desenul este actualmente salvat "
+"ca rebut, aceasta va scrie o nouă revizie."
+
+#: ../po/tmp/mypaint.xml.h:17
+msgctxt "Menu|File|"
+msgid "Open Previous Scrap"
+msgstr "Deschide rebutul anterior"
+
+#: ../po/tmp/mypaint.xml.h:18
+msgid "Load the previous scrap file, replacing the current drawing"
+msgstr "Încarcă fișierul rebut anterior, înlocuind desenul curent"
+
+#: ../po/tmp/mypaint.xml.h:19
+msgctxt "Menu|File|"
+msgid "Open Next Scrap"
+msgstr "Deschide următorul rebut"
+
+#: ../po/tmp/mypaint.xml.h:20
+msgid "Load the next scrap file, replacing the current drawing"
+msgstr "Încarcă urmatorul fișier rebut, înlocuind desenul curent"
+
+#: ../po/tmp/mypaint.xml.h:21
+msgctxt "Menu|Brush|"
+msgid "Bigger"
+msgstr "Mai mare"
+
+#: ../po/tmp/mypaint.xml.h:22
+msgid "Increase brush radius"
+msgstr "Crește opacitate strat"
+
+#: ../po/tmp/mypaint.xml.h:23
+msgctxt "Menu|Brush|"
+msgid "Smaller"
+msgstr "Mai mic"
+
+#: ../po/tmp/mypaint.xml.h:24
+msgid "Decrease brush radius"
+msgstr "Scade opacitate pensulă"
+
+#: ../po/tmp/mypaint.xml.h:25
+msgctxt "Menu|Brush|"
+msgid "Increase Opacity"
+msgstr "Crește opacitate"
+
+#: ../po/tmp/mypaint.xml.h:26
+msgid "Increase brush opacity"
+msgstr "Crește opacitate pensulă"
+
+#: ../po/tmp/mypaint.xml.h:27
+msgctxt "Menu|Brush|"
+msgid "Decrease Opacity"
+msgstr "Scade opacitate"
+
+#: ../po/tmp/mypaint.xml.h:28
+msgid "Decrease brush opacity"
+msgstr "Scade opacitate pensulă"
+
+#: ../po/tmp/mypaint.xml.h:29
+msgctxt "Menu|Color|Adjust Color|"
+msgid "Brighter"
+msgstr "Mai luminos"
+
+#: ../po/tmp/mypaint.xml.h:30
+msgid "Increase color brightness"
+msgstr "Crește luminozitate culoare"
+
+#: ../po/tmp/mypaint.xml.h:31
+msgctxt "Menu|Color|Adjust Color|"
+msgid "Darker"
+msgstr "Mai întunecat"
+
+#: ../po/tmp/mypaint.xml.h:32
+msgid "Decrease color brightness"
+msgstr "Descrește luminozitate culoare"
+
+#: ../po/tmp/mypaint.xml.h:33
+msgctxt "Menu|Color|Adjust Color|"
+msgid "Hue Anticlockwise"
+msgstr "Nuanță în sens trigonometric"
+
+#: ../po/tmp/mypaint.xml.h:34
+msgid "Rotate color hue anticlockwise"
+msgstr "Rotește nuanța în sens trigonometric"
+
+#: ../po/tmp/mypaint.xml.h:35
+msgctxt "Menu|Color|Adjust Color|"
+msgid "Hue Clockwise"
+msgstr "Nuanță în sens orar"
+
+#: ../po/tmp/mypaint.xml.h:36
+msgid "Rotate color hue clockwise"
+msgstr "Rotește nuanța în sens trigonometric"
+
+#: ../po/tmp/mypaint.xml.h:37
+msgctxt "Menu|Color|Adjust Color|"
+msgid "Purer"
+msgstr "Mai pur"
+
+#: ../po/tmp/mypaint.xml.h:38
+msgid "Increase color saturation"
+msgstr "Crește saturație culoare"
+
+#: ../po/tmp/mypaint.xml.h:39
+msgctxt "Menu|Color|Adjust Color|"
+msgid "Grayer"
+msgstr "Mai gri"
+
+#: ../po/tmp/mypaint.xml.h:40
+msgid "Decrease color saturation"
+msgstr "Scade saturația culorii"
+
+#: ../po/tmp/mypaint.xml.h:41
+msgctxt "Menu|Brush|"
+msgid "Pick Stroke and Layer"
+msgstr "Alege tușă și strat"
+
+#: ../po/tmp/mypaint.xml.h:42
+msgid "Pick brushstroke: settings and layer"
+msgstr "Alege tușă: setări și strat"
+
+#: ../po/tmp/mypaint.xml.h:43
+msgctxt "Menu|Brush|Shortcut Keys|"
+msgid "Restore Color"
+msgstr "Restaurează culoare"
+
+#: ../po/tmp/mypaint.xml.h:44
+msgctxt "Menu|Brush|Shortcut Keys|"
+msgid "Save to Most Recent"
+msgstr "Salvează la cele mai recent"
+
+#: ../po/tmp/mypaint.xml.h:45
+msgid "Save brush to the most recent shortcut"
+msgstr "Salvează pensulă la recent restaurate"
+
+#: ../po/tmp/mypaint.xml.h:46
+msgctxt "Menu|Layer|"
+msgid "Clear"
+msgstr "Curăță"
+
+#: ../po/tmp/mypaint.xml.h:47
+msgid "Clear the current layer"
+msgstr "Curăță stratul curent"
+
+#: ../po/tmp/mypaint.xml.h:48
+msgctxt "Menu|Layer|"
+msgid "Copy"
+msgstr "Copiază"
+
+#: ../po/tmp/mypaint.xml.h:49
+msgid "Copy the current layer to the clipboard"
+msgstr "Copiază stratul curent în clipboard"
+
+#: ../po/tmp/mypaint.xml.h:50
+msgctxt "Menu|Layer|"
+msgid "Paste"
+msgstr "Lipește"
+
+#: ../po/tmp/mypaint.xml.h:51
+msgid "Replaces the layer with the clipboard's contents"
+msgstr "Înlocuiește stratul curent cu conținutul clipboardului"
+
+#: ../po/tmp/mypaint.xml.h:52
+msgctxt "Menu|Layer|Go to Layer|"
+msgid "At Cursor"
+msgstr "La cursor"
+
+#: ../po/tmp/mypaint.xml.h:53
+msgid "Choose a layer by picking a brushstroke on it"
+msgstr "Alege un strat selectând o tușă de pe acesta"
+
+#: ../po/tmp/mypaint.xml.h:54
+msgctxt "Menu|Layer|Go to Layer|"
+msgid "Above"
+msgstr "Deasupra"
+
+#: ../po/tmp/mypaint.xml.h:55
+msgid "Go one layer up in the layers stack"
+msgstr "Mergi cu un strat mai sus pe stiva de straturi"
+
+#: ../po/tmp/mypaint.xml.h:56
+msgctxt "Menu|Layer|Go to Layer|"
+msgid "Below"
+msgstr "Dedesubt"
+
+#: ../po/tmp/mypaint.xml.h:57
+msgid "Go one layer down in the layers stack"
+msgstr "Mergi cu un strat mai jos pe stiva de straturi"
+
+#: ../po/tmp/mypaint.xml.h:58
+msgctxt "Menu|Layer|"
+msgid "New (above)"
+msgstr "Nou (deasupra)"
+
+#: ../po/tmp/mypaint.xml.h:59
+msgid "Add a new layer above the current layer"
+msgstr "Adaugă un nou strat, deasupra celui curent"
+
+#: ../po/tmp/mypaint.xml.h:60
+msgctxt "Menu|Layer|"
+msgid "New (below)"
+msgstr "Nou (dedesubt)"
+
+#: ../po/tmp/mypaint.xml.h:61
+msgid "Add a new layer below the current layer"
+msgstr "Adaugă un nou strat sub cel curent"
+
+#: ../po/tmp/mypaint.xml.h:62
+msgctxt "Menu|Layer|"
+msgid "Merge Down"
+msgstr "Contopește în jos"
+
+#: ../po/tmp/mypaint.xml.h:63
+msgid "Merge layer with the one beneath it"
+msgstr "Contopește strat cu cel de sub el"
+
+#: ../po/tmp/mypaint.xml.h:64
+msgctxt "Menu|Layer|"
+msgid "Delete"
+msgstr "Șterge"
+
+#: ../po/tmp/mypaint.xml.h:65
+msgid "Delete the current layer"
+msgstr "Reîncarcă stratul curent"
+
+#: ../po/tmp/mypaint.xml.h:66
+msgctxt "Menu|Layer"
+msgid "Convert to Normal mode"
+msgstr "Convertește în modul normal"
+
+#: ../po/tmp/mypaint.xml.h:67
+msgctxt "Menu|Layer|Opacity|"
+msgid "Increase"
+msgstr "Crește"
+
+#: ../po/tmp/mypaint.xml.h:68
+msgctxt "Menu|Layer|Opacity|"
+msgid "Decrease"
+msgstr "Descrește"
+
+#: ../po/tmp/mypaint.xml.h:69
+msgctxt "Menu|Layer|"
+msgid "Raise"
+msgstr "Ridică"
+
+#: ../po/tmp/mypaint.xml.h:70
+msgid "Raise the current layer one step in the layers stack"
+msgstr "Ridică stratul curent cu o poziție pe stiva de straturi"
+
+#: ../po/tmp/mypaint.xml.h:71
+msgctxt "Menu|Layer|"
+msgid "Lower"
+msgstr "Coboară"
+
+#: ../po/tmp/mypaint.xml.h:72
+msgid "Lower the current layer one step in the layers stack"
+msgstr "Coboară stratul curent cu o poziție pe stiva de straturi"
+
+#: ../po/tmp/mypaint.xml.h:73
+msgctxt "Menu|Layer|"
+msgid "Duplicate"
+msgstr "Duplichează"
+
+#: ../po/tmp/mypaint.xml.h:74
+msgid "Make an exact duplicate of the current layer"
+msgstr "Creează o replică exactă a stratului curent"
+
+#: ../po/tmp/mypaint.xml.h:75
+msgctxt "Menu|Layer|"
+msgid "Rename..."
+msgstr "Redenumește..."
+
+#: ../po/tmp/mypaint.xml.h:76
+msgid "Enter a new name for the current layer"
+msgstr "Introdu un nou nume pentru stratul curent"
+
+#: ../po/tmp/mypaint.xml.h:77
+msgctxt "Menu|Layer|"
+msgid "Locked"
+msgstr "Blocat"
+
+#: ../po/tmp/mypaint.xml.h:78
+msgid "The current layer's locked state: locked layers cannot be drawn to"
+msgstr "Starea de blocare a stratului curent: straturile blocate nu pot fi desenate pe"
+
+#: ../po/tmp/mypaint.xml.h:79
+msgctxt "Menu|Layer|"
+msgid "Visible"
+msgstr "Vizibil"
+
+#: ../po/tmp/mypaint.xml.h:80
+msgid "The current layer's visibility state"
+msgstr "Starea de vizibilitate a stratului curent"
+
+#: ../po/tmp/mypaint.xml.h:81
+msgctxt "Menu|View|"
+msgid "Reset and Center"
+msgstr "Resetează și centrează"
+
+#: ../po/tmp/mypaint.xml.h:82
+msgid "Reset Zoom, Rotation and Mirroring, and recenter the document"
+msgstr "Resetează zoom, rotație și oglindire, și recentrează documentul"
+
+#: ../po/tmp/mypaint.xml.h:83
+msgctxt "Menu|View|"
+msgid "Fit"
+msgstr "Potrivește"
+
+#: ../po/tmp/mypaint.xml.h:84
+msgid "Zoom to fit the document, and recenter"
+msgstr "Mărește pentru a potrivi cu documentul și recentrează"
+
+#: ../po/tmp/mypaint.xml.h:85
+msgctxt "Menu|View|"
+msgid "Reset"
+msgstr "Resetează"
+
+#: ../po/tmp/mypaint.xml.h:86
+msgctxt "Menu|View|Reset|"
+msgid "Zoom"
+msgstr "Mărire"
+
+#: ../po/tmp/mypaint.xml.h:87
+msgctxt "Menu|View|Reset|"
+msgid "Rotation"
+msgstr "Rotație"
+
+#: ../po/tmp/mypaint.xml.h:88
+msgctxt "Menu|View|Reset|"
+msgid "Mirror"
+msgstr "Oglindire"
+
+#: ../po/tmp/mypaint.xml.h:89
+msgctxt "Menu|View|Adjust View|"
+msgid "Zoom In"
+msgstr "Mărește"
+
+#: ../po/tmp/mypaint.xml.h:90
+msgid "Increase magnification"
+msgstr "Crește mărirea"
+
+#: ../po/tmp/mypaint.xml.h:91
+msgctxt "Menu|View|Adjust View|"
+msgid "Zoom Out"
+msgstr "Micșorează"
+
+#: ../po/tmp/mypaint.xml.h:92
+msgid "Decrease magnification"
+msgstr "Scade mărirea"
+
+#: ../po/tmp/mypaint.xml.h:93
+msgctxt "Menu|View|Adjust View|"
+msgid "Rotate Counterclockwise"
+msgstr "Rotește în sens trigonometric"
+
+#: ../po/tmp/mypaint.xml.h:94
+msgid "Rotate the view counterclockwise"
+msgstr "Rotește viziunea în sens trigonometric"
+
+#: ../po/tmp/mypaint.xml.h:95
+msgctxt "Menu|View|Adjust View|"
+msgid "Rotate Clockwise"
+msgstr "Rotește în sens orar"
+
+#: ../po/tmp/mypaint.xml.h:96
+msgid "Rotate the view clockwise"
+msgstr "Rotește viziunea imaginea spre stânga"
+
+#: ../po/tmp/mypaint.xml.h:97
+msgctxt "Menu|View|Adjust View|"
+msgid "Mirror Horizontal"
+msgstr "Oglindește orizontal"
+
+#: ../po/tmp/mypaint.xml.h:98
+msgid "Flip the view left to right"
+msgstr "Întoarce imaginea de la stânga la dreapta"
+
+#: ../po/tmp/mypaint.xml.h:99
+msgctxt "Menu|View|Adjust View|"
+msgid "Mirror Vertical"
+msgstr "Oglindește vertical"
+
+#: ../po/tmp/mypaint.xml.h:100
+msgid "Flip the view upside-down"
+msgstr "Intoarce imaginea de sus în jos"
+
+#: ../po/tmp/mypaint.xml.h:101
+msgctxt "Menu|View|"
+msgid "Layer Solo"
+msgstr "Strat singur"
+
+#: ../po/tmp/mypaint.xml.h:102
+msgctxt "Menu|View|"
+msgid "Hide Layers Above Current"
+msgstr "Ascunde straturile de deasupra celui curent"
+
+#: ../po/tmp/mypaint.xml.h:103
+msgctxt "Menu|Brush|"
+msgid "Blend Mode"
+msgstr "Mod amestecare"
+
+#: ../po/tmp/mypaint.xml.h:104
+msgctxt "Menu|Edit|"
+msgid "Symmetrical Painting"
+msgstr "Desenează simetric"
+
+#: ../po/tmp/mypaint.xml.h:105
+msgid "Mirrors all strokes drawn around the vertical axis"
+msgstr "Oglindește toate tușele aplicate, de-a lungul axei verticale"
+
+#: ../po/tmp/mypaint.xml.h:106
+msgctxt "Menu|Help|Debug|"
+msgid "Print Brush Input Values to Console"
+msgstr "Afișează la consolă valorile de intrare ale pensulei"
+
+#: ../po/tmp/mypaint.xml.h:107
+msgctxt "Menu|Help|Debug|"
+msgid "Visualize Rendering"
+msgstr "Vizualizează randarea"
+
+#: ../po/tmp/mypaint.xml.h:108
+msgid "Show rendering updates on-screen, for debugging"
+msgstr "Afișează actualizarea randării pe ecran, pentru depanare"
+
+#: ../po/tmp/mypaint.xml.h:109
+msgctxt "Menu|Help|Debug|"
+msgid "Disable GTK Double Buffering"
+msgstr "Dezactivează GTK Double Buffering"
+
+#: ../po/tmp/mypaint.xml.h:110
+msgctxt "Menu|"
+msgid "File"
+msgstr "Fișier"
+
+#: ../po/tmp/mypaint.xml.h:111
+msgctxt "Menu|File|"
+msgid "Quit"
+msgstr "Ieșire"
+
+#: ../po/tmp/mypaint.xml.h:112
+msgctxt "Menu|File|"
+msgid "Frame Enabled"
+msgstr "Cadru activat"
+
+#: ../po/tmp/mypaint.xml.h:113
+msgctxt "Menu|"
+msgid "Edit"
+msgstr "Editează"
+
+#: ../po/tmp/mypaint.xml.h:114
+msgctxt "Menu|"
+msgid "Color"
+msgstr "Culoare"
+
+#: ../po/tmp/mypaint.xml.h:115
+msgctxt "Menu|Color|"
+msgid "Adjust Color"
+msgstr "Ajustează culoare"
+
+#: ../po/tmp/mypaint.xml.h:116
+msgctxt "Menu|Color|"
+msgid "Pick Color"
+msgstr "Alege culoare"
+
+#: ../po/tmp/mypaint.xml.h:117
+msgctxt "Menu|Color|"
+msgid "Color History"
+msgstr "Istoric culoare"
+
+#: ../po/tmp/mypaint.xml.h:118
+msgctxt "Menu|Color|"
+msgid "Change Color"
+msgstr "Schimbă culoare"
+
+#: ../po/tmp/mypaint.xml.h:119
+msgid "Color changer popup (crossed bowl)"
+msgstr "Selector culoare (crossed bowl)"
+
+#: ../po/tmp/mypaint.xml.h:120
+msgctxt "Menu|Color|"
+msgid "Change Color (wash)"
+msgstr "Schimbă culoare (wash)"
+
+#: ../po/tmp/mypaint.xml.h:121
+msgid "Color changer popup (wash)"
+msgstr "Selector culoare (wash)"
+
+#: ../po/tmp/mypaint.xml.h:122
+msgctxt "Menu|Color|"
+msgid "Change Color (ring)"
+msgstr "Schimbă culoare (inel)"
+
+#: ../po/tmp/mypaint.xml.h:123
+msgid "Color changer popup (concentric rings)"
+msgstr "Selector culoare (inele concentrice)"
+
+#: ../po/tmp/mypaint.xml.h:124
+msgctxt "Menu|Color|"
+msgid "Color Details"
+msgstr "Detalii culoare"
+
+#: ../po/tmp/mypaint.xml.h:125
+msgid "Color details dialog with text entry"
+msgstr "Dialog pentru detalii de culoare cu intrare text"
+
+#: ../po/tmp/mypaint.xml.h:126
+msgctxt "Menu|Color"
+msgid "Next Palette Color"
+msgstr "Următoarea paletă de culoare"
+
+#: ../po/tmp/mypaint.xml.h:127
+msgid "Next color in the palette"
+msgstr "Următoarea culoare în paletă"
+
+#: ../po/tmp/mypaint.xml.h:128
+msgctxt "Menu|Color|"
+msgid "Previous Palette Color"
+msgstr "Culoarea precedentă în paletă"
+
+#: ../po/tmp/mypaint.xml.h:129
+msgid "Previous color in the palette"
+msgstr "Culoarea precedentă în paletă"
+
+#: ../po/tmp/mypaint.xml.h:130
+msgctxt "Menu|"
+msgid "Layer"
+msgstr "Strat"
+
+#: ../po/tmp/mypaint.xml.h:131
+msgctxt "Menu|Layer|"
+msgid "Opacity"
+msgstr "Opacitate"
+
+#: ../po/tmp/mypaint.xml.h:132
+msgctxt "Menu|Layer|"
+msgid "Go to Layer"
+msgstr "Du-te la strat"
+
+#: ../po/tmp/mypaint.xml.h:133
+msgctxt "Menu|"
+msgid "Scratchpad"
+msgstr "Caiet de ciorne"
+
+#: ../po/tmp/mypaint.xml.h:134
+msgctxt "Menu|Scratchpad|"
+msgid "New"
+msgstr "Nou"
+
+#: ../po/tmp/mypaint.xml.h:135
+msgctxt "Menu|Scratchpad|"
+msgid "Open..."
+msgstr "Deschide..."
+
+#: ../po/tmp/mypaint.xml.h:136
+msgctxt "Menu|Scratchpad|"
+msgid "Save"
+msgstr "Salvează"
+
+#: ../po/tmp/mypaint.xml.h:137
+msgctxt "Menu|Scratchpad|"
+msgid "Save As..."
+msgstr "Salvează ca..."
+
+#: ../po/tmp/mypaint.xml.h:138
+msgctxt "Menu|Scratchpad|"
+msgid "Revert"
+msgstr "Revino"
+
+#: ../po/tmp/mypaint.xml.h:139
+msgctxt "Menu|Scratchpad|"
+msgid "Save as Default"
+msgstr "Salveaza ca implicit"
+
+#: ../po/tmp/mypaint.xml.h:140
+msgctxt "Menu|Scratchpad|"
+msgid "Clear Default"
+msgstr "Șterge implicit"
+
+#: ../po/tmp/mypaint.xml.h:141
+msgctxt "Menu|Scratchpad|"
+msgid "Use Main Background"
+msgstr "Folosește fundal principal"
+
+#: ../po/tmp/mypaint.xml.h:142
+msgctxt "Menu|Scratchpad|"
+msgid "Color Dabs"
+msgstr "Tampoane culoare"
+
+#: ../po/tmp/mypaint.xml.h:143
+msgctxt "Menu|Scratchpad|Color Dabs|"
+msgid "Render from File..."
+msgstr "Randează din fișier..."
+
+#: ../po/tmp/mypaint.xml.h:144
+msgctxt "Menu|Scratchpad|Color Dabs|"
+msgid "Saturation Spread for Current Color"
+msgstr "Răspândirea saturației culorii curente"
+
+#: ../po/tmp/mypaint.xml.h:145
+msgctxt "Menu|Brush|"
+msgid "Brush"
+msgstr "Pensulă"
+
+#: ../po/tmp/mypaint.xml.h:146
+msgctxt "Menu|Brush|"
+msgid "Shortcut Keys"
+msgstr "Taste scurtături"
+
+#: ../po/tmp/mypaint.xml.h:147
+msgctxt "Menu|Brush|Shortcut Keys|"
+msgid "Help"
+msgstr "Ajutor"
+
+#: ../po/tmp/mypaint.xml.h:148
+msgctxt "Menu|Brush|"
+msgid "Change Brush"
+msgstr "Schimbă pensulă"
+
+#: ../po/tmp/mypaint.xml.h:149
+msgctxt "Menu|Brush|"
+msgid "Get More Brushes..."
+msgstr "Obține mai mute pensule..."
+
+#: ../po/tmp/mypaint.xml.h:150
+msgctxt "Menu|Brush|"
+msgid "Import Brushes..."
+msgstr "Importă pensule..."
+
+#: ../po/tmp/mypaint.xml.h:151
+msgctxt "Menu|Help|"
+msgid "Help"
+msgstr "Ajutor"
+
+#: ../po/tmp/mypaint.xml.h:152
+msgctxt "Menu|Help|"
+msgid "Where is the Documentation?"
+msgstr "Unde se gasește documentația?"
+
+#: ../po/tmp/mypaint.xml.h:153
+msgctxt "Menu|Help|"
+msgid "Change the Keyboard Shortcuts?"
+msgstr "Schimbă combinații taste"
+
+#: ../po/tmp/mypaint.xml.h:154
+msgctxt "Menu|Help|"
+msgid "About MyPaint"
+msgstr "Despre MyPaint"
+
+#: ../po/tmp/mypaint.xml.h:155
+msgctxt "Menu|Help|"
+msgid "Debug"
+msgstr "Depanează"
+
+#: ../po/tmp/mypaint.xml.h:156
+msgctxt "Menu|Help|Debug|"
+msgid "Print Memory Leak Info to Console (Slow!)"
+msgstr "Afișează informații despre scurgeri de memorie la consola (lent!)"
+
+#: ../po/tmp/mypaint.xml.h:157
+msgctxt "Menu|Help|Debug|"
+msgid "Run Garbage Collector Now"
+msgstr "Pornește Garbage Collector acum"
+
+#: ../po/tmp/mypaint.xml.h:158
+msgctxt "Menu|Help|Debug|"
+msgid "Start/Stop Python Profiling (cProfile)"
+msgstr "Pornește/Oprește Python Profiling (cProfile)"
+
+#: ../po/tmp/mypaint.xml.h:159
+msgctxt "Menu|Help|Debug|"
+msgid "GTK Input Device Dialog"
+msgstr "Dialog dispozitiv de intrare GTK"
+
+#: ../po/tmp/mypaint.xml.h:160
+msgctxt "Menu|"
+msgid "View"
+msgstr "Vizualizare"
+
+#: ../po/tmp/mypaint.xml.h:161
+msgctxt "Menu|View|"
+msgid "Toolbars"
+msgstr "Bare de unelte"
+
+#: ../po/tmp/mypaint.xml.h:162
+msgctxt "Menu|View|"
+msgid "Feedback"
+msgstr "Răspuns"
+
+#: ../po/tmp/mypaint.xml.h:163
+msgctxt "Menu|View|"
+msgid "Adjust View"
+msgstr "Ajustează vizualizare"
+
+#: ../po/tmp/mypaint.xml.h:164
+msgctxt "Menu|View|"
+msgid "Popup Menu"
+msgstr "Meniu context"
+
+#: ../po/tmp/mypaint.xml.h:165
+msgctxt "Menu|Edit|"
+msgid "Preferences"
+msgstr "Preferințe"
+
+#: ../po/tmp/mypaint.xml.h:166
+msgid "Test Input Devices"
+msgstr "Testează dispozitive intrare"
+
+#: ../po/tmp/mypaint.xml.h:167
+msgid "Document Frame..."
+msgstr "Cadru document..."
+
+#: ../po/tmp/mypaint.xml.h:168
+msgid "Set and adjust a frame for the canvas"
+msgstr "Setează și ajustează rama pânzei"
+
+#: ../po/tmp/mypaint.xml.h:169
+msgid "Layers Window"
+msgstr "Fereastră straturi"
+
+#: ../po/tmp/mypaint.xml.h:170
+msgid "Edit and rearrange layers"
+msgstr "Editează și reorganizează straturi"
+
+#: ../po/tmp/mypaint.xml.h:171
+msgctxt "Menu|Layer|"
+msgid "Choose Background"
+msgstr "Alege fundal"
+
+#: ../po/tmp/mypaint.xml.h:172
+msgid "Choose a background image"
+msgstr "Alege o imagine de fundal"
+
+#: ../po/tmp/mypaint.xml.h:173
+msgctxt "Menu|Brush|"
+msgid "Brushes Window"
+msgstr "Fereastră pensule"
+
+#: ../po/tmp/mypaint.xml.h:174
+msgid "Select brushes, and edit brush sets"
+msgstr "Selectează pensule și editează seturi de pensule"
+
+#: ../po/tmp/mypaint.xml.h:175
+msgctxt "Menu|Brush|"
+msgid "Settings Window"
+msgstr "Fereastră setări"
+
+#: ../po/tmp/mypaint.xml.h:176
+msgid "Edit the active brush's settings"
+msgstr "Editează setările pensulei active"
+
+#: ../po/tmp/mypaint.xml.h:177
+msgctxt "Menu|Color|"
+msgid "Colors Window"
+msgstr "Fereastră culoare"
+
+#: ../po/tmp/mypaint.xml.h:178
+msgid "Set the color used for painting"
+msgstr "Setează culoarea folosită pentru desen"
+
+#: ../po/tmp/mypaint.xml.h:179
+msgctxt "Menu|Scratchpad|"
+msgid "Scratchpad Window"
+msgstr "Fereastră caiet de ciorne"
+
+#: ../po/tmp/mypaint.xml.h:180
+msgid "Mix colors and make sketches on separate scrap pages"
+msgstr "Amestecă culori și schițează pe ciorne diferite"
+
+#: ../po/tmp/mypaint.xml.h:181
+msgctxt "Menu|View|"
+msgid "Subwindows"
+msgstr "Subferestre"
+
+#: ../po/tmp/mypaint.xml.h:182
+msgid "Show subwindows"
+msgstr "Arată subferestre"
+
+#: ../po/tmp/mypaint.xml.h:183
+msgctxt "Menu|View|Feedback|"
+msgid "Zoom Level"
+msgstr "Nivel mărire"
+
+#: ../po/tmp/mypaint.xml.h:184
+msgid "Show the zoom level when zooming in or out"
+msgstr "Arată nivelul de mărire în timpul măririi sau micșorării"
+
+#: ../po/tmp/mypaint.xml.h:185
+msgctxt "Menu|View|Feedback|"
+msgid "Last Painting Position"
+msgstr "Ulrima poziție de desenare"
+
+#: ../po/tmp/mypaint.xml.h:186
+msgid "Show where strokes end"
+msgstr "Arată unde tușele se termină"
+
+#: ../po/tmp/mypaint.xml.h:187
+msgctxt "Menu|View|Feedback|"
+msgid "Axis of Symmetry"
+msgstr "Axă de simetrie"
+
+#: ../po/tmp/mypaint.xml.h:188
+msgid "Show the symmetry axis"
+msgstr "Arată axa de simetrie"
+
+#: ../po/tmp/mypaint.xml.h:189
+msgctxt "Menu|View|Toolbars|"
+msgid "Menubar Only"
+msgstr "Numai bara meniu"
+
+#: ../po/tmp/mypaint.xml.h:190
+msgid "Show menu bar"
+msgstr "Arată bară meniu"
+
+#: ../po/tmp/mypaint.xml.h:191
+msgctxt "Menu|View|Toolbars|"
+msgid "Toolbar Only"
+msgstr "Numai bara unelte"
+
+#: ../po/tmp/mypaint.xml.h:192
+msgid "Show toolbar"
+msgstr "Arată bară unelte"
+
+#: ../po/tmp/mypaint.xml.h:193
+msgctxt "Menu|View|Toolbars|"
+msgid "Both"
+msgstr "Amandouă"
+
+#: ../po/tmp/mypaint.xml.h:194
+msgid "Show both the menu bar and the toolbar"
+msgstr "Arată bară meniu și bară instrumente"
+
+#: ../po/tmp/mypaint.xml.h:195
+msgctxt "Menu|Edit|"
+msgid "Current Mode"
+msgstr "Mod curent"
+
+#: ../po/tmp/mypaint.xml.h:196
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Freehand Drawing"
+msgstr "Desen liber"
+
+#: ../po/tmp/mypaint.xml.h:197
+msgctxt "Toolbar|"
+msgid "Freehand"
+msgstr "Liber"
+
+#: ../po/tmp/mypaint.xml.h:198
+msgid "Freehand Drawing: draw and paint freely, without geometric constraints"
+msgstr "Desen liber: desenează și pictează liber, fără limitări geometrice"
+
+#: ../po/tmp/mypaint.xml.h:199
+msgctxt "Menu|Edit|"
+msgid "Freehand Drawing"
+msgstr "Desenare liberă"
+
+#: ../po/tmp/mypaint.xml.h:200
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Scroll View"
+msgstr "Defilează viziunea"
+
+#: ../po/tmp/mypaint.xml.h:201
+msgctxt "Toolbar|"
+msgid "Scroll"
+msgstr "Defilare"
+
+#: ../po/tmp/mypaint.xml.h:202
+msgid "Scroll View: move around the canvas by clicking and dragging"
+msgstr "Defilează viziunea: deplasațivă pe pânză făcând clic și trăgând"
+
+#: ../po/tmp/mypaint.xml.h:203
+msgctxt "Menu|View|"
+msgid "Scroll"
+msgstr "Defilează"
+
+#: ../po/tmp/mypaint.xml.h:204
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Rotate View"
+msgstr "Rotește viziune"
+
+#: ../po/tmp/mypaint.xml.h:205
+msgctxt "Toolbar|"
+msgid "Rotate"
+msgstr "Rotește"
+
+#: ../po/tmp/mypaint.xml.h:206
+msgid "Rotate View: turn the canvas by clicking and dragging"
+msgstr "Rotește viziune: întoarce pânza făcând clic și trăgând"
+
+#: ../po/tmp/mypaint.xml.h:207
+msgctxt "Menu|View|"
+msgid "Rotate"
+msgstr "Rotește"
+
+#: ../po/tmp/mypaint.xml.h:208
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Zoom View"
+msgstr "Mărește viziune"
+
+#: ../po/tmp/mypaint.xml.h:209
+msgctxt "Toolbar|"
+msgid "Zoom"
+msgstr "Mărire"
+
+#: ../po/tmp/mypaint.xml.h:210
+msgid "Zoom View: zoom the canvas by clicking and dragging"
+msgstr "Mărește viziune: mărește pânza făcând clic și trâgând"
+
+#: ../po/tmp/mypaint.xml.h:211
+msgctxt "Menu|View|"
+msgid "Zoom"
+msgstr "Mărire"
+
+#: ../po/tmp/mypaint.xml.h:212
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Lines and Curves"
+msgstr "Linii și curbe"
+
+#: ../po/tmp/mypaint.xml.h:213
+msgctxt "Toolbar|"
+msgid "Lines"
+msgstr "Linii"
+
+#: ../po/tmp/mypaint.xml.h:214
+msgctxt "Menu|Edit|"
+msgid "Lines and Curves"
+msgstr "Linii"
+
+#: ../po/tmp/mypaint.xml.h:215
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Connected Lines"
+msgstr "Linii conectate"
+
+#: ../po/tmp/mypaint.xml.h:216
+msgctxt "Toolbar|"
+msgid "Line Seq."
+msgstr "Secvență linii"
+
+#: ../po/tmp/mypaint.xml.h:217
+msgctxt "Menu|Edit|"
+msgid "Connected Lines"
+msgstr "Linii conectate"
+
+#: ../po/tmp/mypaint.xml.h:218
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Ellipses and Circles"
+msgstr "Elipse și cercuri"
+
+#: ../po/tmp/mypaint.xml.h:219
+msgctxt "Toolbar|"
+msgid "Ellipse"
+msgstr "Elipsă"
+
+#: ../po/tmp/mypaint.xml.h:220
+msgctxt "Menu|Edit|"
+msgid "Ellipses and Circles"
+msgstr "Elipse și cercuri"
+
+#: ../po/tmp/mypaint.xml.h:221
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Move Layer"
+msgstr "Deplasează strat"
+
+#: ../po/tmp/mypaint.xml.h:222
+msgid "Move Layer: reposition the current layer on the canvas"
+msgstr "Deplasează strat: repoziționează stratul curent pe pânză"
+
+#: ../po/tmp/mypaint.xml.h:223
+msgctxt "Menu|Layer|"
+msgid "Move"
+msgstr "Deplasează"
+
+#: ../po/tmp/mypaint.xml.h:224
+msgctxt "Menu|Edit|Current Mode|"
+msgid "Edit Frame"
+msgstr "Editează cadru"
+
+#: ../po/tmp/mypaint.xml.h:225
+msgctxt "Toolbar|"
+msgid "Frame"
+msgstr "Cadru"
+
+#: ../po/tmp/mypaint.xml.h:226
+msgid ""
+"Edit Frame: define a frame around the document to give it a finite size. The "
+"frame is used when exporting."
+msgstr ""
+"Editează cadru: definește un cadru în jurul documentului pentru a-i da o dimensiune "
+"finită. Cadrul este folosit la exportare."
+
+#: ../po/tmp/mypaint.xml.h:227
+msgctxt "Menu|File|"
+msgid "Edit Frame"
+msgstr "Editează cadru"
+
+#~ msgid ""
+#~ "The background %s was ignored because it has an alpha channel. Please "
+#~ "remove it."
+#~ msgstr ""
+#~ "Fundalul %s a fost ignorat deoarece are un canal alfa. Eliminați-l, vă "
+#~ "rog."
+
+#~ msgid ""
+#~ "The background %s was ignored because it is the wrong size. Only (N*%d)x"
+#~ "(M*%d) is supported."
+#~ msgstr ""
+#~ "Fundalul %s a fost ignorat deoarece are mărirea eronată. Numai (N*%d)x(M*"
+#~ "%d) este acceptată."
+
+#~ msgid "Try right click, middle click or Ctrl click"
+#~ msgstr "Încercați clic-dreapta, clic-mijloc sau Ctrl clic"
+
+#~ msgid "Export group as brush package..."
+#~ msgstr "Exportă grupul ca pachet de pensule..."
+
+#~ msgid "Download brushes (in web browser)"
+#~ msgstr "Descarcă pensule (în navigatorul web)"
+
+#~ msgid "Recently used colors"
+#~ msgstr "Culori folosite recent"
+
+#~ msgid "Harmony color switcher"
+#~ msgstr "Selector de culoare Harmony"
+
+#~ msgid "Change Hue"
+#~ msgstr "Schimbă nuanță"
+
+#~ msgid "Pick a screen color"
+#~ msgstr "Alege culoare ecran"
+
+#~ msgid "Change Hue, Saturation and Value"
+#~ msgstr "Schimbă nuantă, saturație și valoare"
+
+#~ msgid "Change Red, Green and Blue components"
+#~ msgstr "Schimbă componentele roșu, verde și albastru"
+
+#~ msgid "Color history"
+#~ msgstr "Istoric culoare"
+
+#~ msgid "Analogous"
+#~ msgstr "Analog"
+
+#~ msgid ""
+#~ "Three nearby hues on the color wheel.\n"
+#~ "Often found in nature, frequently pleasing to the eye."
+#~ msgstr ""
+#~ "Trei nuanțe alăturate pe roata culorilor.\n"
+#~ "Des întalnite în natură, frecvent plăcute ochiului."
+
+#~ msgid ""
+#~ "Two opposite hues on the color wheel.\n"
+#~ "Vibrant, and maximally contrasting."
+#~ msgstr ""
+#~ "Două nuanțe opuse pe roata culorilor.\n"
+#~ "Vibrant, și cu contrast maxim."
+
+#~ msgid ""
+#~ "Two hues next to the current hue's complement.\n"
+#~ "Contrasting, but adds a possibly pleasing harmony."
+#~ msgstr ""
+#~ "Două nuanțe alăturate nuanței complementare actuale.\n"
+#~ "Contrastant, dar adaugă o posibilă armonie placută."
+
+#~ msgid "Double complementary"
+#~ msgstr "Dublu complementar"
+
+#~ msgid "Four hues in two complementary pairs."
+#~ msgstr "Patru nuanțe în două perechi complementare."
+
+#~ msgid "Square"
+#~ msgstr "Pătrat"
+
+#~ msgid "Four equally-spaced hues"
+#~ msgstr "Patru nuanțe egal departate"
+
+#~ msgid ""
+#~ "Three equally-spaced hues.\n"
+#~ "Vibrant with equal tension."
+#~ msgstr ""
+#~ "Trei nuanțe egal depărtate\n"
+#~ "Vibrant cu tensiune egală."
+
+#~ msgid "Change value/saturation"
+#~ msgstr "Schimbă valoare/saturație"
+
+#~ msgid "Blend each color to opposite"
+#~ msgstr "Amestecă fiecare culoare cu opusul"
+
+#~ msgid "Blend each color to negative"
+#~ msgstr "Amestecă fiecare culoare cu negativul"
+
+#~ msgid "More Opaque"
+#~ msgstr "Mai opac"
+
+#~ msgid "Less Opaque"
+#~ msgstr "Mai puțin opac"
+
+#~ msgid "Pick Context (layer, brush and color)"
+#~ msgstr "Alege context (strat, pensulă și culoare)"
+
+#~ msgid "Change Color Hue (counter-clockwise)"
+#~ msgstr "Schimbă nuanța culorii (în sens invers acelor de ceasornic)"
+
+#~ msgid "Change Color Hue (clockwise)"
+#~ msgstr "Schimbă nuanța culorii (în sensul acelor de ceasornic)"
+
+#~ msgid "Copy to Clipboard"
+#~ msgstr "Copiaza în clipboard"
+
+#~ msgid "Paste Clipboard (Replace Layer)"
+#~ msgstr "Lipește clipboard (înlocuiește strat)"
+
+#~ msgid "Select Layer at Cursor"
+#~ msgstr "Selectează stratul de la cursor"
+
+#~ msgid "Next (above current)"
+#~ msgstr "Următorul (deasupra curentului)"
+
+#~ msgid "Next (below current)"
+#~ msgstr "Următorul (dedesubtul curentului)"
+
+#~ msgid "Remove"
+#~ msgstr "Elimină"
+
+#~ msgid "Rotate the view right"
+#~ msgstr "Rotește imaginea spre dreapta"
+
+#~ msgid "Undo: nothing to undo"
+#~ msgstr "Anulează: nimic de anulat"
+
+#~ msgid "Redo: nothing to redo"
+#~ msgstr "Refă: nimic de refacut"
+
+#~ msgid "Toggle Document Frame"
+#~ msgstr "Comută ramă document"
+
+#~ msgid "Help!"
+#~ msgstr "Ajutor!"
+
+#~ msgid "Load Scratchpad..."
+#~ msgstr "Încarcă scratchpad..."
+
+#~ msgid "Save Scratchpad Now"
+#~ msgstr "Salvează scratchpadul acum"
+
+#~ msgid "Save Scratchpad As..."
+#~ msgstr "Salvează scratchpadul ca..."
+
+#~ msgid "Save Scratchpad as Default"
+#~ msgstr "Salvează scratchpadul ca implicit"
+
+#~ msgid "Clear the Default Scratchpad"
+#~ msgstr "Curăță scratchpadul implicit"
+
+#~ msgid "Copy Background to Scratchpad"
+#~ msgstr "Copiază fundal în scratchpad"
+
+#~ msgid "Change Brush..."
+#~ msgstr "Schimbă pensula..."
+
+#~ msgid "Download more brushes (in web browser)"
+#~ msgstr "Descarcă mai multe pensule (în navigatorul web)"
+
+#~ msgid "Toggle the Layers list"
+#~ msgstr "Comută listă straturi"
+
+#~ msgid "Change Brush Settings in detail"
+#~ msgstr "Schimbă setari pensule în detaliu"
+
+#~ msgid "Toggle the Colour Triangle"
+#~ msgstr "Comută triunghi culoare"
+
+#~ msgid "Toggle the advanced Colour Sampler"
+#~ msgstr "Comută selector culoare avansat"
+
+#~ msgid "Toggle the scratchpad"
+#~ msgstr "Comută scratchpad"
+
+#~ msgid "Open Last"
+#~ msgstr "Deschide ultimul"
+
+#~ msgid "Reload"
+#~ msgstr "Reîncarcă"
+
+#~ msgid "Crop to active layer bounds"
+#~ msgstr "Taie pe marginile stratului activ"
+
+#, fuzzy
+#~ msgid "Straight/Curved Lines"
+#~ msgstr "Linie dreaptă"
+
+#, fuzzy
+#~ msgid "Sequence of Lines"
+#~ msgstr "Secvență de linii drepte"
+
+#~ msgid "Menu"
+#~ msgstr "Meniu"
+
+#~ msgid "Toggle Subwindows"
+#~ msgstr "Comută subferestre"
+
+#~ msgid "Pan"
+#~ msgstr "Mută"
+
+#~ msgid "Straight Line"
+#~ msgstr "Linie dreaptă"
+
+#~ msgid "Color Changer"
+#~ msgstr "Selector culoare"
+
+#~ msgid "Button 1 + Shift"
+#~ msgstr "Buton 1 + Shift"
+
+#~ msgid "Button 1 + Ctrl (or Alt)"
+#~ msgstr "Buton 1 + Ctrl (sau Alt)"
+
+#~ msgid "Button 2"
+#~ msgstr "Buton 2"
+
+#~ msgid "Button 2 + Shift"
+#~ msgstr "Buton 2 + Shift"
+
+#~ msgid "Button 2 + Ctrl (or Alt)"
+#~ msgstr "Buton 2 + Ctrl (sau Alt)"
+
+#~ msgid "Button 3"
+#~ msgstr "Buton 3"
+
+#~ msgid "Button 3 + Shift"
+#~ msgstr "Buton 3 + Shift"
+
+#~ msgid "Button 3 + Ctrl (or Alt)"
+#~ msgstr "Buton 3 + Ctrl (sau Alt)"
+
+#~ msgid "<b>Pen and mouse button mappings</b>"
+#~ msgstr "<b>Cartografiere butoane maus și stilou</b>"
+
+#~ msgid "Brush List Editor"
+#~ msgstr "Editor listă pensule"
+
+#~ msgid "Brush Modifiers Active"
+#~ msgstr "Modificatori pensula activi"
+
+#~ msgid "Brush Modifiers Inactive"
+#~ msgstr "Modificatori pensula inactivi"

@@ -110,7 +110,7 @@ class AddCel(Action):
         # Create new layer:
         layername = layername_from_description(self.frame.description)
         self.layer = layer.Layer(name=layername)
-        self.layer.surface.observers.append(self.doc.layer_modified_cb)
+        self.layer._surface.observers.append(self.doc.layer_modified_cb)
     
     def redo(self):
         self.doc.layers.append(self.layer)
@@ -118,7 +118,7 @@ class AddCel(Action):
         self.doc.layer_idx = len(self.doc.layers) - 1
         
         self.frame.add_cel(self.layer)
-        self._notify_canvas_observers(self.layer)
+        self._notify_canvas_observers([self.layer])
         self.doc.ani.update_opacities()
         self._notify_document_observers()
     
@@ -126,7 +126,7 @@ class AddCel(Action):
         self.doc.layers.remove(self.layer)
         self.doc.layer_idx = self.prev_idx
         self.frame.remove_cel()
-        self._notify_canvas_observers(self.layer)
+        self._notify_canvas_observers([self.layer])
         self.doc.ani.update_opacities()
         self._notify_document_observers()
 
@@ -144,7 +144,7 @@ class RemoveCel(Action):
             self.doc.layers.remove(self.layer)
             self.prev_idx = self.doc.layer_idx
             self.doc.layer_idx = len(self.doc.layers) - 1
-            self._notify_canvas_observers(self.layer)
+            self._notify_canvas_observers([self.layer])
 
         self.frame.remove_cel()
 
@@ -155,7 +155,7 @@ class RemoveCel(Action):
         if self.prev_idx is not None:
             self.doc.layers.append(self.layer)
             self.doc.layer_idx = self.prev_idx
-            self._notify_canvas_observers(self.layer)
+            self._notify_canvas_observers([self.layer])
 
         self.frame.add_cel(self.layer)
 
@@ -224,7 +224,7 @@ class RemoveFrames(Action):
             if frame.cel is not None and \
             self.doc.ani.frames.count_cel(frame.cel) == 0:
                 self.doc.layers.append(frame.cel)
-                self._notify_canvas_observers(frame.cel)
+                self._notify_canvas_observers([frame.cel])
 
         self.frames.insert_frames(self.frames_to_remove)
 

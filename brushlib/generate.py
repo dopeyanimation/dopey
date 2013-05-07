@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # brushlib - The MyPaint Brush Library
 # Copyright (C) 2007-2008 Martin Renold <martinxyz@gmx.ch>
 #
@@ -16,6 +15,12 @@
 
 "Code generator, part of the build process."
 import os, sys
+
+import gettext
+# workaround for https://gna.org/bugs/index.php?20281
+def do_not_translate(domain, s):
+    return s
+gettext.dgettext = do_not_translate
 import brushsettings
 
 def writefile(filename, s):
@@ -27,19 +32,94 @@ def writefile(filename, s):
         print 'Writing', filename
         open(filename, 'w').write(s)
 
+def generate_enum(enum_name, enum_prefix, count_name, name_list, value_list):
+    # Can only generate an enum which starts at 0, and where each value is 1 more than the former
+    assert len(name_list) == len(value_list)
+    assert value_list == list(xrange(0, len(value_list)))
 
-content = ''
-for i in brushsettings.inputs:
-    content += '#define INPUT_%s %d\n' % (i.name.upper(), i.index)
-content += '#define INPUT_COUNT %d\n' % len(brushsettings.inputs)
-content += '\n'
-for s in brushsettings.settings:
-    content += '#define BRUSH_%s %d\n' % (s.cname.upper(), s.index)
-content += '#define BRUSH_SETTINGS_COUNT %d\n' % len(brushsettings.settings)
-content += '\n'
-for s in brushsettings.states:
-    content += '#define STATE_%s %d\n' % (s.cname.upper(), s.index)
-content += '#define STATE_COUNT %d\n' % len(brushsettings.states)
+    indent = " " * 4
+    begin = "typedef enum {\n"
+    end = "} %s;\n" % enum_name
 
-writefile('brushsettings.hpp', content)
+    entries = []
+    for name in name_list:
+        entries.append(indent + enum_prefix + name)
+    entries.append(indent + count_name)
 
+    return begin + ",\n".join(entries) + "\n" + end
+
+def generate_static_struct_array(struct_type, instance_name, entries_list):
+
+    indent = " " * 4
+    begin = "static %s %s[] = {\n" % (struct_type, instance_name)
+    end = "};\n"
+
+    entries = []
+    for entry in entries_list:
+        entries.append(indent + "{%s}" % (", ".join(entry)))
+    entries.append("\n")
+
+    return begin + ", \n".join(entries) + end
+
+def generate_internal_settings_code():
+    content = ''
+
+    def stringify(value):
+        value = value.replace("\n", "\\n")
+        value = value.replace('"', '\\"')
+        return "\"%s\"" % value
+
+    def floatify(value, positive_inf=True):
+        if value is None:
+            return "FLT_MAX" if positive_inf else "-FLT_MAX"
+
+        return str(value)
+
+    def gettextify(value):
+        return "N_(%s)" % stringify(value)
+
+    def boolify(value):
+        return str("TRUE") if value else str("FALSE")
+
+    def input_info_struct(i):
+        return (stringify(i.name), floatify(i.hard_min), floatify(i.soft_min),
+                floatify(i.normal), floatify(i.soft_max), floatify(i.hard_max),
+                gettextify(i.dname), gettextify(i.tooltip))
+
+    def settings_info_struct(s):
+        return (stringify(s.cname), gettextify(s.name), boolify(s.constant),
+                floatify(s.min), floatify(s.default), floatify(s.max), gettextify(s.tooltip))
+
+    content += generate_static_struct_array("MyPaintBrushSettingInfo", "settings_info_array",
+                                            [settings_info_struct(i) for i in brushsettings.settings])
+    content += "\n"
+    content += generate_static_struct_array("MyPaintBrushInputInfo", "inputs_info_array",
+                                            [input_info_struct(i) for i in brushsettings.inputs])
+
+    return content
+
+def generate_public_settings_code():
+    content = ''
+
+    content += generate_enum("MyPaintBrushInput", "MYPAINT_BRUSH_INPUT_", "MYPAINT_BRUSH_INPUTS_COUNT",
+                             [i.name.upper() for i in brushsettings.inputs],
+                             [i.index for i in brushsettings.inputs])
+    content += '\n'
+    content += generate_enum("MyPaintBrushSetting", "MYPAINT_BRUSH_SETTING_", "MYPAINT_BRUSH_SETTINGS_COUNT",
+                             [i.cname.upper() for i in brushsettings.settings],
+                             [i.index for i in brushsettings.settings])
+    content += '\n'
+    content += generate_enum("MyPaintBrushState", "MYPAINT_BRUSH_STATE_", "MYPAINT_BRUSH_STATES_COUNT",
+                             [i.cname.upper() for i in brushsettings.states],
+                             [i.index for i in brushsettings.states])
+    content += '\n'
+
+    return content
+
+
+if __name__ == '__main__':
+
+    args = sys.argv[1:]
+
+    writefile(args[0], generate_public_settings_code())
+    writefile(args[1], generate_internal_settings_code())

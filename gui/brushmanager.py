@@ -10,6 +10,7 @@
 This module does file management for brushes and brush groups.
 """
 
+import pygtkcompat
 import dialogs
 import gtk
 from gtk import gdk # only for gdk.pixbuf
@@ -17,29 +18,32 @@ from gettext import gettext as _
 import os, zipfile
 from os.path import basename
 import urllib
-import gobject
 from lib.brush import BrushInfo
+from warnings import warn
 
 preview_w = 128
 preview_h = 128
 
-DEFAULT_STARTUP_GROUP = 'Deevad'  # Suggestion only
-DEFAULT_BRUSH = 'deevad/artpen'  # TODO: phase out and use heruristics?
-DEFAULT_ERASER = 'deevad/stick'  # TODO: ---------------"--------------
+DEFAULT_STARTUP_GROUP = 'set#2'  # Suggestion only (FIXME: no effect?)
+DEFAULT_BRUSH = 'deevad/2B_pencil'  # TODO: phase out and use heuristics?
+DEFAULT_ERASER = 'deevad/kneaded_eraser_large'  # TODO: ---------------"--------------
 FOUND_BRUSHES_GROUP = 'lost&found'
 DELETED_BRUSH_GROUP = 'deleted'
 FAVORITES_BRUSH_GROUP = 'favorites'
 DEVBRUSH_NAME_PREFIX = "devbrush_"
+BRUSH_HISTORY_NAME_PREFIX = "history_"
+BRUSH_HISTORY_SIZE = 5
+NUM_BRUSHKEYS = 10
 
 def devbrush_quote(device_name, prefix=DEVBRUSH_NAME_PREFIX):
     """
     Quotes an arbitrary device name for use as the basename of a
     device-specific brush.
 
-    >>> devbrush_quote(u'Heavy Metal Umlaut D\u00ebvice')
-    'devbrush_Heavy+Metal+Umlaut+D%C3%ABvice'
-    >>> devbrush_quote(u'unsafe/device\u005Cname') # U+005C == backslash
-    'devbrush_unsafe%2Fdevice%5Cname'
+        >>> devbrush_quote(u'Heavy Metal Umlaut D\u00ebvice')
+        'devbrush_Heavy+Metal+Umlaut+D%C3%ABvice'
+        >>> devbrush_quote(u'unsafe/device\u005Cname') # U+005C == backslash
+        'devbrush_unsafe%2Fdevice%5Cname'
 
     Hopefully this is OK for Windows, UNIX and Mac OS X names.
     """
@@ -52,10 +56,10 @@ def devbrush_unquote(devbrush_name, prefix=DEVBRUSH_NAME_PREFIX):
     """
     Unquotes the basename of a devbrush for use when matching device names.
 
-    >>> expected = "My sister was bitten by a m\u00f8\u00f8se..."
-    >>> quoted = 'devbrush_My+sister+was+bitten+by+a+m%5Cu00f8%5Cu00f8se...'
-    >>> devbrush_unquote(quoted) == expected
-    True
+        >>> expected = "My sister was bitten by a m\u00f8\u00f8se..."
+        >>> quoted = 'devbrush_My+sister+was+bitten+by+a+m%5Cu00f8%5Cu00f8se...'
+        >>> devbrush_unquote(quoted) == expected
+        True
     """
     devbrush_name = str(devbrush_name)
     assert devbrush_name.startswith(prefix)
@@ -64,12 +68,17 @@ def devbrush_unquote(devbrush_name, prefix=DEVBRUSH_NAME_PREFIX):
     return unicode(u8bytes.decode("utf-8"))
 
 def translate_group_name(name):
-    d = {FOUND_BRUSHES_GROUP: _('lost&found'),
-         DELETED_BRUSH_GROUP: _('deleted'),
-         FAVORITES_BRUSH_GROUP: _('favorites'),
-         'ink': _('ink'),
-         'classic': _('classic'),
-         'experimental': _('experimental'),
+    d = {FOUND_BRUSHES_GROUP: _('Lost & Found'),
+         DELETED_BRUSH_GROUP: _('Deleted'),
+         FAVORITES_BRUSH_GROUP: _('Favorites'),
+         'ink': _('Ink'),
+         'classic': _('Classic'),
+         'set#1': _('Set#1'),
+         'set#2': _('Set#2'),
+         'set#3': _('Set#3'),
+         'set#4': _('Set#4'),
+         'set#5': _('Set#5'),
+         'experimental': _('Experimental'),
          }
     return d.get(name, name)
 
@@ -133,6 +142,8 @@ class BrushManager:
                 brushes = self.get_group_brushes(group, make_active=True)
 
         self.brushes_observers.append(self.brushes_modified_cb)
+
+        self.app.doc.input_stroke_ended_observers.append(self.input_stroke_ended_cb)
 
     def select_initial_brush(self):
         initial_brush = None
@@ -200,12 +211,13 @@ class BrushManager:
 
 
     def load_groups(self):
-        self.contexts = [None for i in xrange(10)]
+        self.contexts = [None for i in xrange(NUM_BRUSHKEYS)]
+        self.history = [None for i in xrange(BRUSH_HISTORY_SIZE)]
 
         brush_by_name = {}
-        def get_brush(name):
+        def get_brush(name, **kwargs):
             if name not in brush_by_name:
-                b = ManagedBrush(self, name, persistent=True)
+                b = ManagedBrush(self, name, persistent=True, **kwargs)
                 brush_by_name[name] = b
             return brush_by_name[name]
 
@@ -287,36 +299,56 @@ class BrushManager:
         # Distinguish between brushes in the brushlist and those that are not;
         # handle lost-and-found ones.
         for name in listbrushes(self.stock_brushpath) + listbrushes(self.user_brushpath):
-            b = get_brush(name)
-            b.in_brushlist = True
             if name.startswith('context'):
+                b = get_brush(name)
                 i = int(name[-2:])
                 self.contexts[i] = b
-                b.load_settings(retain_parent=True)
-                b.in_brushlist = False
             elif name.startswith(DEVBRUSH_NAME_PREFIX):
+                b = get_brush(name)
                 device_name = devbrush_unquote(name)
                 self.brush_by_device[device_name] = b
-                b.load_settings(retain_parent=True)
-                b.in_brushlist = False
-            if b.in_brushlist:
+            elif name.startswith(BRUSH_HISTORY_NAME_PREFIX):
+                b = get_brush(name)
+                i_str = name.replace(BRUSH_HISTORY_NAME_PREFIX, '')
+                i = int(i_str)
+                self.history[i] = b
+            else:
+                # normal brush that will appear in the brushlist
+                b = get_brush(name)
                 if not [True for group in our.itervalues() if b in group]:
                     brushes = self.groups.setdefault(FOUND_BRUSHES_GROUP, [])
                     brushes.insert(0, b)
 
-        # Sensible defaults for brushkeys: clone brushes 1 through 10 from the
-        # default startup group if we need to and if we can.
-        for i in xrange(10):
-            if self.contexts[i] is not None:
-                continue
-            name = unicode('context%02d') % i
-            c = ManagedBrush(self, name=name, persistent=False)
-            group = self.groups.get(DEFAULT_STARTUP_GROUP, [])
-            idx = (i+9) % 10 # keyboard order
-            if idx < len(group):
-                b = group[idx]
-                b.clone_into(c, name)
-            self.contexts[i] = c
+        # Sensible defaults for brushkeys and history: clone the first few
+        # brushes from a normal group if we need to and if we can.
+        # Try the default startup group first.
+        default_group = self.groups.get(DEFAULT_STARTUP_GROUP, None)
+
+        # Otherwise, use the biggest group to minimise the chance
+        # of repetition.
+        if default_group is None:
+            groups_by_len = [(len(g),n,g) for n,g in self.groups.items()]
+            groups_by_len.sort()
+            _len, _name, default_group = groups_by_len[-1]
+
+        # Populate blank entries.
+        for i in xrange(NUM_BRUSHKEYS):
+            if self.contexts[i] is None:
+                idx = (i+9) % 10 # keyboard order
+                c_name = unicode('context%02d') % i
+                c = ManagedBrush(self, name=c_name, persistent=False)
+                group_idx = idx % len(default_group)
+                b = default_group[group_idx]
+                b.clone_into(c, c_name)
+                self.contexts[i] = c
+        for i in xrange(BRUSH_HISTORY_SIZE):
+            if self.history[i] is None:
+                h_name = unicode('%s%d') % (BRUSH_HISTORY_NAME_PREFIX, i)
+                h = ManagedBrush(self, name=h_name, persistent=False)
+                group_i = i % len(default_group)
+                b = default_group[group_i]
+                b.clone_into(h, h_name)
+                self.history[i] = h
 
         # clean up legacy stuff
         fn = os.path.join(self.user_brushpath, 'deleted.conf')
@@ -404,7 +436,6 @@ class BrushManager:
                 if brushname in new_brushes:
                     new_brushes.remove(brushname)
                     if b:
-                        b.load_preview()
                         existing_preview_pixbuf = b.preview
                         if do_ask:
                             answer = dialogs.confirm_rewrite_brush(window, brushname, existing_preview_pixbuf, preview_data)
@@ -443,7 +474,6 @@ class BrushManager:
                     preview_f.write(preview_data)
                     preview_f.close()
                     b.load()
-                    b.in_brushlist = True
                 # finally, add it to the group
                 if b not in managed_brushes:
                     managed_brushes.append(b)
@@ -486,31 +516,71 @@ class BrushManager:
                 f.write(b.name.encode('utf-8') + '\n')
         f.close()
 
-    def find_brushlist_ancestor(self, brush):
-        """Finds the nearest ancestor of a ManagedBrush having in_brushlist
 
-        Searches a brush's ancestry chain for something which can be
-        highlighted for the user in the brushlist. Returns `brush`, one of its
-        ancestors, or None if nothing suitable can be found.
+    def input_stroke_ended_cb(self, *junk):
+        """Update brush history at the end of an input stroke.
         """
-        while brush is not None:
-            if brush.in_brushlist:
-                return brush
-            parent_name = brush.brushinfo.get_string_property("parent_brush_name")
-            brush = self.get_brush_by_name(parent_name)
-        return None
+        b = self.app.brush
+        b_parent = b.get_string_property("parent_brush_name")
+        for i, h in enumerate(self.history):
+            h_parent = h.brushinfo.get_string_property("parent_brush_name")
+            # Possibly we should use a tighter equality check than this, but
+            # then we'd need icons showing modifications from the parent.
+            if b_parent == h_parent:
+                del self.history[i]
+                break
+        h = ManagedBrush(self, name=None, persistent=False)
+        h.brushinfo = b.clone()
+        h.preview = self.selected_brush.preview
+        self.history.append(h)
+        while len(self.history) > BRUSH_HISTORY_SIZE:
+            del self.history[0]
+        for i, h in enumerate(self.history):
+            h.name = u"%s%d" % (BRUSH_HISTORY_NAME_PREFIX, i)
+
+    def is_in_brushlist(self, brush):
+        """Returns whether this brush is accessible through the brush selector."""
+        for group, brushes in self.groups.iteritems():
+            if brush in brushes:
+                return True
+        return False
 
     def select_brush(self, brush):
         """Selects a ManagedBrush, highlights it, & updates the live brush."""
         if brush is None:
             brush = self.get_default_brush()
+
+        brushinfo = brush.brushinfo
+        if not self.is_in_brushlist(brush):
+            # select parent brush instead, but keep brushinfo
+            brush = self.get_parent_brush(brush=brush)
+            if not brush:
+                # no parent, select an empty brush instead
+                brush = ManagedBrush(self)
+
         self.selected_brush = brush
-        if brush.persistent and not brush.settings_loaded:
-            brush.load_settings()
         self.app.preferences['brushmanager.selected_brush'] = brush.name
         # Take care of updating the live brush, amongst other things
         for callback in self.selected_brush_observers:
-            callback(brush)
+            callback(brush, brushinfo)
+
+
+    def get_parent_brush(self, brush=None, brushinfo=None):
+        """Gets the parent `ManagedBrush` for a brush or a `BrushInfo`.
+        """
+        if brush is not None:
+            brushinfo = brush.brushinfo
+        if brushinfo is None:
+            raise RuntimeError, "One of `brush` or `brushinfo` must be defined."
+        parent_name = brushinfo.get_string_property("parent_brush_name")
+        if parent_name is None:
+            return None
+        else:
+            parent_brush = self.get_brush_by_name(parent_name)
+            if parent_brush is None:
+                return None
+            return parent_brush
+
 
     def clone_selected_brush(self, name):
         """
@@ -520,11 +590,7 @@ class BrushManager:
         clone = ManagedBrush(self, name, persistent=False)
         clone.brushinfo = self.app.brush.clone()
         clone.preview = self.selected_brush.preview
-        list_brush = self.find_brushlist_ancestor(self.selected_brush)
-        if list_brush:
-            parent = list_brush.name
-        else:
-            parent = None
+        parent = self.selected_brush.name
         clone.brushinfo.set_string_property("parent_brush_name", parent)
         return clone
 
@@ -554,13 +620,12 @@ class BrushManager:
         for device_name, devbrush in self.brush_by_device.iteritems():
             devbrush.save()
 
+    def save_brush_history(self):
+        for brush in self.history:
+            brush.save()
+
     def set_active_groups(self, groups):
-        """Set active groups, loading them first if neccesary."""
-        for groupname in groups:
-            if not groupname in self.loaded_groups:
-                for brush in self.groups[groupname]:
-                    brush.load_preview()
-            self.loaded_groups.append(groupname)
+        """Set active groups."""
         self.active_groups = groups
         self.app.preferences['brushmanager.selected_groups'] = groups
         for f in self.groups_observers: f()
@@ -609,15 +674,11 @@ class ManagedBrush(object):
     '''Represents a brush, but cannot be selected or painted with directly.'''
     def __init__(self, brushmanager, name=None, persistent=False):
         self.bm = brushmanager
-        self.preview = None
+        self._preview = None
         self.name = name
-        self.brushinfo = BrushInfo()
-        self.persistent = persistent
-        """If True this brush is stored in the filesystem."""
-        self.settings_loaded = False
-        """If True this brush is fully initialized, ready to paint with."""
-        self.in_brushlist = False
-        """Set to True if this brush is known to be in the brushlist"""
+        self._brushinfo = BrushInfo()
+        self.persistent = persistent #: If True this brush is stored in the filesystem.
+        self.settings_loaded = False  #: If True this brush is fully initialized, ready to paint with.
 
         self.settings_mtime = None
         self.preview_mtime = None
@@ -625,6 +686,41 @@ class ManagedBrush(object):
         if persistent:
             # we load the files later, but throw an exception now if they don't exist
             self.get_fileprefix()
+
+    # load preview pixbuf on demand
+    def get_preview(self):
+        if self._preview is None and self.name:
+            self._load_preview()
+        if self._preview is None:
+            # When does this happen?
+            self.preview = pygtkcompat.gdk.pixbuf.new(gdk.COLORSPACE_RGB,
+                            False, 8, preview_w, preview_h)
+            self.preview.fill(0xffffffff) # white
+        return self._preview
+    def set_preview(self, pixbuf):
+        self._preview = pixbuf
+    preview = property(get_preview, set_preview)
+
+    # load brush settings on demand
+    def get_brushinfo(self):
+        if self.persistent and not self.settings_loaded:
+            self._load_settings()
+        return self._brushinfo
+    def set_brushinfo(self, brushinfo):
+        self._brushinfo = brushinfo
+    brushinfo = property(get_brushinfo, set_brushinfo)
+
+    def get_display_name(self):
+        """Gets a displayable name for the brush.
+        """
+        if self.bm.is_in_brushlist(self):  # FIXME: get rid of this check
+            dname = self.name
+        else:
+            dname = self.brushinfo.get_string_property("parent_brush_name")
+        if dname is None:
+            return _("Unknown Brush")
+        return dname.replace("_", " ")
+
 
     def get_fileprefix(self, saving=False):
         prefix = 'b'
@@ -663,15 +759,11 @@ class ManagedBrush(object):
 
     def clone_into(self, target, name):
         "Copies all brush settings into another brush, giving it a new name"
-        if not self.settings_loaded:
+        if not self.settings_loaded:   # XXX refactor
             self.load()
         target.brushinfo = self.brushinfo.clone()
-        list_brush = self.bm.find_brushlist_ancestor(self)
-        if list_brush:
-            parent = list_brush.name
-        else:
-            parent = None
-        target.brushinfo.set_string_property("parent_brush_name", parent)
+        if self.bm.is_in_brushlist(self): # FIXME: get rid of this check!
+            target.brushinfo.set_string_property("parent_brush_name", self.name)
         target.preview = self.preview
         target.name = name
 
@@ -702,38 +794,54 @@ class ManagedBrush(object):
 
     def save(self):
         prefix = self.get_fileprefix(saving=True)
-        if self.preview is None:
-            self.preview = gdk.Pixbuf(gdk.COLORSPACE_RGB, False, 8, preview_w, preview_h)
-            self.preview.fill(0xffffffff) # white
-        self.preview.save(prefix + '_prev.png', 'png')
+
+        if self.preview.get_has_alpha():
+            # remove it (previous mypaint versions would display an empty image)
+            w, h = preview_w, preview_h
+            tmp = pygtkcompat.gdk.pixbuf.new(gdk.COLORSPACE_RGB, False,
+                                             8, w, h)
+            tmp.fill(0xffffffff)
+            self.preview.composite(tmp, 0, 0, w, h, 0, 0, 1, 1, gdk.INTERP_BILINEAR, 255)
+            self.preview = tmp
+
+        pygtkcompat.gdk.pixbuf.save(self.preview, prefix + '_prev.png', 'png')
         brushinfo = self.brushinfo.clone()
         open(prefix + '.myb', 'w').write(brushinfo.save_to_string())
         self.remember_mtimes()
 
-    def load(self, retain_parent=False):
+    def load(self):
         """Loads the brush's preview and settings from disk."""
-        self.load_preview()
-        self.load_settings(retain_parent)
+        if self.name is None:
+            warn("Attempt to load an unnamed brush, don't do that.",
+                 RuntimeWarning, 2)
+            return
+        self._load_preview()
+        self._load_settings()
 
-    def load_preview(self):
+    def _load_preview(self):
         """Loads the brush preview as pixbuf into the brush."""
+        assert self.name
         prefix = self.get_fileprefix()
 
         filename = prefix + '_prev.png'
         pixbuf = gdk.pixbuf_new_from_file(filename)
-        self.preview = pixbuf
+        self._preview = pixbuf
         self.remember_mtimes()
 
-    def load_settings(self, retain_parent=False):
+    def _load_settings(self):
         """Loads the brush settings/dynamics from disk."""
         prefix = self.get_fileprefix()
         filename = prefix + '.myb'
         brushinfo_str = open(filename).read()
-        self.brushinfo.load_from_string(brushinfo_str)
+        try:
+            self._brushinfo.load_from_string(brushinfo_str)
+        except BrushInfo.ParseError, e:
+            print 'Failed to load brush %r: %s' % (filename, e)
+            self._brushinfo.load_defaults()
         self.remember_mtimes()
         self.settings_loaded = True
-        if not retain_parent:
-            self.brushinfo.set_string_property("parent_brush_name", None)
+        if self.bm.is_in_brushlist(self): # FIXME: get rid of this check
+            self._brushinfo.set_string_property("parent_brush_name", None)
         self.persistent = True
 
     def reload_if_changed(self):
@@ -745,11 +853,11 @@ class ManagedBrush(object):
         self.load()
         return True
 
-    def __str__(self):
-        if self.brushinfo.settings:
-            return "<ManagedBrush %s p=%s>" % (self.name, self.brushinfo.get_string_property("parent_brush_name"))
+    def __repr__(self):
+        if self._brushinfo.settings:
+            return "<ManagedBrush %r p=%s>" % (self.name, self._brushinfo.get_string_property("parent_brush_name"))
         else:
-            return "<ManagedBrush %s (settings not loaded yet)>" % self.name
+            return "<ManagedBrush %r (settings not loaded yet)>" % self.name
 
 
 if __name__ == '__main__':

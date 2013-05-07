@@ -6,10 +6,13 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-from math import floor, ceil
+from math import floor, ceil, isnan
 import os, sys, hashlib, zipfile, colorsys, urllib, gc
+import numpy
 
-from gtk import gdk # for gdk_pixbuf stuff
+from gi.repository import GdkPixbuf
+from gi.repository import GLib
+
 import mypaintlib
 
 
@@ -30,7 +33,7 @@ except ImportError:
                 from simplejson import dumps as json_dumps, loads as json_loads
                 print "external python-simplejson"
             except ImportError:
-                raise ImportError("Could jot import json. You either need to use python >= 2.6 or install one of python-cjson, python-json or python-simplejson.")
+                raise ImportError("Could not import json. You either need to use python >= 2.6 or install one of python-cjson, python-json or python-simplejson.")
 
 class Rect:
     def __init__(self, x=0, y=0, w=0, h=0):
@@ -86,20 +89,13 @@ class Rect:
     def __repr__(self):
         return 'Rect(%d, %d, %d, %d)' % (self.x, self.y, self.w, self.h)
 
-def iter_rect(x, y, w, h):
-    assert w>=0 and h>=0
-    for yy in xrange(y, y+h):
-        for xx in xrange(x, x+w):
-            yield (xx, yy)
-
-
 def rotated_rectangle_bbox(corners):
     list_y = [y for (x, y) in corners]
     list_x = [x for (x, y) in corners]
     x1 = int(floor(min(list_x)))
     y1 = int(floor(min(list_y)))
-    x2 = int(ceil(max(list_x)))
-    y2 = int(ceil(max(list_y)))
+    x2 = int(floor(max(list_x)))
+    y2 = int(floor(max(list_y)))
     return x1, y1, x2-x1+1, y2-y1+1
 
 def clamp(x, lo, hi):
@@ -108,14 +104,21 @@ def clamp(x, lo, hi):
     return x
 
 def gdkpixbuf2numpy(pixbuf):
-    # workaround for pygtk still returning Numeric instead of numpy arrays
-    # (see gdkpixbuf2numpy.hpp)
-    arr = pixbuf.get_pixels_array()
-    return mypaintlib.gdkpixbuf_numeric2numpy(arr)
+    # gdk.Pixbuf.get_pixels_array() is no longer wrapped; use our own
+    # implementation.
+    return mypaintlib.gdkpixbuf_get_pixels_array(pixbuf)
+    ## Can't do the following - the created generated array is immutable
+    #w, h = pixbuf.get_width(), pixbuf.get_height()
+    #assert pixbuf.get_bits_per_sample() == 8
+    #assert pixbuf.get_has_alpha()
+    #assert pixbuf.get_n_channels() == 4
+    #arr = numpy.frombuffer(pixbuf.get_pixels(), dtype=numpy.uint8)
+    #arr = arr.reshape(h, w, 4)
+    #return arr
+
 
 def freedesktop_thumbnail(filename, pixbuf=None):
-    """
-    Fetch or (re-)generate the thumbnail in ~/.thumbnails.
+    """Fetch or (re-)generate the thumbnail in ~/.thumbnails.
 
     If there is no thumbnail for the specified filename, a new
     thumbnail will be generated and stored according to the FDO spec.
@@ -130,12 +133,12 @@ def freedesktop_thumbnail(filename, pixbuf=None):
     Returns the thumbnail.
     """
 
-    uri = filename2uri(filename)
+    uri = _filename2uri_freedesktop_canon(filename)
     file_hash = hashlib.md5(uri).hexdigest()
 
     if sys.platform == 'win32':
-        import glib
-        base_directory = os.path.join(glib.get_user_data_dir().decode('utf-8'), 'mypaint', 'thumbnails')
+        base_directory = os.path.join(GLib.get_user_data_dir().decode('utf-8'),
+                                      'mypaint', 'thumbnails')
     else:
         base_directory = expanduser_unicode(u'~/.thumbnails')
 
@@ -165,7 +168,7 @@ def freedesktop_thumbnail(filename, pixbuf=None):
     for fn in acceptable_tb_filenames:
         if not pixbuf and os.path.isfile(fn):
             # use the largest stored thumbnail that isn't obsolete
-            pixbuf = gdk.pixbuf_new_from_file(fn)
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(fn)
             if file_mtime == pixbuf.get_option("tEXt::Thumb::MTime"):
                 save_thumbnail = False
             else:
@@ -176,29 +179,37 @@ def freedesktop_thumbnail(filename, pixbuf=None):
         pixbuf = get_pixbuf(filename)
 
     if pixbuf:
-        pixbuf = scale_proportionally(pixbuf, 256,256)
+        pixbuf = scale_proportionally(pixbuf, 256, 256)
         if save_thumbnail:
-            pixbuf.save(tb_filename_large, 'png', {"tEXt::Thumb::MTime" : file_mtime, "tEXt::Thumb::URI" : uri})
-            # save normal size too, in case some implementations don't bother with large thumbnails
-            pixbuf_normal = scale_proportionally(pixbuf, 128,128)
-            pixbuf_normal.save(tb_filename_normal, 'png', {"tEXt::Thumb::MTime" : file_mtime, "tEXt::Thumb::URI" : uri})
-
+            png_opts = {"tEXt::Thumb::MTime": file_mtime,
+                        "tEXt::Thumb::URI": uri}
+            pixbuf.savev(tb_filename_large, 'png',
+                         png_opts.keys(), png_opts.values())
+            # save normal size too, in case some implementations don't
+            # bother with large thumbnails
+            pixbuf_normal = scale_proportionally(pixbuf, 128, 128)
+            pixbuf_normal.savev(tb_filename_normal, 'png',
+                                png_opts.keys(), png_opts.values())
     return pixbuf
 
+
 def get_pixbuf(filename):
+    """Returns a thumbnail pixbuf from a file.
+    """
     try:
         if os.path.splitext(filename)[1].lower() == ".ora":
             ora = zipfile.ZipFile(filename)
             data = ora.read("Thumbnails/thumbnail.png")
-            loader = gdk.PixbufLoader("png")
+            loader = GdkPixbuf.PixbufLoader("png")
             loader.write(data)
             loader.close()
             return loader.get_pixbuf()
         else:
-            return gdk.pixbuf_new_from_file(filename)
+            return GdkPixbuf.Pixbuf.new_from_file(filename)
     except:
         # filename is a directory, or just nothing image-like
         return
+
 
 def scale_proportionally(pixbuf, w, h, shrink_only=True):
     width, height = pixbuf.get_width(), pixbuf.get_height()
@@ -208,24 +219,27 @@ def scale_proportionally(pixbuf, w, h, shrink_only=True):
     new_width, new_height = int(width * scale), int(height * scale)
     new_width = max(new_width, 1)
     new_height = max(new_height, 1)
-    return pixbuf.scale_simple(new_width, new_height, gdk.INTERP_BILINEAR)
+    return pixbuf.scale_simple(new_width, new_height,
+                               GdkPixbuf.InterpType.BILINEAR)
+
 
 def pixbuf_thumbnail(src, w, h, alpha=False):
-    """
-    Creates a centered thumbnail of a gdk.pixbuf.
+    """Creates a centered thumbnail of a GdkPixbuf.
     """
     src2 = scale_proportionally(src, w, h)
     w2, h2 = src2.get_width(), src2.get_height()
-    dst = gdk.Pixbuf(gdk.COLORSPACE_RGB, alpha, 8, w, h)
+    dst = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, alpha, 8, w, h)
     if alpha:
         dst.fill(0xffffff00) # transparent background
     else:
         dst.fill(0xffffffff) # white background
-    src2.copy_area(0, 0, w2, h2, dst, (w-w2)/2, (h-h2)/2)
+    src2.composite(dst, (w-w2)/2, (h-h2)/2, w2, h2, (w-w2)/2, (h-h2)/2, 1, 1,
+                   GdkPixbuf.InterpType.BILINEAR, 255)
     return dst
 
+
 def uri2filename(uri):
-    # code from http://faq.pygtk.org/index.py?req=show&file=faq23.031.htp
+    # code from http://faq.pyGtk.org/index.py?req=show&file=faq23.031.htp
     # get the path to file
     path = ""
     if uri.startswith('file:\\\\\\'): # windows
@@ -240,6 +254,7 @@ def uri2filename(uri):
     path = path.decode('utf-8') # return unicode object (for Windows)
     
     return path
+
 
 def filename2uri(path):
     path = os.path.abspath(path)
@@ -257,11 +272,43 @@ def filename2uri(path):
     #print 'pathname2url:', repr(path)
     return 'file:///' + path
 
+
+def _filename2uri_freedesktop_canon(path, encoding=None):
+    """Filename-to-URI for the thumbnailer.
+
+      >>> path = u'/tmp/smile (\u263a).ora'
+      >>> _filename2uri_freedesktop_canon(path, encoding='UTF-8')
+      'file:///tmp/smile%20(%E2%98%BA).ora'
+
+    Freedesktop thumbnailing requires the canonical URI for the filename in
+    order for the hashes used it generates to be interoperable with other
+    programs. In particular, ``()`` brackets must not be encoded.
+
+    :param path: the path to encode; must be a unicode object.
+    :param encoding: override the filesystem encoding for testing.
+      If left unspecified, then the system filesystem encoding will be assumed:
+      see `sys.getfilesystemencoding()`. Normally that's correct.
+    :rtype: str, containing a canonical URI.
+
+    """
+    # TODO: investigate whether this can be used as a general replacement for
+    # filename2uri().
+    assert type(path) is unicode
+    if encoding is None:
+        encoding = sys.getfilesystemencoding()
+    path_bytes = path.encode(encoding)
+    return GLib.filename_to_uri(path_bytes, None)
+
+
 def rgb_to_hsv(r, g, b):
+    assert not isnan(r)
     r = clamp(r, 0.0, 1.0)
     g = clamp(g, 0.0, 1.0)
     b = clamp(b, 0.0, 1.0)
-    return colorsys.rgb_to_hsv(r, g, b)
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    assert not isnan(h)
+    return h, s, v
+
 
 def hsv_to_rgb(h, s, v):
     h = clamp(h, 0.0, 1.0)
@@ -269,9 +316,11 @@ def hsv_to_rgb(h, s, v):
     v = clamp(v, 0.0, 1.0)
     return colorsys.hsv_to_rgb(h, s, v)
 
+
 def indent_etree(elem, level=0):
-    """
-    Indent an XML etree. This does not seem to come with python?
+    """Indent an XML etree.
+
+    This does not seem to come with python?
     Source: http://effbot.org/zone/element-lib.htm#prettyprint
     """
     i = "\n" + level*"  "
@@ -325,6 +374,30 @@ def expanduser_unicode(s):
     s = s.decode(sys.getfilesystemencoding())
     return s
 
+
+def escape(u, quot=False, apos=False):
+    """Escapes a Unicode string for use in XML/HTML.
+
+      >>> u = u'<foo> & "bar"'
+      >>> escape(u)
+      '&lt;foo&gt; &amp; "bar"'
+      >>> escape(u, quot=True)
+      '&lt;foo&gt; &amp; &quot;bar&quot;'
+
+    Works like ``cgi.escape()``, but adds character ref encoding for characters
+    outside the ASCII range. The returned string is ASCII.
+
+    """
+    u = u.replace("&", "&amp;")
+    u = u.replace("<", "&lt;")
+    u = u.replace(">", "&gt;")
+    if apos:
+        u = u.replace("'", "&apos;")
+    if quot:
+        u = u.replace('"', "&quot;")
+    return u.encode("ascii", "xmlcharrefreplace")
+
+
 if __name__ == '__main__':
     big = Rect(-3, 2, 180, 222)
     a = Rect(0, 10, 5, 15)
@@ -342,7 +415,6 @@ if __name__ == '__main__':
     assert not a.overlaps(c)
     assert not c.overlaps(a)
 
-
     r1 = Rect( -40, -40, 5, 5 )
     r2 = Rect( -40-1, -40+5, 5, 500 )
     assert not r1.overlaps(r2)
@@ -353,6 +425,9 @@ if __name__ == '__main__':
     r1.x += 999
     assert not r1.overlaps(r2)
     assert not r2.overlaps(r1)
+
+    import doctest
+    doctest.testmod()
 
     print 'Tests passed.'
 

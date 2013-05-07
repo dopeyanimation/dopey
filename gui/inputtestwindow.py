@@ -7,8 +7,12 @@
 # (at your option) any later version.
 
 from gettext import gettext as _
-import gtk, gobject, pango
-gdk = gtk.gdk
+import gtk
+from gtk import gdk
+import gobject
+import pango
+
+import pygtkcompat
 import windowing
 
 
@@ -65,12 +69,12 @@ class Window(windowing.SubWindow):
         vbox.pack_start(tv, expand=True, fill=True)
         self.log = []
 
-    def map_cb(self, *trash):
+    def map_cb(self, *junk):
         if self.initialized:
             return
         print 'Event statistics enabled.'
         self.initialized = True
-        #self.app.doc.tdw.connect("event", self.event_cb)
+        self.app.doc.tdw.connect("event", self.event_cb)
         self.app.drawWindow.connect("event", self.event_cb)
         gobject.timeout_add(1000, self.second_timer_cb, priority=gobject.PRIORITY_HIGH)
 
@@ -88,14 +92,19 @@ class Window(windowing.SubWindow):
         self.motion_dtime_sample = []
         return True
 
-    def event2str(self, event):
+    def event2str(self, widget, event):
         t = str(getattr(event, 'time', '-'))
         msg = '% 6s % 15s' % (t[-6:], event.type.value_name.replace('GDK_', ''))
 
         if hasattr(event, 'x') and hasattr(event, 'y'):
             msg += ' x=% 7.2f y=% 7.2f' % (event.x, event.y)
 
-        pressure = event.get_axis(gdk.AXIS_PRESSURE)
+        if pygtkcompat.USE_GTK3:
+            axis_found, pressure = event.get_axis(gdk.AXIS_PRESSURE)
+            if not axis_found:
+                pressure = None
+        else: # PyGTK
+            pressure = event.get_axis(gdk.AXIS_PRESSURE)
         if pressure is not None:
             self.pressure_label.set_text('%4.4f' % pressure)
             msg += ' pressure=% 4.4f' % pressure
@@ -104,7 +113,15 @@ class Window(windowing.SubWindow):
             msg += ' state=0x%04x' % event.state
 
         if hasattr(event, 'button'):
-            msg += ' button=%d' % event.button
+            if pygtkcompat.USE_GTK3:
+                has_button, button = event.get_button()
+                if not has_button:
+                    button = None
+            else:
+                button = event.button
+                has_button = True
+            if has_button:
+                msg += ' button=%d' % button
 
         if hasattr(event, 'keyval'):
             msg += ' keyval=%s' % event.keyval
@@ -114,16 +131,31 @@ class Window(windowing.SubWindow):
 
         device = getattr(event, 'device', None)
         if device:
-            device = device.name
+            if pygtkcompat.USE_GTK3:
+                device = event.get_source_device()
+                device = device.get_name()
+            else: # PyGTK
+                device = device.name
             if self.last_device != device:
                 self.last_device = device
                 self.device_label.set_text(device)
 
-        xtilt = event.get_axis(gdk.AXIS_XTILT)
-        ytilt = event.get_axis(gdk.AXIS_YTILT)
-        if xtilt is not None or ytilt is not None:
+        if pygtkcompat.USE_GTK3:
+            has_xtilt, xtilt = event.get_axis(gdk.AXIS_XTILT)
+            has_ytilt, ytilt = event.get_axis(gdk.AXIS_YTILT)
+            have_tilts = has_xtilt and has_ytilt
+        else: #PyGTK
+            xtilt = event.get_axis(gdk.AXIS_XTILT)
+            ytilt = event.get_axis(gdk.AXIS_YTILT)
+            have_tilts = xtilt is not None and ytilt is not None
+        if have_tilts:
             self.tilt_label.set_text('%+4.4f / %+4.4f' % (xtilt, ytilt))
 
+        if widget is not self.app.doc.tdw:
+            if widget is self.app.drawWindow:
+                msg += ' [drawWindow]'
+            else:
+                msg += ' [%r]' % widget
         return msg
 
     def report(self, msg):
@@ -136,7 +168,7 @@ class Window(windowing.SubWindow):
     def event_cb(self, widget, event):
         if event.type == gdk.EXPOSE:
             return False
-        msg = self.event2str(event)
+        msg = self.event2str(widget, event)
         if event.type == gdk.MOTION_NOTIFY:
             # statistics
             self.motion_event_counter += 1

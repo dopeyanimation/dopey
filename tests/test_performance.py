@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-
 import sys, os, tempfile, subprocess, gc, cProfile
 from time import time, sleep
 
-import gtk, glib
-from pylab import math, linspace, loadtxt
+from gi.repository import Gtk, Gdk
+from numpy import math, linspace, loadtxt
 
 os.chdir(os.path.dirname(sys.argv[0]))
 sys.path.insert(0, '..')
@@ -81,10 +80,9 @@ def paint(gui):
     gui.wait_for_duration(1.5) # fullscreen seems to take some time to get through...
     gui.wait_for_idle()
 
-    events = loadtxt('painting30sec.dat.gz')
+    events = loadtxt('painting30sec.dat')
     events = list(events)
     yield start_measurement
-    t0 = time()
     t_old = 0.0
     t_last_redraw = 0.0
     for t, x, y, pressure in events:
@@ -93,8 +91,7 @@ def paint(gui):
             t_last_redraw = t
         dtime = t - t_old
         t_old = t
-        cr = tdw.get_model_coordinates_cairo_context()
-        x, y = cr.device_to_user(x, y)
+        x, y = tdw.display_to_model(x, y)
         gui_doc.model.stroke_to(dtime, x, y, pressure, 0.0, 0.0)
     yield stop_measurement
 
@@ -102,8 +99,7 @@ def paint(gui):
 def paint_zoomed_out_5x(gui):
     gui.wait_for_idle()
     gui_doc = gui.app.doc
-    for i in range(5):
-        gui_doc.zoom('ZoomOut')
+    gui.zoom_out(5)
     for res in paint(gui):
         yield res
 
@@ -123,8 +119,7 @@ def layerpaint_zoomed_out_5x(gui):
     gui.app.filehandler.open_file('bigimage.ora')
     gui_doc.tdw.scroll(800, 1000)
     gui_doc.model.select_layer(len(gui_doc.model.layers)/3)
-    for i in range(5):
-        gui_doc.zoom('ZoomOut')
+    gui.zoom_out(5)
     for res in paint(gui):
         yield res
 
@@ -177,7 +172,7 @@ def save_png_layer():
     d = document.Document()
     d.load('biglayer.png')
     yield start_measurement
-    d.layer.surface.save('test_save.png')
+    d.layer.save_as_png('test_save.png')
     yield stop_measurement
 
 
@@ -188,16 +183,24 @@ def brushengine_paint_hires():
     bi = brush.BrushInfo(open('brushes/watercolor.myb').read())
     b = brush.Brush(bi)
 
-    events = loadtxt('painting30sec.dat.gz')
+    events = loadtxt('painting30sec.dat')
     t_old = events[0][0]
-    s.begin_atomic()
     yield start_measurement
+    s.begin_atomic()
+    trans_time = 0.0
     for t, x, y, pressure in events:
         dtime = t - t_old
         t_old = t
         b.stroke_to (s, x*5, y*5, pressure, 0.0, 0.0, dtime)
-    yield stop_measurement
+
+        trans_time += dtime
+        if trans_time > 0.05:
+            trans_time = 0.0
+            s.end_atomic()
+            s.begin_atomic()
+
     s.end_atomic()
+    yield stop_measurement
     #s.save('test_paint_hires.png') # approx. 3000x3000
 
 @gui_test
@@ -228,8 +231,7 @@ def scroll_zoomed_out_1x_onelayer(gui):
     dw = gui.app.drawWindow
     dw.fullscreen_cb()
     gui.app.filehandler.open_file('biglayer.png')
-    for i in range(1):
-        gui.app.doc.zoom('ZoomOut')
+    gui.zoom_out(1)
     gui.wait_for_idle()
     yield start_measurement
     gui.scroll()
@@ -241,8 +243,7 @@ def scroll_zoomed_out_2x_onelayer(gui):
     dw = gui.app.drawWindow
     dw.fullscreen_cb()
     gui.app.filehandler.open_file('biglayer.png')
-    for i in range(2):
-        gui.app.doc.zoom('ZoomOut')
+    gui.zoom_out(2)
     gui.wait_for_idle()
     yield start_measurement
     gui.scroll()
@@ -254,8 +255,7 @@ def scroll_zoomed_out_5x(gui):
     dw = gui.app.drawWindow
     dw.fullscreen_cb()
     gui.app.filehandler.open_file('bigimage.ora')
-    for i in range(5):
-        gui.app.doc.zoom('ZoomOut')
+    gui.zoom_out(5)
     gui.wait_for_idle()
     yield start_measurement
     gui.scroll()
@@ -267,8 +267,7 @@ def memory_zoomed_out_5x(gui):
     dw = gui.app.drawWindow
     dw.fullscreen_cb()
     gui.app.filehandler.open_file('bigimage.ora')
-    for i in range(5):
-        gui.app.doc.zoom('ZoomOut')
+    gui.zoom_out(5)
     gui.wait_for_idle()
     gui.scroll()
     print 'result =', open('/proc/self/statm').read().split()[0]
@@ -344,7 +343,7 @@ if __name__ == '__main__':
                     fname = '%s_%s_%d.pstats' % (options.profile, t, i)
                 args[3] = fname
             child = subprocess.Popen(args, stdout=subprocess.PIPE)
-            output, trash = child.communicate()
+            output, junk = child.communicate()
             if child.returncode != 0:
                 print 'FAILED'
                 break

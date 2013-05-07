@@ -6,60 +6,25 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-"preferences dialog"
-from bisect import bisect_left
+"""Preferences dialog.
+"""
+
+import os.path
+
 from gettext import gettext as _
-import gtk, os
-gdk = gtk.gdk
+import gtk
+from gtk import gdk
 
-from functionwindow import CurveWidget
-from lib import mypaintlib
-import windowing, filehandling
+import windowing
+import canvasevent
 
-device_modes = [
-    ('disabled', _("Disabled (no pressure sensitivity)")),
-    ('screen', _("Screen (normal)")),
-    ('window', _("Window (not recommended)")),  ]
 
 RESPONSE_REVERT = 1
 
-# Rebindable mouse buttons
-mouse_button_actions = [
-    # These can be names of actions within ActionGroups defined elsewhere,
-    # or names of actions the handler interprets itself.
-    # NOTE: The translatable strings for actions are duplicated from
-    # their action definition. Please keep in sync (or refactor to get the string from there)
-    # (action_or_whatever, label)
-    ('no_action', _("No action")),  #[0] is the default for the comboboxes
-    ('popup_menu', _("Menu")),
-    ('ToggleSubwindows', _("Toggle Subwindows")),
-    ('ColorPickerPopup', _("Pick Color")),
-    ('PickContext', _('Pick Context (layer, brush and color)')),
-    ('PickLayer', _('Select Layer at Cursor')),
-    ('pan_canvas', _("Pan")),
-    ('zoom_canvas', _("Zoom")),
-    ('rotate_canvas', _("Rotate")),
-    ('straight_line', _("Straight Line")),
-    ('straight_line_sequence', _("Sequence of Straight Lines")),
-    ('ColorChangerPopup', _("Color Changer")),
-    ('ColorRingPopup', _("Color Ring")),
-    ('ColorHistoryPopup', _("Color History")),
-    ]
-mouse_button_prefs = [
-    # Used for creating the menus,
-    # (pref_name, label)
-    ("input.button1_shift_action", _("Button 1 + Shift")),
-    ("input.button1_ctrl_action",  _("Button 1 + Ctrl (or Alt)")),
-    ("input.button2_action",       _("Button 2")),
-    ("input.button2_shift_action", _("Button 2 + Shift")),
-    ("input.button2_ctrl_action",  _("Button 2 + Ctrl (or Alt)")),
-    ("input.button3_action",       _("Button 3")),
-    ("input.button3_shift_action", _("Button 3 + Shift")),
-    ("input.button3_ctrl_action",  _("Button 3 + Ctrl (or Alt)")),
-    ]
 
-class Window(windowing.Dialog):
-    '''Window for manipulating preferences.'''
+class Window (windowing.Dialog):
+    """Window for manipulating preferences.
+    """
 
     def __init__(self, app):
         flags = gtk.DIALOG_DESTROY_WITH_PARENT
@@ -73,180 +38,37 @@ class Window(windowing.Dialog):
         self.in_update_ui = False
 
         # Set up widgets
-        nb = gtk.Notebook()
-        nb.set_border_width(12)
+        builder = gtk.Builder()
+        xml_path = os.path.join(app.datapath, 'gui/preferenceswindow.glade')
+        builder.add_from_file(xml_path)
+        self._builder = builder
+
+        # Notebook
+        nb = builder.get_object("prefs_notebook")
+        self.nb = nb
         self.vbox.pack_start(nb, expand=True, padding=0)
 
-        ### Input tab
-        table = gtk.Table(5, 3)
-        table.set_border_width(12)
-        table.set_col_spacing(0, 12)
-        table.set_col_spacing(1, 12)
-        table.set_row_spacings(6)
-        current_row = 0
-        # TRANSLATORS: Tab label
-        nb.append_page(table, gtk.Label(_('Pen Input')))
-        xopt = gtk.FILL | gtk.EXPAND
-        yopt = gtk.FILL
+        # Curve init
+        curve = builder.get_object("mapping_curve")
+        curve.changed_cb = self.pressure_curve_changed_cb
+        curve.magnetic = False
+        self._pressure_curve = curve
 
-        l = gtk.Label()
-        l.set_alignment(0.0, 0.5)
-        l.set_markup(_('<b>Input Device</b>'))
-        table.attach(l, 0, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
+        # Button mappings editor
+        assert app.preferences.has_key("input.button_mapping")
+        reg = canvasevent.ModeRegistry
+        actions_possible = [n for n in reg.get_action_names()
+                            if issubclass(reg.get_mode_class(n),
+                                          canvasevent.SpringLoadedModeMixin) ]
+        actions_possible += canvasevent.extra_actions
+        bm_ed = builder.get_object("button_mapping_editor")
+        bm_ed.set_bindings(app.preferences["input.button_mapping"])
+        bm_ed.set_actions(actions_possible)
+        bm_ed.bindings_observers.append(self.button_mapping_edited_cb)
 
-        l = gtk.Label()
-        l.set_alignment(0.0, 0.5)
-        l.set_line_wrap(True)
-        l.set_markup(_('Scale input pressure to brush pressure. This is applied to all input devices. The mouse button has an input pressure of 0.5 when pressed.'))
-        table.attach(l, 1, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
+        # Signal hookup now everything is in the right initial state
+        self._builder.connect_signals(self)
 
-        t = gtk.Table(4, 4)
-        self.cv = CurveWidget(self.pressure_curve_changed_cb, magnetic=False)
-        t.attach(self.cv, 0, 3, 0, 3, gtk.EXPAND | gtk.FILL, gtk.EXPAND | gtk.FILL, 5, 0)
-        l1 = gtk.Label('1.0')
-        if l1.set_angle:
-            # TRANSLATORS: Graph y-axis label
-            l2 = gtk.Label(_('Brush Pressure'))
-            l2.set_angle(90)
-        else:
-            l2 = gtk.Label('')
-        l3 = gtk.Label('0.0')
-        t.attach(l1, 3, 4, 0, 1, 0, 0, 5, 0)
-        t.attach(l2, 3, 4, 1, 2, 0, gtk.EXPAND, 5, 0)
-        t.attach(l3, 3, 4, 2, 3, 0, 0, 5, 0)
-        l4 = gtk.Label('0.0')
-        # TRANSLATORS: Graph x-axis label
-        l5 = gtk.Label(_('Input Pressure'))
-        l5.set_justify(gtk.JUSTIFY_CENTER)
-        l6 = gtk.Label('1.0')
-        t.attach(l4, 0, 1, 3, 4, 0, 0, 5, 0)
-        t.attach(l5, 1, 2, 3, 4, gtk.EXPAND, 0, 5, 0)
-        t.attach(l6, 2, 3, 3, 4, 0, 0, 5, 0)
-        table.attach(t, 1, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        l = gtk.Label(_('Mode: '))
-        l.set_alignment(0.0, 0.5)
-        table.attach(l, 1, 2, current_row, current_row + 1, xopt, yopt)
-        combo = self.input_devices_combo = gtk.combo_box_new_text()
-        for m, s in device_modes:
-            combo.append_text(s)
-        combo.connect('changed', self.input_devices_combo_changed_cb)
-        table.attach(combo, 2, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        ### Buttons tab
-        table = gtk.Table(5, 3)
-        table.set_border_width(12)
-        table.set_col_spacing(0, 12)
-        table.set_col_spacing(1, 12)
-        table.set_row_spacings(6)
-        current_row = 0
-        nb.append_page(table, gtk.Label(_('Buttons')))
-        xopt = gtk.FILL | gtk.EXPAND
-        yopt = gtk.FILL
-
-        l = gtk.Label()
-        l.set_alignment(0.0, 0.5)
-        l.set_markup(_('<b>Pen and mouse button mappings</b>'))
-        table.attach(l, 0, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        # Mouse button actions
-        self.mouse_action_comboboxes = {}
-        for pref_name, label_str in mouse_button_prefs:
-            l = gtk.Label(label_str)
-            l.set_alignment(0.0, 0.5)
-            table.attach(l, 1, 2, current_row, current_row + 1, xopt, yopt)
-            action_name = self.app.preferences.get(pref_name, None)
-            c = gtk.combo_box_new_text()
-            self.mouse_action_comboboxes[pref_name] = c
-            for a, s in mouse_button_actions:
-                c.append_text(s)
-            c.connect("changed", self.mouse_button_action_changed, pref_name)
-            table.attach(c, 2, 3, current_row, current_row + 1, xopt, yopt)
-            current_row += 1
-
-        ### Saving tab
-        table = gtk.Table(5, 3)
-        table.set_border_width(12)
-        table.set_col_spacing(0, 12)
-        table.set_col_spacing(1, 12)
-        table.set_row_spacings(6)
-        current_row = 0
-        nb.append_page(table, gtk.Label(_('Saving')))
-        xopt = gtk.FILL | gtk.EXPAND
-        yopt = gtk.FILL
-
-        l = gtk.Label()
-        l.set_alignment(0.0, 0.5)
-        l.set_markup(_('<b>Saving</b>'))
-        table.attach(l, 0, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        l = gtk.Label(_('Default file format:'))
-        l.set_alignment(0.0, 0.5)
-        combo = self.defaultsaveformat_combo = gtk.combo_box_new_text()
-        self.defaultsaveformat_values = [filehandling.SAVE_FORMAT_ORA, 
-            filehandling.SAVE_FORMAT_PNGSOLID, filehandling.SAVE_FORMAT_JPEG]
-        for saveformat in self.defaultsaveformat_values:
-            format_desc = self.app.filehandler.saveformats[saveformat][0]
-            combo.append_text(format_desc)
-        combo.connect('changed', self.defaultsaveformat_combo_changed_cb)
-        table.attach(l, 1, 2, current_row, current_row + 1, xopt, yopt)
-        table.attach(combo, 2, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        l = gtk.Label()
-        l.set_alignment(0.0, 0.5)
-        l.set_markup(_('<b>Save Next Scrap</b>'))
-        table.attach(l, 0, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        l = gtk.Label(_('Path and filename prefix:'))
-        l.set_alignment(0.0, 0.5)
-        self.prefix_entry = gtk.Entry()
-        self.prefix_entry.connect('changed', self.prefix_entry_changed_cb)
-        table.attach(l, 1, 2, current_row, current_row + 1, xopt, yopt)
-        table.attach(self.prefix_entry, 2, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        ### View tab
-        table = gtk.Table(2, 4)
-        table.set_border_width(12)
-        table.set_col_spacing(0, 12)
-        table.set_col_spacing(1, 12)
-        table.set_row_spacings(6)
-        current_row = 0
-        nb.append_page(table, gtk.Label(_('View')))
-        xopt = gtk.FILL | gtk.EXPAND
-        yopt = gtk.FILL
-
-        l = gtk.Label()
-        l.set_alignment(0.0, 0.5)
-        l.set_markup(_('<b>Default View</b>'))
-        table.attach(l, 0, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        l = gtk.Label(_('Default zoom:'))
-        l.set_alignment(0.0, 0.5)
-        combo = self.defaultzoom_combo = gtk.combo_box_new_text()
-        # Different from doc.zoomlevel_values because we only want a subset
-        # - keep sorted for bisect
-        self.defaultzoom_values = [0.25, 0.50, 1.0, 2.0]
-        for val in self.defaultzoom_values:
-            combo.append_text('%d%%' % (val*100))
-        combo.connect('changed', self.defaultzoom_combo_changed_cb)
-        table.attach(l, 1, 2, current_row, current_row + 1, xopt, yopt)
-        table.attach(combo, 2, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
-
-        b = self.highqualityzoom_checkbox = gtk.CheckButton(_('High quality zoom (may result in slow scrolling)'))
-        b.connect('toggled', self.highqualityzoom_checkbox_changed_cb)
-        table.attach(b, 0, 3, current_row, current_row + 1, xopt, yopt)
-        current_row += 1
 
     def on_response(self, dialog, response, *args):
         if response == gtk.RESPONSE_ACCEPT:
@@ -256,82 +78,175 @@ class Window(windowing.Dialog):
             self.app.load_settings()
             self.app.apply_settings()
 
+
     def update_ui(self):
-        """Update the preferences window to reflect the current settings."""
+        """Update the preferences window to reflect the current settings.
+        """
         if self.in_update_ui:
             return
         self.in_update_ui = True
+
         p = self.app.preferences
-        self.cv.points = p['input.global_pressure_mapping']
-        self.prefix_entry.set_text(p['saving.scrap_prefix'])
+
+        # Pen input curve
+        self._pressure_curve.points = p['input.global_pressure_mapping']
+
+        # prefix for saving scarps
+        entry = self._builder.get_object("scrap_prefix_entry")
+        entry.set_text(p['saving.scrap_prefix'])
+
         # Device mode
-        mode_config = p.get("input.device_mode", None)
-        mode_idx = i = 0
-        for mode_name, junk in device_modes:
-            if mode_config == mode_name:
-                mode_idx = i
-                break
-            i += 1
-        self.input_devices_combo.set_active(mode_idx)
-        zoom = p['view.default_zoom']
-        zoomlevel = min(bisect_left(self.defaultzoom_values, zoom),
-                        len(self.defaultzoom_values) - 1)
-        self.defaultzoom_combo.set_active(zoomlevel)
-        self.highqualityzoom_checkbox.set_active(p['view.high_quality_zoom'])
-        saveformat_config = p['saving.default_format']
-        saveformat_idx = self.app.filehandler.config2saveformat[saveformat_config]
-        idx = self.defaultsaveformat_values.index(saveformat_idx)
-        # FIXME: ^^^^^^^^^ try/catch/default may be more tolerant & futureproof
-        self.defaultsaveformat_combo.set_active(idx)
-        # Mouse button
-        for pref_name, junk in mouse_button_prefs:
-            action_config = p.get(pref_name, None)
-            action_idx = i = 0
-            for action_name, junk in mouse_button_actions:
-                if action_config == action_name:
-                    action_idx = i
-                    break
-                i += 1
-            combobox = self.mouse_action_comboboxes[pref_name]
-            combobox.set_active(action_idx)
-        self.cv.queue_draw()
+        mode_config = p["input.device_mode"]
+        mode_combo = self._builder.get_object("input_mode_combobox")
+        mode_combo.set_active_id(mode_config)
+
+        # Zoom
+        zoom_float = p.get('view.default_zoom', 1.0)
+        zoom_idcolstr = "%0.2f" % (zoom_float,)
+        zoom_combo = self._builder.get_object("default_zoom_combobox")
+        zoom_combo.set_active_id(zoom_idcolstr)
+
+        # Hide whatevs in fullscreen
+        for name in ["menubar", "toolbar", "subwindows"]:
+            checkbutton_name = "fullscreen_hide_%s_checkbutton" % name
+            checkbutton = self._builder.get_object(checkbutton_name)
+            if checkbutton:
+                setting_name = "ui.hide_%s_in_fullscreen" % name
+                setting = p.get(setting_name, True)
+                checkbutton.set_active(setting)
+
+        # High-quality zoom
+        hq_zoom_checkbutton = self._builder.get_object("hq_zoom_checkbutton")
+        hq_zoom_checkbutton.set_active(p['view.high_quality_zoom'])
+
+        # Default save format
+        fmt_config = p['saving.default_format']
+        fmt_combo = self._builder.get_object("default_save_format_combobox")
+        fmt_combo.set_active_id(fmt_config)
+
+        # Button mapping
+        bm_ed = self._builder.get_object("button_mapping_editor")
+        bm_ed.set_bindings(p.get("input.button_mapping", {}))
+
+        # Input curve
+        self._pressure_curve.queue_draw()
+
+        # Cursor presets
+        cursor_config = p.get("cursor.freehand.style", "thin")
+        cursor_combo = self._builder.get_object("freehand_cursor_combobox")
+        cursor_combo.set_active_id(cursor_config)
+
+        # Colour wheel type
+        wheel_config = self.app.brush_color_manager.get_wheel_type()
+        wheel_radiobutton_name = "color_wheel_%s_radiobutton"
+        wheel_radiobutton = self._builder.get_object(wheel_radiobutton_name)
+        if wheel_radiobutton:
+            wheel_radiobutton.set_active(True)
+
         self.in_update_ui = False
 
+
     # Callbacks for widgets that manipulate settings
-    def input_devices_combo_changed_cb(self, widget):
-        i = widget.get_property("active")
-        mode = device_modes[i][0]
+
+    def input_mode_combobox_changed_cb(self, combobox):
+        mode = combobox.get_active_id()
         self.app.preferences['input.device_mode'] = mode
         self.app.apply_settings()
 
-    def mouse_button_action_changed(self, widget, pref_name):
-        i = widget.get_property("active")
-        action = mouse_button_actions[i][0]
-        self.app.preferences[pref_name] = action
-        self.app.apply_settings()
+
+    def button_mapping_edited_cb(self, editor):
+        self.app.button_mapping.update(editor.bindings)
+
 
     def pressure_curve_changed_cb(self, widget):
-        self.app.preferences['input.global_pressure_mapping'] = self.cv.points[:]
+        points = self._pressure_curve.points[:]
+        self.app.preferences['input.global_pressure_mapping'] = points
         self.app.apply_settings()
 
-    def prefix_entry_changed_cb(self, widget):
+
+    def scrap_prefix_entry_changed_cb(self, widget):
         self.app.preferences['saving.scrap_prefix'] = widget.get_text()
 
-    def defaultzoom_combo_changed_cb(self, widget):
-        zoomlevel = self.defaultzoom_combo.get_active()
-        zoom = self.defaultzoom_values[zoomlevel]
+
+    def default_zoom_combobox_changed_cb(self, combobox):
+        zoom_idcolstr = combobox.get_active_id()
+        zoom = float(zoom_idcolstr)
         self.app.preferences['view.default_zoom'] = zoom
 
-    def highqualityzoom_checkbox_changed_cb(self, widget):
-        self.app.preferences['view.high_quality_zoom'] = bool(widget.get_active())
-        self.app.doc.tdw.queue_draw()
 
-    def defaultsaveformat_combo_changed_cb(self, widget):
-        idx = self.defaultsaveformat_combo.get_active()
-        saveformat = self.defaultsaveformat_values[idx]
-        # Reverse lookup
-        for key, val in self.app.filehandler.config2saveformat.iteritems():
-            if val == saveformat:
-                formatstr = key
+    def fullscreen_hide_menubar_checkbutton_toggled_cb(self, widget):
+        hide = bool(widget.get_active())
+        self.app.preferences['ui.hide_menubar_in_fullscreen'] = hide
+
+
+    def fullscreen_hide_toolbar_checkbutton_toggled_cb(self, widget):
+        hide = bool(widget.get_active())
+        self.app.preferences['ui.hide_toolbar_in_fullscreen'] = hide
+
+
+    def fullscreen_hide_subwindows_checkbutton_toggled_cb(self, widget):
+        hide = bool(widget.get_active())
+        self.app.preferences['ui.hide_subwindows_in_fullscreen'] = hide
+
+
+    def hq_zoom_checkbutton_toggled_cb(self, button):
+        hq_zoom = bool(button.get_active())
+        self.app.preferences['view.high_quality_zoom'] = hq_zoom
+
+
+    def default_save_format_combobox_changed_cb(self, combobox):
+        formatstr = combobox.get_active_id()
         self.app.preferences['saving.default_format'] = formatstr
+
+
+    def color_wheel_rgb_radiobutton_toggled_cb(self, radiobtn):
+        if self.in_update_ui or not radiobtn.get_active():
+            return
+        cm = self.app.brush_color_manager
+        cm.set_wheel_type("rgb")
+
+
+    def color_wheel_ryb_radiobutton_toggled_cb(self, radiobtn):
+        if self.in_update_ui or not radiobtn.get_active():
+            return
+        cm = self.app.brush_color_manager
+        cm.set_wheel_type("ryb")
+
+
+    def color_wheel_rygb_radiobutton_toggled_cb(self, radiobtn):
+        if self.in_update_ui or not radiobtn.get_active():
+            return
+        cm = self.app.brush_color_manager
+        cm.set_wheel_type("rygb")
+
+
+    def freehand_cursor_combobox_changed_cb(self, combobox):
+        cname = combobox.get_active_id()
+        if self.in_update_ui:
+            return
+        p = self.app.preferences
+        p["cursor.freehand.style"] = cname
+        if cname == 'thin':
+            # The default.
+            p.pop("cursor.freehand.min_size", None)
+            p.pop("cursor.freehand.outer_line_width", None)
+            p.pop("cursor.freehand.inner_line_width", None)
+            p.pop("cursor.freehand.inner_line_inset", None)
+            p.pop("cursor.freehand.outer_line_color", None)
+            p.pop("cursor.freehand.inner_line_color", None)
+        elif cname == "medium":
+            p["cursor.freehand.min_size"] = 5
+            p["cursor.freehand.outer_line_width"] = 2.666
+            p["cursor.freehand.inner_line_width"] = 1.333
+            p["cursor.freehand.inner_line_inset"] = 2
+            p["cursor.freehand.outer_line_color"] = (0, 0, 0, 1)
+            p["cursor.freehand.inner_line_color"] = (1, 1, 1, 1)
+        elif cname == "thick":
+            p["cursor.freehand.min_size"] = 7
+            p["cursor.freehand.outer_line_width"] = 3.75
+            p["cursor.freehand.inner_line_width"] = 2.25
+            p["cursor.freehand.inner_line_inset"] = 3
+            p["cursor.freehand.outer_line_color"] = (0, 0, 0, 1)
+            p["cursor.freehand.inner_line_color"] = (1, 1, 1, 1)
+
 

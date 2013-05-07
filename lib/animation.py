@@ -163,7 +163,7 @@ class Animation(object):
               jpgs, out_filename])
 
     def _notify_canvas_observers(self, affected_layer):
-        bbox = affected_layer.surface.get_bbox()
+        bbox = affected_layer._surface.get_bbox()
         for f in self.doc.canvas_observers:
             f(*bbox)
 

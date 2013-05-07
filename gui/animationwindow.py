@@ -15,7 +15,6 @@ import gobject
 import dialogs
 import anidialogs
 from layerswindow import stock_button
-from layout import ElasticExpander
 
 from lib.framelist import DEFAULT_ACTIVE_CELS
 
@@ -23,6 +22,8 @@ COLUMNS_NAME = ('frame_index', 'frame_data')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
 class ToolWidget(gtk.VBox):
+
+    stock_id = 'mypaint-tool-animation'
     
     tool_widget_title = _("Animation")
     
@@ -222,14 +223,12 @@ class ToolWidget(gtk.VBox):
         preferences_vbox.pack_start(opacity_hbox, expand=False)
         preferences_vbox.pack_start(opacityopts_vbox, expand=False)
 
-        self.controls_expander = ElasticExpander(_('Controls'))
-        self.controls_expander.set_spacing(6)
+        self.controls_expander = gtk.Expander(label=_('Controls'))
         self.controls_expander.add(controls_vbox)
         self.controls_expander.connect("notify::expanded",
             self.expanded_cb, 'controls')
 
-        self.prefs_expander = ElasticExpander(_('Preferences'))
-        self.prefs_expander.set_spacing(6)
+        self.prefs_expander = gtk.Expander(label=_('Preferences'))
         self.prefs_expander.add(preferences_vbox)
         self.prefs_expander.connect("notify::expanded",
             self.expanded_cb, 'preferences')
@@ -266,13 +265,13 @@ class ToolWidget(gtk.VBox):
             self.listmodel.append((i, frame))
 
         column = self.treeview.get_column(0)
-        cell = column.get_cell_renderers()[0]
+        cell = column.get_cells()[0]
         column.set_cell_data_func(cell, self.set_number)
         column = self.treeview.get_column(1)
-        cell = column.get_cell_renderers()[0]
+        cell = column.get_cells()[0]
         column.set_cell_data_func(cell, self.set_icon)
         column = self.treeview.get_column(2)
-        cell = column.get_cell_renderers()[0]
+        cell = column.get_cells()[0]
         column.set_cell_data_func(cell, self.set_description)
 
         # reconnect treeview:
@@ -410,15 +409,15 @@ class ToolWidget(gtk.VBox):
         path = model.get_path(it)[0]
         return path % 2
 
-    def set_number(self, column, cell, model, it):
+    def set_number(self, column, cell, model, it, data):
         idx = model.get_value(it, COLUMNS_ID['frame_index'])
-        cell.set_property('text', idx+1)
+        cell.set_property('text', str(idx+1))
         
-    def set_description(self, column, cell, model, it):
+    def set_description(self, column, cell, model, it, data):
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
         cell.set_property('text', frame.description)
         
-    def set_icon(self, column, cell, model, it):
+    def set_icon(self, column, cell, model, it, data):
         frame = model.get_value(it, COLUMNS_ID['frame_data'])
         pixname = 'frame'
         if frame.cel is not None:
@@ -539,9 +538,9 @@ class ToolWidget(gtk.VBox):
     def show_cb(self, widget):
         assert not self.expander_prefs_loaded
         if self.app.preferences.get("xsheet.expander-controls", False):
-            self.expander_controls.set_expanded(True)
+            self.controls_expander.set_expanded(True)
         if self.app.preferences.get("xsheet.expander-preferences", False):
-            self.expander_preferences.set_expanded(True)
+            self.prefs_expander.set_expanded(True)
         self.expander_prefs_loaded = True
 
     def expanded_cb(self, expander, junk, cfg_stem):

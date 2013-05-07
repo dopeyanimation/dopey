@@ -1,3 +1,11 @@
+
+#ifndef HELPERS2_HPP
+#define HELPERS2_HPP
+
+// Making the helpers of brushlib also bound by Python
+#include "helpers.c"
+#include <glib.h>
+
 // Special HSV -> RGB converter for use with the color selector classes
 // Takes values in the range [ 0.0 , 1.0 ]
 // Gives values in the range [ 0.0 , 255.0 ]
@@ -69,3 +77,6 @@ void hsv_to_rgb_range_one(float *h_, float *s_, float *v_)
   *v_ = b*255.0f;
 }
 
+typedef struct { int x, y, w, h; } Rect;
+
+#endif //HELPERS2_HPP

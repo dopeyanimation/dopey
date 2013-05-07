@@ -6,17 +6,13 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-import gtk, gobject
-gdk = gtk.gdk
+import pygtkcompat
+import gobject
+import gtk
+from gtk import gdk
 
 class StateGroup():
-    """
-    Supervisor instance for GUI states.
-
-    A GUI state is a mode which the GUI is in, for example an active
-    popup window or a special (usually short-lived) view on the
-    document. The application defines functions to be called when the
-    state is entered or left.
+    """Supervisor instance for GUI states.
 
     This class mainly deals with the various ways how the user can
     leave such a mode, eg. if the mode is entered by holding down a
@@ -43,14 +39,39 @@ class StateGroup():
         return self.create_state(popup.enter, popup.leave, popup)
 
 class State:
-    "how long a key can be held down to go through as single hit (and not press-and-hold)"
+    """A GUI state.
+
+    A GUI state is a mode which the GUI is in, for example an active
+    popup window or a special (usually short-lived) view on the
+    document. The application defines functions to be called when the
+    state is entered or left.
+    """
+
+    #: How long a key can be held down to go through as single hit (and not
+    #: press-and-hold)
     max_key_hit_duration = 0.250
-    "the state is automatically left after this time (ignored during press-and-hold)"
+
+    #: The state is automatically left after this time (ignored during
+    #: press-and-hold)
     autoleave_timeout = 0.800
-    #"popups only: how long the cursor is allowed outside before closing (ignored during press-and-hold)"
+
+    ##: popups only: how long the cursor is allowed outside before closing
+    ##: (ignored during press-and-hold)"
     #outside_popup_timeout = 0.050
-    "state to activate when this state is activated while already active (None = just leave this state)"
+
+    #: state to activate when this state is activated while already active
+    #: (None = just leave this state)
     next_state = None
+
+    #: Allowed buttons and their masks for starting and continuing states
+    #: triggered by gdk button press events.
+    allowed_buttons_masks = {
+        1: gdk.BUTTON1_MASK,
+        2: gdk.BUTTON2_MASK,
+        3: gdk.BUTTON3_MASK, }
+
+    #: Human-readable display string for the state.
+    label = None
 
     def __init__(self, stategroup, popup):
         self.sg = stategroup
@@ -113,8 +134,8 @@ class State:
                 assert e.type == gdk.BUTTON_PRESS
                 # let's just note down what mous button that was
                 assert e.button
-                if e.button in [1]:
-                    self.mouse_button = 1
+                if e.button in self.allowed_buttons_masks:
+                    self.mouse_button = e.button
 
             else:
                 a = action_or_event
@@ -126,10 +147,16 @@ class State:
         self.enter()
 
     def toggle(self, action=None):
-        if not self.active:
-            self.activate(action)
+        if isinstance(action, gtk.ToggleAction):
+            want_active = action.get_active()
         else:
-            self.leave()
+            want_active = not self.active
+        if want_active:
+            if not self.active:
+                self.activate(action)
+        else:
+            if self.active:
+                self.leave()
 
     def keyup_cb(self, widget, event):
         if not self.active:
@@ -166,12 +193,25 @@ class State:
         self.outside_popup_timer = gobject.timeout_add(int(1000*self.outside_popup_timeout), self.outside_popup_timeout_cb)
 
 
+
+    # ColorPicker-only stuff (for now)
+
+
     def motion_notify_cb(self, widget, event):
         assert self.keydown
+
+        # We can't leave the state yet if button 1 is being pressed without
+        # risking putting an accidental dab on the canvas. This happens with
+        # some resistive touchscreens where a logical "button 3" is physically
+        # a stylus button 3 plus a nib press (which is also a button 1).
         pressure = event.get_axis(gdk.AXIS_PRESSURE)
-        painting = (event.state & gdk.BUTTON1_MASK) or pressure
-        if not painting:
-            # we can leave the state without putting an accidental dab on the canvas
+        button1_down = event.state & gdk.BUTTON1_MASK
+        if pressure or button1_down:
+            return
+
+        # Leave if the button we started with is no longer being pressed.
+        button_mask = self.allowed_buttons_masks.get(self.mouse_button, 0)
+        if not event.state & button_mask:
             self.disconnect_motion_handler()
             self.keyup_cb(widget, event)
 
@@ -191,7 +231,10 @@ class State:
                           | gdk.PROXIMITY_OUT_MASK
                           | gdk.PROXIMITY_IN_MASK
                           )
-        widget.set_extension_events (gdk.EXTENSION_EVENTS_ALL)
+        if pygtkcompat.USE_GTK3:
+            pass
+        else:
+            widget.set_extension_events (gdk.EXTENSION_EVENTS_ALL)
 
         if self.keydown:
             # we are reacting to a keyboard event, we will not be
@@ -202,7 +245,7 @@ class State:
             # we are able to wait for a button release now
             self.keydown = True
             # register for events
-            assert self.mouse_button == 1
+            assert self.mouse_button in self.allowed_buttons_masks
             handler_id = widget.connect("motion-notify-event", self.motion_notify_cb)
             assert not self.connected_motion_handler
             self.connected_motion_handler = (widget, handler_id)

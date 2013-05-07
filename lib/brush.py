@@ -9,7 +9,10 @@
 import mypaintlib
 from brushlib import brushsettings
 import helpers
-import urllib, copy, math
+import urllib
+import copy
+import math
+import json
 
 string_value_settings = set(("parent_brush_name", "group"))
 current_brushfile_version = 2
@@ -50,14 +53,11 @@ def brushinfo_unquote(quoted):
 
 class BrushInfo:
     """Fully parsed description of a brush.
-
-    Just the strings, numbers and inputs/points hashes in a dict-based wrapper
-    without any special interpretation other than a free upgrade to the newest
-    brush format."""
+    """
 
     def __init__(self, string=None):
         """Construct a BrushInfo object, optionally parsing it."""
-        self.settings = None
+        self.settings = {}
         self.cache_str = None
         self.observers = [self.settings_changed_cb]
         self.observers_hidden = []
@@ -106,8 +106,66 @@ class BrushInfo:
     class Obsolete(ParseError):
         pass
 
+    def to_json(self):
+        settings = dict(self.settings)
+
+        # Parent brush is not really a brush (engine) setting
+        parent_brush_name = settings.pop('parent_brush_name', '')
+        # Neither is group
+        brush_group = settings.pop('group', '')
+
+        # Make the contents of each setting a bit more explicit
+        for k, v in settings.items():
+            base_value, inputs = v
+            settings[k] = {'base_value': base_value, 'inputs': inputs}
+
+        document = {'version': 3,
+                    'comment': """MyPaint brush file""",
+                    'parent_brush_name': parent_brush_name,
+                    'settings': settings,
+                    'group': brush_group,
+                   }
+        return json.dumps(document, sort_keys=True, indent=4)
+
+    def from_json(self, json_string):
+        brush_def = json.loads(json_string)
+        if brush_def['version'] != 3:
+            raise BrushInfo.ParseError, 'brush is not compatible with this version of mypaint (json version=%r)' % brush_def['version']
+
+        # settings not in json_string must still be present in self.settings
+        self.load_defaults()
+
+        # MyPaint expects that each setting has an array, where
+        # index 0 is base value, and index 1 is inputs
+        for k, v in brush_def['settings'].items():
+            base_value, inputs = v['base_value'], v['inputs']
+            if k not in self.settings:
+                print 'ignoring unknown brush setting %r' % k
+                continue
+            self.settings[k] = [base_value, inputs]
+
+        # MyPaint expects parent brush as a setting
+        self.settings['parent_brush_name'] = brush_def['parent_brush_name']
+        # FIXME: who uses this? brush groups are stored externally in order.conf, is this redundant?
+        self.settings['group'] = brush_def['group']
+
     def load_from_string(self, settings_str):
         """Load a setting string, overwriting all current settings."""
+
+        if settings_str.startswith('{'):
+            # new json-based brush format
+            self.from_json(settings_str)
+        elif settings_str.startswith('#'):
+            # old brush format
+            self._load_old_format(settings_str)
+        else:
+            raise BrushInfo.ParseError, 'brush format not recognized'
+
+        for f in self.observers:
+            f(all_settings)
+        self.cache_str = settings_str   # Maybe. It could still be old format...
+
+    def _load_old_format(self, settings_str):
 
         def parse_value(rawvalue, cname, version):
             """Parses a setting value, for a given setting name and brushfile version."""
@@ -204,6 +262,8 @@ class BrushInfo:
 
         # Parse each pair
         self.load_defaults()
+        # compatibility hack: keep disabled for old brushes, but still use non-zero default
+        self.settings['anti_aliasing'][0] = 0.0
         num_parsed = 0
         for rawcname, rawvalue in rawsettings:
             try:
@@ -218,19 +278,24 @@ class BrushInfo:
             except Exception, e:
                 line = "%s %s" % (rawcname, rawvalue)
                 errors.append((line, str(e)))
-        if num_parsed == 0:
-            errors.append(('', 'there was only garbage in this file, using defaults'))
         if errors:
             for error in errors:
                 print error
-        for f in self.observers:
-            f(all_settings)
-        self.cache_str = settings_str   # Maybe. It could still be old format...
+        if num_parsed == 0:
+            raise BrushInfo.ParseError, 'old brush file format parser did not find any brush settings in this file'
+
 
     def save_to_string(self):
         """Serialise brush information to a string. Result is cached."""
         if self.cache_str:
             return self.cache_str
+
+        res = self.to_json()
+
+        self.cache_str = res
+        return res
+
+    def _save_old_format(self):
         res = '# mypaint brush file\n'
         res += '# you can edit this file and then select the brush in mypaint (again) to reload\n'
         res += 'version %d\n' % current_brushfile_version
@@ -248,20 +313,26 @@ class BrushInfo:
                         res += " | " + inputname + ' '
                         res += ', '.join(['(%f %f)' % xy for xy in points])
             res += "\n"
-        self.cache_str = res
+
         return res
 
     def get_base_value(self, cname):
         return self.settings[cname][0]
 
-    def get_points(self, cname, input):
-        return copy.deepcopy(self.settings[cname][1].get(input, ()))
+    def get_points(self, cname, input, readonly=False):
+        res = self.settings[cname][1].get(input, ())
+        if not readonly: # slow
+            res = copy.deepcopy(res)
+        return res
 
     def set_base_value(self, cname, value):
         assert cname in brush_settings
-        self.settings[cname][0] = value
-        for f in self.observers:
-            f(set([cname]))
+        assert not math.isnan(value)
+        assert not math.isinf(value)
+        if self.settings[cname][0] != value:
+            self.settings[cname][0] = value
+            for f in self.observers:
+                f(set([cname]))
 
     def set_points(self, cname, input, points):
         assert cname in brush_settings
@@ -284,7 +355,6 @@ class BrushInfo:
         return copy.deepcopy(self.settings[cname])
 
     def get_string_property(self, name):
-        tmp = self.settings.get(name, None)
         return self.settings.get(name, None)
 
     def set_string_property(self, name, value):
@@ -304,9 +374,16 @@ class BrushInfo:
                 return False
         return True
 
+    def has_large_base_value(self, cname, threshold=0.9):
+        return self.get_base_value(cname) > threshold
+
+    def has_small_base_value(self, cname, threshold=0.1):
+        return self.get_base_value(cname) < threshold
+
     def has_input(self, cname, input):
         """Return whether a given input is used by some setting."""
-        return self.get_points(cname, input)
+        points = self.get_points(cname, input, readonly=True)
+        return bool(points)
 
     def begin_atomic(self):
         self.observers_hidden.append(self.observers[:])
@@ -328,6 +405,7 @@ class BrushInfo:
         h = self.get_base_value('color_h')
         s = self.get_base_value('color_s')
         v = self.get_base_value('color_v')
+        assert not math.isnan(h)
         return (h, s, v)
 
     def set_color_hsv(self, hsv):
@@ -348,26 +426,38 @@ class BrushInfo:
         return helpers.hsv_to_rgb(*hsv)
 
     def is_eraser(self):
-        return self.get_base_value('eraser') > 0.9
+        return self.has_large_base_value("eraser")
 
-    def get_effective_radius(self):
-        """Return brush radius in pixels for cursor shape."""
-        base_radius = math.exp(self.get_base_value('radius_logarithmic'))
-        r = base_radius
-        r += 2*base_radius*self.get_base_value('offset_by_random')
-        return r
+    def is_alpha_locked(self):
+        return self.has_large_base_value("lock_alpha")
 
+    def is_colorize(self):
+        return self.has_large_base_value("colorize")
 
-class Brush(mypaintlib.Brush):
+    def matches(self, other, ignore=["color_h", "color_s", "color_v", "parent_brush_name"]):
+        s1 = self.settings.copy()
+        s2 = other.settings.copy()
+        for k in ignore:
+            s1.pop(k, None)
+            s2.pop(k, None)
+        return s1 == s2
+
+class Brush(mypaintlib.PythonBrush):
     """
     Low-level extension of the C brush class, propagating all changes of
     a brushinfo instance down into the C code.
     """
     def __init__(self, brushinfo):
-        mypaintlib.Brush.__init__(self)
+        mypaintlib.PythonBrush.__init__(self)
         self.brushinfo = brushinfo
         brushinfo.observers.append(self.update_brushinfo)
         self.update_brushinfo(all_settings)
+
+        # override some mypaintlib.Brush methods with special wrappers
+        # from python_brush.hpp
+        self.get_state = self.python_get_state
+        self.set_state = self.python_set_state
+        self.stroke_to = self.python_stroke_to
 
     def update_brushinfo(self, settings):
         """Mirror changed settings into the BrushInfo tracking this Brush."""
@@ -381,7 +471,7 @@ class Brush(mypaintlib.Brush):
             self.set_base_value(setting.index, base)
 
             for input in brushsettings.inputs:
-                points = self.brushinfo.get_points(cname, input.name)
+                points = self.brushinfo.get_points(cname, input.name, readonly=True)
 
                 assert len(points) != 1
                 #if len(points) > 2:

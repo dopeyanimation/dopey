@@ -1,0 +1,56 @@
+<ui>
+<!--
+This file is part of MyPaint.
+Copyright (C) 2011 by Andrew Chadwick <andrewc-git@piffle.org>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+-->
+  <popup name="toolbar1-settings-menu">
+    <menuitem action="toolbar1_file"/>
+    <menuitem action="toolbar1_scrap"/>
+    <menuitem action="toolbar1_edit"/>
+    <menuitem action="toolbar1_blendmodes"/>
+    <menuitem action="toolbar1_linemodes"/>
+    <menuitem action="toolbar1_view_modes"/>
+    <menuitem action="toolbar1_view_manips"/>
+    <menuitem action="toolbar1_view_resets"/>
+    <menuitem action="toolbar1_subwindows"/>
+  </popup>
+
+  <toolbar name="toolbar1">
+    <placeholder name="file-toolitems"/>
+    <separator/>
+    <placeholder name="scrap-toolitems"/>
+    <separator/>
+    <placeholder name="edit-toolitems"/>
+    <separator/>
+    <placeholder name="paint-settings-toolitems">
+      <toolitem action="ColorDropdown"/>
+      <toolitem action="BrushDropdown"/>
+      <toolitem action="BrushSettingsDropdown"/>
+      <toolitem action="LineDropdown"/>
+    </placeholder>
+    <separator/>
+    <toolitem action="BlendModeEraser"/>
+    <placeholder name="blendmodes-toolitems"/>
+    <placeholder name="linemodes-toolitems"/>
+    <toolitem action="ColorPickMode"/>
+    <toolitem action="LayerMoveMode"/>
+    <toolitem action="FrameEditMode"/>
+    <toolitem action="Symmetry"/>
+    <separator/>
+    <placeholder name="view-modes-toolitems"/>
+    <placeholder name="view-manips-toolitems"/>
+    <placeholder name="view-resets-toolitems"/>
+    <separator expand="true"/>
+    <placeholder name="subwindows-toolitems"/>
+    <separator/>
+    <placeholder name="end-toolitems">
+      <toolitem action="Fullscreen"/>
+    </placeholder>
+  </toolbar>
+
+</ui>

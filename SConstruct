@@ -1,22 +1,21 @@
 import os, sys
 from os.path import join, basename
+from SCons.Script.SConscript import SConsEnvironment
+import SCons.Util
 
 EnsureSConsVersion(1, 0)
 
-# FIXME: sometimes it would be good to build for a different python
-# version than the one running scons. (But how to find all paths then?)
-python = 'python%d.%d' % (sys.version_info[0], sys.version_info[1])
-print 'Building for', python
+default_python_binary = 'python%d.%d' % (sys.version_info[0], sys.version_info[1])
+default_python_config = 'python%d.%d-config' % (sys.version_info[0], sys.version_info[1])
 
 if sys.platform == "win32":
-    python = 'python' # usually no versioned binaries on Windows
+    # usually no versioned binaries on Windows
+    default_python_binary = 'python'
+    default_python_config = 'python-config'
 
-try: 
-    import numpy
-except ImportError:
-    print 'You need to have numpy installed.'
-    print
-    raise
+if os.path.exists('/etc/gentoo-release'):
+     print 'Gentoo: /etc/gentoo-release exists. Must be on a Gentoo based system.'
+     default_python_config = 'python-config-%d.%d'  % (sys.version_info[0],sys.version_info[1])
 
 SConsignFile() # no .scsonsign into $PREFIX please
 
@@ -27,41 +26,56 @@ else:
 
 opts = Variables()
 opts.Add(PathVariable('prefix', 'autotools-style installation prefix', default_prefix, validator=PathVariable.PathIsDirCreate))
-
 opts.Add(BoolVariable('debug', 'enable HEAVY_DEBUG and disable optimizations', False))
-env = Environment(ENV=os.environ, options=opts)
+opts.Add(BoolVariable('enable_profiling', 'enable debug symbols for profiling purposes (on by default)', True))
+opts.Add(BoolVariable('brushlib_only', 'only build and install brushlib/', False))
+opts.Add(BoolVariable('enable_brushlib_i18n', 'enable i18n support for brushlib (requires gettext)', False))
+opts.Add(BoolVariable('enable_gegl', 'enable GEGL based code in build', False))
+opts.Add(BoolVariable('enable_introspection', 'enable GObject introspection support', False))
+opts.Add(BoolVariable('enable_docs', 'enable documentation build', False))
+opts.Add(BoolVariable('enable_gperftools', 'enable gperftools in build, for profiling', False))
+opts.Add(BoolVariable('enable_openmp', 'enable OpenMP for libmypaint', False))
+opts.Add('python_binary', 'python executable to build for', default_python_binary)
+opts.Add('python_config', 'python-config to used', default_python_config)
+
+tools = ['default', 'textfile']
+
+env = Environment(ENV=os.environ, options=opts, tools=tools)
+
+print('building for %r (use scons python_binary=xxx to change)' % env['python_binary'])
+print('using %r (use scons python_config=xxx to change)' % env['python_config'])
 if sys.platform == "win32":
     # remove this mingw if trying VisualStudio
-    env = Environment(tools=['mingw'], ENV=os.environ, options=opts)
+    env = Environment(tools=tools + ['mingw'], ENV=os.environ, options=opts)
+
+# Respect some standard build environment stuff
+# See http://cgit.freedesktop.org/mesa/mesa/tree/scons/gallium.py
+# See https://wiki.gentoo.org/wiki/SCons#Missing_CC.2C_CFLAGS.2C_LDFLAGS
+if os.environ.has_key('CC'):
+   env['CC'] = os.environ['CC']
+if os.environ.has_key('CFLAGS'):
+   env['CCFLAGS'] += SCons.Util.CLVar(os.environ['CFLAGS'])
+if os.environ.has_key('CXX'):
+   env['CXX'] = os.environ['CXX']
+if os.environ.has_key('CXXFLAGS'):
+   env['CXXFLAGS'] += SCons.Util.CLVar(os.environ['CXXFLAGS'])
+if os.environ.has_key('CPPFLAGS'):
+   env['CCFLAGS'] += SCons.Util.CLVar(os.environ['CPPFLAGS'])
+   env['CXXFLAGS'] += SCons.Util.CLVar(os.environ['CPPFLAGS'])
+if os.environ.has_key('LDFLAGS'):
+    # LDFLAGS is omitted in SHLINKFLAGS, which is derived from LINKFLAGS
+   env['LINKFLAGS'] += SCons.Util.CLVar(os.environ['LDFLAGS'])
+if "$CCFLAGS" in env['CXXCOM']:
+   env['CXXCOM'] = env['CXXCOM'].replace("$CCFLAGS","")
+
 opts.Update(env)
 
-env.ParseConfig('pkg-config --cflags --libs glib-2.0')
-env.ParseConfig('pkg-config --cflags --libs libpng')
-
 env.Append(CXXFLAGS=' -Wall -Wno-sign-compare -Wno-write-strings')
+env.Append(CCFLAGS='-Wall')
+env.Append(CFLAGS='-std=c99')
 
-# Get the numpy include path (for numpy/arrayobject.h).
-numpy_path = numpy.get_include()
-env.Append(CPPPATH=numpy_path)
-
-
-if sys.platform == "win32":
-    # official python shipped with no pc file on windows so get from current python
-    from distutils import sysconfig
-    pre,inc = sysconfig.get_config_vars('exec_prefix', 'INCLUDEPY')
-    env.Append(CPPPATH=inc, LIBPATH=pre+'\libs', LIBS='python'+sys.version[0]+sys.version[2])
-elif sys.platform == "darwin":
-    env.ParseConfig('python-config --cflags')
-    env.ParseConfig('python-config --ldflags')
-else:
-    # some distros use python2.5-config, others python-config2.5
-    try:
-        env.ParseConfig(python + '-config --cflags')
-        env.ParseConfig(python + '-config --ldflags')
-    except OSError:
-        print 'going to try python-config instead'
-        env.ParseConfig('python-config --ldflags')
-        env.ParseConfig('python-config --cflags')
+# Define strdup() in string.h under glibc >= 2.10 (POSIX.1-2008)
+env.Append(CFLAGS='-D_POSIX_C_SOURCE=200809L')
 
 if env.get('CPPDEFINES'):
     # make sure assertions are enabled
@@ -70,55 +84,122 @@ if env.get('CPPDEFINES'):
 if env['debug']:
     env.Append(CPPDEFINES='HEAVY_DEBUG')
     env.Append(CCFLAGS='-O0', LINKFLAGS='-O0')
+else:
+    # Overridable defaults
+    env.Prepend(CCFLAGS='-O3', LINKFLAGS='-O3')
 
-Export('env', 'python')
-module = SConscript('lib/SConscript')
-SConscript('brushlib/SConscript')
-languages = SConscript('po/SConscript')
+if env['enable_profiling'] or env['debug']:
+    env.Append(CCFLAGS='-g')
 
-# Build mypaint.exe for running on windows
-if sys.platform == "win32":
-    env2 = Environment(tools=['mingw'], ENV=os.environ)
-    env2.Append(CPPPATH='-I'+inc, LIBPATH=pre+'\libs', LIBS='python'+sys.version[0]+sys.version[2])
-    env2.Program('mypaint', ['mypaint_exe.c'])
+#env.Append(CCFLAGS='-fno-inline', LINKFLAGS='-fno-inline')
 
-def burn_python_version(target, source, env):
-    # make sure we run the python version that we built the extension modules for
-    s =  '#!/usr/bin/env ' + python + '\n'
-    s += 5*'#\n'
-    s += '# DO NOT EDIT - edit %s instead\n' % source[0]
-    s += 5*'#\n'
-    s += open(str(source[0])).read()
-    f = open(str(target[0]), 'w')
-    f.write(s)
-    f.close()
+# Look up libraries dependencies relative to the library
+if sys.platform == "linux2":
+    env.Append(LINKFLAGS = Split('-z origin'))
 
-env.Command('mypaint', 'mypaint.py', [burn_python_version, Chmod('$TARGET', 0755)])
+env.Append(RPATH = env.Literal(os.path.join('\\$$ORIGIN')))
 
-env.Clean('.', Glob('*.pyc'))
-env.Clean('.', Glob('gui/*.pyc'))
-env.Clean('.', Glob('lib/*.pyc'))
+# remove libraries produced by earlier versions, which are actually
+# being used if they keep lying around, leading to mysterious bugs
+if sys.platform != "win32":
+    # do not execute this on windows...
+    env.Execute('rm -f libmypaint-tests.so libmypaint.so libmypaintlib.so')
 
-env.Alias('install', env['prefix'])
-def install(dst, pattern):
-    files = Glob(pattern)
-    assert files, "Glob expression did not match any files"
-    env.Install(join(env['prefix'], dst), files)
-install('bin', 'mypaint')
-install('share/mypaint/brushes', 'brushes/*')
-install('share/mypaint/backgrounds', 'backgrounds/*')
-install('share/mypaint/pixmaps', 'pixmaps/*')
+set_dir_postaction = {}
+def install_perms(env, target, sources, perms=0644, dirperms=0755):
+    """As a normal env.Install, but with Chmod postactions.
 
-install('share', 'desktop/icons')
-install('share/applications', 'desktop/mypaint.desktop')
+    The `target` parameter must be a string which starts with ``$prefix``.
+    Unless this is a sandbox install, the permission bits `dirperms` will be
+    set on every directory back to ``$prefix``, but not including it. `perms`
+    will always be set on each installed file from `sources`.
+    """
+    assert target.startswith('$prefix')
+    install_targs = env.Install(target, sources)
+    sandboxed = False
+    final_prefix = os.path.normpath(env["prefix"])
 
-# location for achitecture-dependent modules
-env.Install(join(env['prefix'], 'lib/mypaint'), module)
-install('share/mypaint/lib', 'lib/*.py')
-install('share/mypaint/gui', 'gui/*.py')
-install('share/mypaint/gui', 'gui/menu.xml')
-install('share/mypaint/brushlib', 'brushlib/*.py')
+    # Set file permissions.
+    for targ in install_targs:
+        env.AddPostAction(targ, Chmod(targ, perms))
+        targ_path = os.path.normpath(targ.get_path())
+        if not targ_path.startswith(final_prefix):
+            sandboxed = True
 
-# translations
-for lang in languages:
-    install('share/locale/%s/LC_MESSAGES' % lang, 'po/%s/LC_MESSAGES/mypaint.mo' % lang)
+    if not sandboxed:
+        # Set permissions on superdirs, back to $prefix (but not including it)
+        # Not sure if this is necessary with the umask forcing. It might help
+        # fix some broken installs.
+        for file_targ in install_targs:
+            d = os.path.normpath(target)
+            d_prev = None
+            while d != d_prev and d != '$prefix':
+                d_prev = d
+                if not set_dir_postaction.has_key(d):
+                    env.AddPostAction(file_targ, Chmod(d, dirperms))
+                    set_dir_postaction[d] = True
+                d = os.path.dirname(d)
+
+    return install_targs
+
+
+def install_tree(env, dest, path, perms=0644, dirperms=0755):
+    assert os.path.isdir(path)
+    target_root = join(dest, os.path.basename(path))
+    for dirpath, dirnames, filenames in os.walk(path):
+        reltarg = os.path.relpath(dirpath, path)
+        target_dir = join(target_root, reltarg)
+        target_dir = os.path.normpath(target_dir)
+        filepaths = [join(dirpath, basename) for basename in filenames]
+        install_perms(env, target_dir, filepaths, perms=perms, dirperms=dirperms)
+
+def createStaticPicLibraryBuilder(env):
+    """This is a utility function that creates the StaticExtLibrary Builder in
+    an Environment if it is not there already.
+
+    If it is already there, we return the existing one."""
+    import SCons.Action
+
+    try:
+        static_extlib = env['BUILDERS']['StaticPicLibrary']
+    except KeyError:
+        action_list = [ SCons.Action.Action("$ARCOM", "$ARCOMSTR") ]
+        if env.Detect('ranlib'):
+            ranlib_action = SCons.Action.Action("$RANLIBCOM", "$RANLIBCOMSTR")
+            action_list.append(ranlib_action)
+
+    static_extlib = SCons.Builder.Builder(action = action_list,
+                                          emitter = '$LIBEMITTER',
+                                          prefix = '$LIBPREFIX',
+                                          suffix = '$LIBSUFFIX',
+                                          src_suffix = '$OBJSUFFIX',
+                                          src_builder = 'SharedObject')
+
+    env['BUILDERS']['StaticPicLibrary'] = static_extlib
+    return static_extlib
+
+createStaticPicLibraryBuilder(env)
+
+# Common
+install_tree(env, '$prefix/share/mypaint', 'brushes')
+
+# These hierarchies belong entirely to us, so unmake if asked.
+env.Clean('$prefix', '$prefix/lib/mypaint')
+env.Clean('$prefix', '$prefix/share/mypaint')
+
+# Convenience alias for installing to $prefix
+env.Alias('install', '$prefix')
+
+Export('env', 'install_tree', 'install_perms')
+
+if not env['brushlib_only']:
+    print "Enabling i18n for brushlib in full application build"
+    env['enable_brushlib_i18n'] = True
+
+brushlib = SConscript('./brushlib/SConscript')
+
+if not env['brushlib_only']:
+    application = SConscript('./SConscript')
+    Depends(application, brushlib)
+
+# vim:syntax=python

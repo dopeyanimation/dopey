@@ -10,14 +10,14 @@ import os, re
 from glob import glob
 import sys
 
+import glib
 import gtk
 from gettext import gettext as _
 from gettext import ngettext
 
-from lib import document, helpers
+from lib import document, helpers, tiledsurface
 import drawwindow
-
-import mimetypes
+import pygtkcompat
 
 SAVE_FORMAT_ANY = 0
 SAVE_FORMAT_ORA = 1
@@ -55,21 +55,7 @@ class FileHandler(object):
         #NOTE: filehandling and drawwindow are very tightly coupled
         self.save_dialog = None
 
-        file_actions = [ \
-        ('New',          gtk.STOCK_NEW, _('New'), '<control>N', None, self.new_cb),
-        ('Open',         gtk.STOCK_OPEN, _('Open...'), '<control>O', None, self.open_cb),
-        ('OpenLast',     None, _('Open Last'), 'F3', None, self.open_last_cb),
-        ('Reload',       gtk.STOCK_REFRESH, _('Reload'), 'F5', None, self.reload_cb),
-        ('Save',         gtk.STOCK_SAVE, _('Save'), '<control>S', None, self.save_cb),
-        ('SaveAs',       gtk.STOCK_SAVE_AS, _('Save As...'), '<control><shift>S', None, self.save_as_cb),
-        ('Export',       gtk.STOCK_SAVE_AS, _('Export...'), '<control><shift>E', None, self.save_as_cb),
-        ('SaveScrap',    None, _('Save As Scrap'), 'F2', None, self.save_scrap_cb),
-        ('PrevScrap',    None, _('Open Previous Scrap'), 'F6', None, self.open_scrap_cb),
-        ('NextScrap',    None, _('Open Next Scrap'), 'F7', None, self.open_scrap_cb),
-        ]
-        ag = gtk.ActionGroup('FileActions')
-        ag.add_actions(file_actions)
-        self.app.ui_manager.insert_action_group(ag, -1)
+        ag = app.builder.get_object('FileActions')
 
         ra = gtk.RecentAction('OpenRecent', _('Open Recent'), _('Open Recent files'), None)
         ra.set_show_tips(True)
@@ -86,7 +72,9 @@ class FileHandler(object):
 
         self._filename = None
         self.current_file_observers = []
+        self.file_opened_observers = []
         self.active_scrap_filename = None
+        self.lastsavefailed = False
         self.set_recent_items()
 
         self.file_filters = [ #(name, patterns)
@@ -124,7 +112,7 @@ class FileHandler(object):
         # with utf-8 characters into this list, I assume this is a
         # gtk bug.  So we use our own test instead of i.exists().
         self.recent_items = [
-                i for i in gtk.recent_manager_get_default().get_items()
+                i for i in pygtkcompat.gtk.recent_manager_get_default().get_items()
                 if "mypaint" in i.get_applications() and os.path.exists(helpers.uri2filename(i.get_uri()))
         ]
         self.recent_items.reverse()
@@ -190,10 +178,14 @@ class FileHandler(object):
 
         if t > 120:
             t = int(round(t/60))
-            t = ngettext('%d minute', '%d minutes', t) % t
+            t = ngettext('This will discard %d minute of unsaved painting.',
+                         'This will discard %d minutes of unsaved painting.',
+                         t) % t
         else:
             t = int(round(t))
-            t = ngettext('%d second', '%d seconds', t) % t
+            t = ngettext('This will discard %d second of unsaved painting.',
+                         'This will discard %d seconds of unsaved painting.',
+                         t) % t
         d = gtk.Dialog(title, self.app.drawWindow, gtk.DIALOG_MODAL)
 
         b = d.add_button(gtk.STOCK_DISCARD, gtk.RESPONSE_OK)
@@ -202,10 +194,10 @@ class FileHandler(object):
         b = d.add_button(_("_Save as Scrap"), gtk.RESPONSE_APPLY)
         b.set_image(gtk.image_new_from_stock(gtk.STOCK_SAVE, gtk.ICON_SIZE_BUTTON))
 
-        d.set_has_separator(False)
+        # d.set_has_separator(False)
         d.set_default_response(gtk.RESPONSE_CANCEL)
         l = gtk.Label()
-        l.set_markup(_("<b>%s</b>\n\nThis will discard %s of unsaved painting.") % (question,t))
+        l.set_markup("<b>%s</b>\n\n%s" % (question,t))
         l.set_padding(10, 10)
         l.show()
         d.vbox.pack_start(l)
@@ -219,15 +211,20 @@ class FileHandler(object):
     def new_cb(self, action):
         if not self.confirm_destructive_action():
             return
-        bg = self.doc.model.background
         self.doc.model.clear()
-        self.doc.model.set_background(bg)
+        # Match scratchpad to canvas background
+        # TODO make this into a preference
+        if self.app.scratchpad_doc:
+            self.app.scratchpad_doc.model.set_background(self.doc.model.background)
         self.filename = None
         self.set_recent_items()
-        self.app.doc.reset_view_cb(None)
+        self.app.doc.reset_view(True, True, True)
 
     @staticmethod
     def gtk_main_tick():
+        if pygtkcompat.USE_GTK3:
+            # FIXME: use something better
+            return
         while gtk.events_pending():
             gtk.main_iteration(False)
 
@@ -239,38 +236,84 @@ class FileHandler(object):
             self.app.message_dialog(str(e),type=gtk.MESSAGE_ERROR)
         else:
             self.filename = os.path.abspath(filename)
+            for func in self.file_opened_observers:
+                func(self.filename)
             print 'Loaded from', self.filename
-            self.app.doc.reset_view_cb(None)
+            self.app.doc.reset_view(True, True, True)
+            # try to restore the last used brush and color
+            si = self.doc.model.layer.get_last_stroke_info()
+            if si:
+                self.doc.restore_brush_from_stroke_info(si)
+
+    def open_scratchpad(self, filename):
+        try:
+            self.app.scratchpad_doc.model.load(filename, feedback_cb=self.gtk_main_tick)
+            self.app.scratchpad_filename = os.path.abspath(filename)
+            self.app.preferences["scratchpad.last_opened_scratchpad"] = self.app.scratchpad_filename
+        except document.SaveLoadError, e:
+            self.app.message_dialog(str(e), type=gtk.MESSAGE_ERROR)
+        else:
+            self.app.scratchpad_filename = os.path.abspath(filename)
+            self.app.preferences["scratchpad.last_opened_scratchpad"] = self.app.scratchpad_filename
+            print 'Loaded scratchpad from', self.app.scratchpad_filename
+            self.app.scratchpad_doc.reset_view(True, True, True)
 
     @drawwindow.with_wait_cursor
     def save_file(self, filename, export=False, **options):
+        thumbnail_pixbuf = self.save_doc_to_file(filename, self.doc, export=export, **options)
+        if "multifile" in options or not os.path.isfile(filename):
+            # Multifile save, or failed save (error dialog was already shown).
+            # Skip thumbnail generation attempt and recentmanager stuff.
+            return
+        if not export:
+            self.filename = os.path.abspath(filename)
+            recent_mgr = pygtkcompat.gtk.recent_manager_get_default()
+            uri = helpers.filename2uri(self.filename)
+            recent_data = dict(app_name='mypaint',
+                               app_exec=sys.argv_unicode[0].encode('utf-8'),
+                               # todo: get mime_type
+                               mime_type='application/octet-stream')
+            if pygtkcompat.USE_GTK3:
+                # No Gtk.RecentData.new() as of 3.4.2-0ubuntu0.3,
+                # nor can we set the fields of an empty one :(
+                recent_mgr.add_item(uri)
+            else:
+                recent_mgr.add_full(uri, recent_data)
+        if not thumbnail_pixbuf:
+            thumbnail_pixbuf = self.doc.model.render_thumbnail()
+        helpers.freedesktop_thumbnail(filename, thumbnail_pixbuf)
+
+    @drawwindow.with_wait_cursor
+    def save_scratchpad(self, filename, export=False, **options):
+        if self.app.scratchpad_doc.model.unsaved_painting_time or export or not os.path.exists(filename):
+            self.save_doc_to_file(filename, self.app.scratchpad_doc, export=export, **options)
+        if not export:
+            self.app.scratchpad_filename = os.path.abspath(filename)
+            self.app.preferences["scratchpad.last_opened_scratchpad"] = self.app.scratchpad_filename
+
+    def save_doc_to_file(self, filename, doc, export=False, **options):
+        thumbnail_pixbuf = None
         try:
-            x, y, w, h =  self.doc.model.get_bbox()
+            x, y, w, h =  doc.model.get_bbox()
             if w == 0 and h == 0:
-                raise document.SaveLoadError, _('Did not save, the canvas is empty.')
-            thumbnail_pixbuf = self.doc.model.save(filename, feedback_cb=self.gtk_main_tick, **options)
+                w, h = tiledsurface.N, tiledsurface.N # TODO: support for other sizes
+            thumbnail_pixbuf = doc.model.save(filename, feedback_cb=self.gtk_main_tick, **options)
+            self.lastsavefailed = False
         except document.SaveLoadError, e:
+            self.lastsavefailed = True
             self.app.message_dialog(str(e),type=gtk.MESSAGE_ERROR)
         else:
-            file_location = None
+            file_location = os.path.abspath(filename)
+            if "multifile" in options:
+                file_location += " (basis; used multiple .XXX.ext names)"
             if not export:
-                file_location = self.filename = os.path.abspath(filename)
-                print 'Saved to', self.filename
-                gtk.recent_manager_get_default().add_full(helpers.filename2uri(self.filename),
-                        {
-                            'app_name': 'mypaint',
-                            'app_exec': sys.argv_unicode[0].encode('utf-8'),
-                            # todo: get mime_type
-                            'mime_type': 'application/octet-stream'
-                        }
-                )
+                print 'Saved to', file_location
             else:
-                file_location = os.path.abspath(filename)
-                print 'Exported to', os.path.abspath(file_location)
+                print 'Exported to', file_location
 
-            if not thumbnail_pixbuf:
-                thumbnail_pixbuf = self.doc.model.render_thumbnail()
-            helpers.freedesktop_thumbnail(file_location, thumbnail_pixbuf)
+        return thumbnail_pixbuf
+
+
 
     def update_preview_cb(self, file_chooser, preview):
         filename = file_chooser.get_preview_filename()
@@ -285,6 +328,21 @@ class FileHandler(object):
             else:
                 #TODO display "no preview available" image
                 pass
+
+    def get_open_dialog(self, filename=None, start_in_folder=None, file_filters=[]):
+        dialog = gtk.FileChooserDialog(_("Open..."), self.app.drawWindow,
+                                       gtk.FILE_CHOOSER_ACTION_OPEN,
+                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dialog.set_default_response(gtk.RESPONSE_OK)
+        add_filters_to_dialog(file_filters, dialog)
+
+        if filename:
+            dialog.set_filename(filename)
+        elif start_in_folder and os.path.isdir(start_in_folder):
+            dialog.set_current_folder(start_in_folder)
+
+        return dialog
 
     def open_cb(self, action):
         if not self.confirm_destructive_action():
@@ -320,20 +378,22 @@ class FileHandler(object):
         finally:
             dialog.destroy()
 
-    def save_cb(self, action):
-        if not self.filename:
-            self.save_as_cb(action)
-        else:
-            self.save_file(self.filename)
+    def open_scratchpad_dialog(self):
+        dialog = gtk.FileChooserDialog(_("Open Scratchpad..."), self.app.drawWindow,
+                                       gtk.FILE_CHOOSER_ACTION_OPEN,
+                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,                            
+                                        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dialog.set_default_response(gtk.RESPONSE_OK)
 
-    def save_as_cb(self, action):
-        if not self.save_dialog:
-            self.init_save_dialog()
-        dialog = self.save_dialog
-        if self.filename:
-            dialog_set_filename(dialog, self.filename)
+        preview = gtk.Image()
+        dialog.set_preview_widget(preview)
+        dialog.connect("update-preview", self.update_preview_cb, preview)
+
+        add_filters_to_dialog(self.file_filters, dialog)
+
+        if self.app.scratchpad_filename:
+            dialog.set_filename(self.app.scratchpad_filename)
         else:
-            dialog_set_filename(dialog, '')
             # choose the most recent save folder
             self.set_recent_items()
             for item in reversed(self.recent_items):
@@ -343,6 +403,64 @@ class FileHandler(object):
                 if os.path.isdir(dn):
                     dialog.set_current_folder(dn)
                     break
+        try:
+            if dialog.run() == gtk.RESPONSE_OK:
+                dialog.hide()
+                self.app.scratchpad_filename = dialog.get_filename().decode('utf-8')
+                self.open_scratchpad(self.app.scratchpad_filename)
+        finally:
+            dialog.destroy()  
+
+    def save_cb(self, action):
+        if not self.filename:
+            self.save_as_cb(action)
+        else:
+            self.save_file(self.filename)
+
+    def save_as_cb(self, action):
+        start_in_folder = None
+        if self.filename:
+            current_filename = self.filename
+        else:
+            current_filename = ''
+            # choose the most recent save folder
+            self.set_recent_items()
+            for item in reversed(self.recent_items):
+                uri = item.get_uri()
+                fn = helpers.uri2filename(uri)
+                dn = os.path.dirname(fn)
+                if os.path.isdir(dn):
+                    start_in_folder = dn
+                    break
+
+        if action.get_name() == 'Export':
+            # Do not change working file
+            self.save_as_dialog(self.save_file, suggested_filename = current_filename, export=True)
+        else:
+            self.save_as_dialog(self.save_file, suggested_filename = current_filename)
+
+    def save_scratchpad_as_dialog(self, export = False):
+        start_in_folder = None
+        if self.app.scratchpad_filename:
+            current_filename = self.app.scratchpad_filename
+        else:
+            current_filename = ''
+            start_in_folder = self.get_scratchpad_prefix()
+
+        self.save_as_dialog(self.save_scratchpad, suggested_filename = current_filename, export = export)
+
+    def save_as_dialog(self, save_method_reference, suggested_filename=None, start_in_folder=None, export = False, **options):
+        if not self.save_dialog:
+            self.init_save_dialog()
+        dialog = self.save_dialog
+        # Set the filename in the dialog
+        if suggested_filename:
+            dialog_set_filename(dialog, suggested_filename)
+        else:
+            dialog_set_filename(dialog, '')
+            # Recent directory?
+            if start_in_folder:
+                dialog.set_current_folder(start_in_folder)
 
         try:
             # Loop until we have filename with an extension
@@ -361,7 +479,7 @@ class FileHandler(object):
                         except KeyError:
                             saveformat = default_saveformat
                     else:
-                            saveformat = default_saveformat
+                        saveformat = default_saveformat
 
                 desc, ext_format, options = self.saveformats[saveformat]
 
@@ -375,11 +493,11 @@ class FileHandler(object):
                         options = {}
                     assert(filename)
                     dialog.hide()
-                    if action.get_name() == 'Export':
+                    if export:
                         # Do not change working file
-                        self.save_file(filename, True, **options)
+                        save_method_reference(filename, True, **options)
                     else:
-                        self.save_file(filename, **options)
+                        save_method_reference(filename, **options)
                     break
 
                 filename = name + ext_format
@@ -393,10 +511,19 @@ class FileHandler(object):
             dialog.destroy()  # avoid GTK crash: https://gna.org/bugs/?17902
             self.save_dialog = None
 
+
+
     def save_scrap_cb(self, action):
         filename = self.filename
         prefix = self.get_scrap_prefix()
+        self.app.filename = self.save_autoincrement_file(filename, prefix, main_doc = True)
 
+    def save_scratchpad_cb(self, action):
+        filename = self.app.scratchpad_filename
+        prefix = self.get_scratchpad_prefix()
+        self.app.scratchpad_filename = self.save_autoincrement_file(filename, prefix, main_doc = False)
+
+    def save_autoincrement_file(self, filename, prefix, main_doc = True):
         # If necessary, create the folder(s) the scraps are stored under
         prefix_dir = os.path.dirname(prefix)
         if not os.path.exists(prefix_dir): 
@@ -404,6 +531,15 @@ class FileHandler(object):
 
         number = None
         if filename:
+            junk, file_fragment = os.path.split(filename)
+            if file_fragment.startswith("_md5"):
+                #store direct, don't attempt to increment
+                if main_doc:
+                    self.save_file(filename)
+                else:
+                    self.save_scratchpad(filename)
+                return filename
+
             l = re.findall(re.escape(prefix) + '([0-9]+)', filename)
             if l:
                 number = l[0]
@@ -417,8 +553,8 @@ class FileHandler(object):
                     char = chr(ord(c)+1)
             if char > 'z':
                 # out of characters, increase the number
-                self.filename = None
-                return self.save_scrap_cb(action)
+                filename = None
+                return self.save_autoincrement_file(filename, prefix, main_doc)
             filename = '%s%s_%c' % (prefix, number, char)
         else:
             # we don't have a scrap filename yet, find the next number
@@ -438,7 +574,11 @@ class FileHandler(object):
         filename += self.saveformats[default_saveformat][1]
 
         assert not os.path.exists(filename)
-        self.save_file(filename)
+        if main_doc:
+            self.save_file(filename)
+        else:
+            self.save_scratchpad(filename)
+        return filename
 
     def get_scrap_prefix(self):
         prefix = self.app.preferences['saving.scrap_prefix']
@@ -449,21 +589,61 @@ class FileHandler(object):
                 prefix += os.path.sep
         return prefix
 
+    def get_scratchpad_prefix(self):
+        # TODO allow override via prefs, maybe
+        prefix = os.path.join(self.app.user_datapath, 'scratchpads')
+        prefix = os.path.abspath(prefix)
+        if os.path.isdir(prefix):
+            if not prefix.endswith(os.path.sep):
+                prefix += os.path.sep
+        return prefix
+
+    def get_scratchpad_default(self):
+        # TODO get the default name from preferences
+        prefix = self.get_scratchpad_prefix()
+        return os.path.join(prefix, "scratchpad_default.ora")
+
+    def get_scratchpad_autosave(self):
+        # TODO get the default name from preferences
+        prefix = self.get_scratchpad_prefix()
+        return os.path.join(prefix, "autosave.ora")
+
     def list_scraps(self):
         prefix = self.get_scrap_prefix()
+        return self.list_prefixed_dir(prefix)
+
+    def list_scratchpads(self):
+        prefix = self.get_scratchpad_prefix()
+        files = self.list_prefixed_dir(prefix)
+        if os.path.isdir(os.path.join(prefix, "special")):
+            files += self.list_prefixed_dir(os.path.join(prefix, "special") + os.path.sep)
+        return files
+
+    def list_prefixed_dir(self, prefix):
         filenames = []
         for ext in ['png', 'ora', 'jpg', 'jpeg']:
             filenames += glob(prefix + '[0-9]*.' + ext)
             filenames += glob(prefix + '[0-9]*.' + ext.upper())
+            # For the special linked scratchpads
+            filenames += glob(prefix + '_md5[0-9a-f]*.' + ext)
         filenames.sort()
         return filenames
 
     def list_scraps_grouped(self):
+        filenames = self.list_scraps()
+        return self.list_files_grouped(filenames)
+
+    def list_scratchpads_grouped(self):
+        filenames = self.list_scratchpads()
+        return self.list_files_grouped(filenames)
+
+    def list_files_grouped(self, filenames):
         """return scraps grouped by their major number"""
         def scrap_id(filename):
             s = os.path.basename(filename)
+            if s.startswith("_md5"):
+                return s
             return re.findall('([0-9]+)', s)[0]
-        filenames = self.list_scraps()
         groups = []
         while filenames:
             group = []
@@ -514,3 +694,21 @@ class FileHandler(object):
     def reload_cb(self, action):
         if self.filename and self.confirm_destructive_action():
             self.open_file(self.filename)
+
+    def delete_scratchpads(self, filenames):
+        prefix = self.get_scratchpad_prefix()
+        prefix = os.path.abspath(prefix)
+        for filename in filenames:
+            if os.path.isfile(filename) and os.path.abspath(filename).startswith(prefix):
+                os.remove(filename)
+                print "Removed %s" % filename
+
+    def delete_default_scratchpad(self):
+        if os.path.isfile(self.get_scratchpad_default()):
+            os.remove(self.get_scratchpad_default())
+            print "Removed the scratchpad default file"
+
+    def delete_autosave_scratchpad(self):
+        if os.path.isfile(self.get_scratchpad_autosave()):
+            os.remove(self.get_scratchpad_autosave())
+            print "Removed the scratchpad autosave file"

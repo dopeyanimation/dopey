@@ -6,11 +6,11 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
+import pygtkcompat
 import gtk
-gdk = gtk.gdk
+from gtk import gdk
 
-import random
-import numpy, cairo
+import cairo
 from lib import helpers
 import windowing
 
@@ -46,7 +46,8 @@ class HistoryPopup(windowing.PopupWindow):
         self.app = app
         self.app.kbm.add_window(self)
 
-        self.popup_width = bigcolor_width + (self.app.ch.num_colors-1)*smallcolor_width
+        hist_len = len(self.app.brush_color_manager.get_history())
+        self.popup_width = bigcolor_width + (hist_len-1)*smallcolor_width
 
         self.set_events(gdk.BUTTON_PRESS_MASK |
                         gdk.BUTTON_RELEASE_MASK |
@@ -55,32 +56,36 @@ class HistoryPopup(windowing.PopupWindow):
                         )
         self.connect("button-release-event", self.button_release_cb)
         self.connect("button-press-event", self.button_press_cb)
-        self.connect("expose_event", self.expose_cb)
+
+        if pygtkcompat.USE_GTK3:
+            self.connect("draw", self.draw_cb)
+        else:
+            self.connect("expose-event", self.expose_cb)
 
         self.set_size_request(self.popup_width, popup_height)
 
         self.selection = None
 
         self.doc = doc
-        guidoc = app.doc
-        guidoc.input_stroke_ended_observers.append(self.input_stroke_ended_cb)
         self.is_shown = False
+
+        guidoc = app.doc
+        guidoc.model.stroke_observers.append(self.stroke_observers_cb)
 
     def enter(self):
         # finish pending stroke, if any (causes stroke_finished_cb to get called)
         self.doc.split_stroke()
-        ch = self.app.ch
+        mgr = self.app.brush_color_manager
+        hist = mgr.get_history()
         if self.selection is None:
-            self.selection = ch.num_colors - 1
-            color = self.app.brush.get_color_hsv()
-            if ch.hsv_equal(ch.colors[self.selection], color):
+            self.selection = len(hist) - 1
+            color = mgr.get_color()
+            if hist[self.selection] == color:
                 self.selection -= 1
         else:
-            self.selection = (self.selection - 1) % ch.num_colors
+            self.selection = (self.selection - 1) % len(hist)
 
-        ch.atomic = True
-        self.app.brush.set_color_hsv(ch.colors[self.selection])
-        ch.atomic = False
+        mgr.set_color(hist[self.selection])
 
         # popup placement
         x, y = self.get_position()
@@ -89,8 +94,8 @@ class HistoryPopup(windowing.PopupWindow):
         self.show_all()
         self.is_shown = True
 
-        self.window.set_cursor(gdk.Cursor(gdk.CROSSHAIR))
-    
+        self.get_window().set_cursor(gdk.Cursor(gdk.CROSSHAIR))
+
     def leave(self, reason):
         self.hide()
         self.is_shown = False
@@ -101,17 +106,14 @@ class HistoryPopup(windowing.PopupWindow):
     def button_release_cb(self, widget, event):
         pass
 
-    def input_stroke_ended_cb(self, event):
-        if self.is_shown: return
-        brush = self.app.brush
+    def stroke_observers_cb(self, stroke, brush):
         self.selection = None
-        if not brush.is_eraser():
-            color = brush.get_color_hsv()
-            self.app.ch.push_color(color)
 
     def expose_cb(self, widget, event):
-        cr = self.window.cairo_create()
+        cr = self.get_window().cairo_create()
+        return self.draw_cb(widget, cr)
 
+    def draw_cb(self, widget, cr):
         cr.set_source_rgb(0.9, 0.9, 0.9)
         cr.paint()
 
@@ -119,7 +121,8 @@ class HistoryPopup(windowing.PopupWindow):
 
         cr.translate(0.0, popup_height/2.0)
 
-        for i, c in enumerate(self.app.ch.colors):
+        hist = self.app.brush_color_manager.get_history()
+        for i, c in enumerate(hist):
             if i != self.selection:
                 cr.scale(0.5, 0.5)
 
@@ -131,7 +134,7 @@ class HistoryPopup(windowing.PopupWindow):
             rect[2] -= distance
             rect[3] -= distance
             cr.rectangle(*rect)
-            cr.set_source_rgb(*helpers.hsv_to_rgb(*c))
+            cr.set_source_rgb(*c.get_rgb())
             cr.fill_preserve()
             cr.set_line_width(line_width)
             cr.set_source_rgb(0, 0, 0)

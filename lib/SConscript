@@ -1,22 +1,108 @@
 Import('env')
-import sys
+import sys, os
+
+try:
+    import numpy
+except ImportError:
+    print 'You need to have numpy installed.'
+    print
+    raise
+
+# NOTE: We use a copy of the environment, to be able to both inherit common options,
+# and also add our own specifics ones without affecting the other builds
+mypaintlib_env = env.Clone()
+env = mypaintlib_env
 
 # For the record: I know that scons supports swig. But it doesn't scan for #include in the generated code.
 # 
 # I have given up. Scons just can't get the dependencies right with those
 # code generators. Let's give scons a "normal" c++ project to dependency-scan.
-if env.Execute('swig -o mypaintlib_wrap.cpp -noproxydel -python -c++ mypaintlib.i'):
+swig_opts = '-DHAVE_GEGL' if env['enable_gegl'] else ''
+if env.Execute('swig -Wall -o mypaintlib_wrap.cpp -noproxydel -python -c++ %s mypaintlib.i' % swig_opts):
     Exit(1)
 env.Clean('.', 'mypaintlib_wrap.cpp')
 env.Clean('.', 'mypaintlib.py')
+env.Clean('.', Glob('*.o'))
+
+# fix bug when upgrading git from e.g. v1.0.0 (old module is loaded instead of new)
+env.Execute('rm -f _mypaintlib.so')
+
+def build_py_module(env, *args, **kwargs):
+    if sys.platform == "win32": # there 's a better way to do this
+        kwargs["SHLIBSUFFIX"]=".pyd"
+    elif sys.platform == "darwin":
+        kwargs["SHLIBSUFFIX"]=".so"
+    else:
+        pass
+    return env.SharedLibrary(*args, **kwargs)
+
+
+# Build against brushlib
+env.Prepend(LIBS=['mypaint-tests', "mypaint"])
+env.Append(LIBPATH="../")
+env.Append(CPPPATH=['../brushlib', '../brushlib/tests'])
+
+# Optional: Build against gegl brushlib
+if env['enable_gegl']:
+    env.Append(CPPPATH='../brushlib/gegl')
+    env.Prepend(LIBS=['mypaint-gegl'])
+
+# Normal dependencies
+env.ParseConfig('pkg-config --cflags --libs glib-2.0')
+env.ParseConfig('pkg-config --cflags --libs libpng')
+env.ParseConfig('pkg-config --cflags --libs lcms2')
+
+pygobject = 'pygobject-2.0'
+
+env.ParseConfig('pkg-config --cflags --libs gtk+-3.0')
+env.Append(CPPDEFINES=['HAVE_GTK3']) # possibly useful while we're porting
+pygobject = 'pygobject-3.0'   # keep in step?
+
+if env['enable_gegl']:
+    # FIXME: this is now lagging.
+    assert pygobject == 'pygobject-2.0'
+    env.ParseConfig('pkg-config --cflags --libs gegl-0.2')
+    env.Append(CPPDEFINES=['HAVE_GEGL'])
+
+env.ParseConfig('pkg-config --cflags --libs ' + pygobject)
+
+# Get the numpy include path (for numpy/arrayobject.h).
+numpy_path = numpy.get_include()
+env.Append(CPPPATH=numpy_path)
+
+if sys.platform == "win32":
+    # official python shipped with no pc file on windows so get from current python
+    from distutils import sysconfig
+    pre,inc = sysconfig.get_config_vars('exec_prefix', 'INCLUDEPY')
+    env.Append(CPPPATH=inc, LIBPATH=pre+'\libs', LIBS='python'+sys.version[0]+sys.version[2])
+elif sys.platform == "darwin":
+    env.ParseConfig(env['python_config'] + ' --cflags')
+    ldflags = env.backtick(env['python_config'] + ' --ldflags').split()
+    # scons does not seem to parse '-u' correctly
+    # put all options after -u in LINKFLAGS
+    if '-u' in ldflags:
+        idx = ldflags.index('-u')
+        env.Append(LINKFLAGS=ldflags[idx:])
+        del ldflags[idx:]
+    env.MergeFlags(' '.join(ldflags))
+else:
+    # some distros use python2.5-config, others python-config2.5
+    try:
+        env.ParseConfig(env['python_config'] + ' --cflags')
+        env.ParseConfig(env['python_config'] + ' --ldflags')
+    except OSError:
+        print '%r does not work, trying python-config instead' % env['python_config']
+        env.ParseConfig('python-config --ldflags')
+        env.ParseConfig('python-config --cflags')
+
+if env.get('CPPDEFINES'):
+    # make sure assertions are enabled
+    env['CPPDEFINES'].remove('NDEBUG')
 
 # python extension module
 src = 'mypaintlib_wrap.cpp'
-if sys.platform == "win32": # there 's a better way to do this 
-    module = env.LoadableModule('_mypaintlib', Split(src), SHLIBPREFIX="", SHLIBSUFFIX=".pyd")
-elif sys.platform == "darwin":
-    module = env.LoadableModule('_mypaintlib', Split(src), SHLIBPREFIX="", SHLIBSUFFIX=".so")
-else:
-    module = env.LoadableModule('_mypaintlib', Split(src), SHLIBPREFIX="")
+module = build_py_module(env, '../_mypaintlib', Split(src), SHLIBPREFIX="")
 
 Return('module')
+
+# vim:syntax=python
