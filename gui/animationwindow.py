@@ -190,6 +190,13 @@ class ToolWidget(gtk.VBox):
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
 
+        framerate_adjustment = gtk.Adjustment(value=24, lower=1, upper=120, step_incr=1.0)
+        self.framerate_entry = gtk.SpinButton(adjustment=framerate_adjustment)
+        framerate_lbl = gtk.Label(_('Frame rate:'))
+        framerate_hbox = gtk.HBox()
+        framerate_hbox.pack_start(framerate_lbl, expand=False)
+        framerate_hbox.pack_start(self.framerate_entry, expand=False)
+
         icons_cb = gtk.CheckButton(_("Small icons"))
         icons_cb.set_active(self.app.preferences.get("xsheet.small_icons", False))
         icons_cb.connect('toggled', self.on_smallicons_toggled)
@@ -216,6 +223,7 @@ class ToolWidget(gtk.VBox):
         controls_vbox.pack_start(editbuttons_hbox, expand=False)
 
         preferences_vbox = gtk.VBox()
+        preferences_vbox.pack_start(framerate_hbox, expand=False)
         preferences_vbox.pack_start(icons_cb, expand=False)
         preferences_vbox.pack_start(play_lightbox_cb, expand=False)
         preferences_vbox.pack_start(showprev_cb, expand=False)
@@ -457,8 +465,14 @@ class ToolWidget(gtk.VBox):
             self.ani.frames.select(0)
         self._change_player_buttons()
         self.ani.hide_all_frames()
-        # add a 24fps (almost 42ms) animation timer:
-        gobject.timeout_add(42, self._call_player, use_lightbox)
+        # animation timer
+        ms_per_frame = int(round(1000.0/self.framerate_entry.get_value()))
+
+        # show first frame immediately, otherwise there's a single frame delay
+        # @TODO: it seems to wait one frame before stopping too
+        self._call_player(use_lightbox)
+
+        gobject.timeout_add(ms_per_frame, self._call_player, use_lightbox)
 
     def on_animation_play(self, button):
         self.ani.play_animation()

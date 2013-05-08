@@ -16,12 +16,7 @@ sheet that animation studios used in the old days.  You can access it
 from the Animation menu.
 
 Animation is usually played at 24 frames per second, but animators can
-choose to draw less, using the same drawing for subsecuent frames.  An
-animation drawing is called a cel.  If the animator uses the same cel
-in two subsecuent frames, we say that the animation is on twos.  The
-"exposure" term comes from the old days, when a camera operator had to
-expose the same cel two or more times, reading this information from
-the sheet.
+choose a different frame rate. Warining: This is not saved to the file yet!
 
 In MyPaint X-Sheet, use the Add Cel button found in the controls of
 the Animation window.  You can also use the Animation menu, or press

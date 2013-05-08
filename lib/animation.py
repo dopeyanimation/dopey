@@ -32,6 +32,7 @@ class Animation(object):
     def __init__(self, doc):
         self.doc = doc
         self.frames = None
+        self.framerate = 24.0
         self.cleared = False
 
         # For reproduction, "play", "pause", "stop":
