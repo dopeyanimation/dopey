@@ -1,7 +1,6 @@
 # test XDNA file reading, writing
 import sys
 import unittest
-import json
 
 sys.path.insert(0, '..')
 

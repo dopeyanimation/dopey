@@ -22,6 +22,7 @@ class XDNA(object):
     def __init__(self):
         self.DEBUG = True
 
+        # the XDNA signature of this version of the program
         self.signature_skeleton = {
             # metadata section. temporary name!
             'application': 'mypaint-xsheet',
@@ -44,38 +45,36 @@ class XDNA(object):
         }
 
     def data_serialize(self, data):
-        '''
+        """
         Standardized way of converting data to json (or other formats if necessary)
 
-        '''
+        """
         return json.dumps(data, sort_keys=False, indent=2)
 
     def data_deserialize(self, data):
-        '''
+        """
         Standardized way of converting data from json
 
-        '''
+        """
         return json.loads(data)
 
     def signatures_diff(self, d1, d2, ctx='', path=[], difflog={'added': [], 'removed': [], 'changed_value': [], 'changed_type': []}):
-        print str(path)
+        """
+        Calculates, in high-level terms, the difference betweent two XDNA signatures
 
+        """
         for k in d1:
             if k not in d2:
-                print k + ' removed from newer'
                 difflog['removed'].append(path + [k])
         for k in d2:
             if k not in d1:
-                print k + ' added in newer'
                 difflog['added'].append(path + [k])
                 continue
             if d2[k] != d1[k]:
                 if type(d2[k]) not in (dict, list):
-                    print k + ' changed in newer to ' + str(d2[k])
                     difflog['changed_value'].append(path + [k])
                 else:
                     if type(d1[k]) != type(d2[k]):
-                        print k + ' changed to ' + str(d2[k])
                         difflog['changed_type'].append(path + [k])
                         continue
                     else:
@@ -84,7 +83,6 @@ class XDNA(object):
                             continue
                         elif type(d2[k]) == list:
                             self.signatures_diff(self.list_to_dict(d1[k]), self.list_to_dict(d2[k]), k, path + [k], difflog)
-        print 'Done with changes in ' + ctx
         return difflog
 
     def list_to_dict(self, l):
