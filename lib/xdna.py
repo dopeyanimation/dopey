@@ -15,32 +15,33 @@ import json
 # * dicts contain indices that are unique
 # * arrays contain repeated objects
 # an XDNA signature is equivalent to an empty xsheet with datatypes
-# instead of data, wrapped in a metadata object
+# instead of data
 
 class XDNA(object):
 
     def __init__(self):
         self.DEBUG = True
 
-        # the XDNA signature of this version of the program
-        self.signature_skeleton = {
-            # metadata section. temporary name!
-            'application': 'mypaint-xsheet',
-            'version_number': '0.1.0+git',
+        self.application_signature = {
+            'application': 'xsheet-mypaint',    # temporary!
+            'version_number': '0.0.1+git'       # @TODO: automatically set this
+        }
 
+        # the XDNA signature of this version of the program
+        self.xdna_signature = {
             # actual document starts here
             'xsheet': {
                 # document information
                 'framerate': 'float',
 
                 # raster frame lists
-                'raster_frame_lists': [{
-                    'raster_frame_list': [{
+                'raster_frame_lists': [
+                    [{
                         'idx': 'int',
                         'is_key': 'bool',
                         'description': 'string'
                     }]
-                }]
+                ]
             }
         }
 
