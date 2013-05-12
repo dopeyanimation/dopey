@@ -298,6 +298,8 @@ class Animation(object):
         if self.frames.has_next():
             self.frames.goto_next()
         else:
+            if self.transport_enabled:
+                jack.transport_locate(0)
             self.frames.select(0)
         if use_lightbox:
             self.update_opacities()
