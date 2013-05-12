@@ -190,12 +190,12 @@ class ToolWidget(gtk.VBox):
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
 
-        framerate_adjustment = gtk.Adjustment(value=24, lower=1, upper=120, step_incr=1.0)
-        self.framerate_entry = gtk.SpinButton(adjustment=framerate_adjustment)
+        framerate_adjustment = gtk.Adjustment(value=24, lower=1, upper=120, step_incr=0.01)
+        self.framerate_entry = gtk.SpinButton(adjustment=framerate_adjustment, digits=2, climb_rate=1.5)
         framerate_lbl = gtk.Label(_('Frame rate:'))
         framerate_hbox = gtk.HBox()
-        framerate_hbox.pack_start(framerate_lbl, expand=False)
-        framerate_hbox.pack_start(self.framerate_entry, expand=False)
+        framerate_hbox.pack_start(framerate_lbl, False, False)
+        framerate_hbox.pack_start(self.framerate_entry, False, False)
 
         icons_cb = gtk.CheckButton(_("Small icons"))
         icons_cb.set_active(self.app.preferences.get("xsheet.small_icons", False))
