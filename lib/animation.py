@@ -17,6 +17,7 @@ import pixbufsurface
 
 import anicommand
 from framelist import FrameList
+from xdna import XDNA
 
 
 class Animation(object):
@@ -34,6 +35,8 @@ class Animation(object):
         self.frames = None
         self.framerate = 24.0
         self.cleared = False
+        self.using_legacy = False
+        self.xdna = XDNA()
 
         # For reproduction, "play", "pause", "stop":
         self.player_state = None
@@ -46,7 +49,7 @@ class Animation(object):
         self.frames = FrameList(24, self.opacities)
         self.cleared = True
     
-    def xsheet_as_str(self):
+    def legacy_xsheet_as_str(self):
         """
         Return animation X-Sheet as data in json format.
 
@@ -58,6 +61,36 @@ class Animation(object):
             else:
                 layer_idx = None
             data.append((f.is_key, f.description, layer_idx))
+        str_data = json.dumps(data, sort_keys=True, indent=4)
+        return str_data
+
+    def xsheet_as_str(self):
+        """
+        Return animation X-Sheet as data in XDNA format.
+
+        """
+        x = self.xdna
+
+        data = {
+            'metadata': x.application_signature,
+            'XDNA': x.xdna_signature,
+            'xsheet': {
+                'framerate': self.framerate,
+                'raster_frame_lists': [[]]
+            }
+        }
+
+        for f in self.frames:
+            if f.cel is not None:
+                layer_idx = self.doc.layers.index(f.cel)
+            else:
+                layer_idx = None
+            data['xsheet']['raster_frame_lists'][0].append({
+                'idx': layer_idx,
+                'is_key': f.is_key,
+                'description': f.description
+            })
+
         str_data = json.dumps(data, sort_keys=True, indent=4)
         return str_data
 
@@ -74,18 +107,45 @@ class Animation(object):
         Update FrameList from animation data.
     
         """
+
         data = json.loads(ani_data)
-        self.frames = FrameList(len(data), self.opacities)
-        self.cleared = True
-        for i, d in enumerate(data):
-            is_key, description, layer_idx = d
-            if layer_idx is not None:
-                cel = self.doc.layers[layer_idx]
-            else:
-                cel = None
-            self.frames[i].is_key = is_key
-            self.frames[i].description = description
-            self.frames[i].cel = cel
+
+        # first check if it's in the legacy non-descriptive JSON or new XDNA format
+        if type(data) is dict and data['XDNA']:
+            print 'Loading using new file format'
+            x = self.xdna
+
+            # right now we only have one animatable layer, hence the first item
+            raster_frames = data['xsheet']['raster_frame_lists'][0]
+
+            self.frames = FrameList(len(raster_frames), self.opacities)
+            self.framerate = data['xsheet']['framerate']
+            self.cleared = True
+
+            for i, d in enumerate(raster_frames):
+                if d['idx'] is not None:
+                    cel = self.doc.layers[d['idx']]
+                else:
+                    cel = None
+                self.frames[i].is_key = d['is_key']
+                self.frames[i].description = d['description']
+                self.frames[i].cel = cel
+
+        else:
+            # load in legacy style
+            print 'Loading using old format'
+            self.using_legacy = True
+            self.frames = FrameList(len(data), self.opacities)
+            self.cleared = True
+            for i, d in enumerate(data):
+                is_key, description, layer_idx = d
+                if layer_idx is not None:
+                    cel = self.doc.layers[layer_idx]
+                else:
+                    cel = None
+                self.frames[i].is_key = is_key
+                self.frames[i].description = description
+                self.frames[i].cel = cel
 
     def _read_xsheet(self, xsheetfile):
         """
