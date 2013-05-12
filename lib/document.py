@@ -615,7 +615,7 @@ class Document():
             tmp_layer = layer.Layer()
             for l in self.layers:
                 l.merge_into(tmp_layer)
-            tmp_layer.surface.save(filename, *doc_bbox)
+            tmp_layer._surface.save(filename, *doc_bbox)
         else:
             if alpha:
                 tmp_layer = layer.Layer()

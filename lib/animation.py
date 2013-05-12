@@ -181,7 +181,7 @@ class Animation(object):
         for i in range(len(self.frames)):
             filename = '%s-%03d%s' % (prefix, i+1, ext)
             cel = self.frames.cel_at(i)
-            cel.surface.save(filename, *doc_bbox, **kwargs)
+            cel._surface.save(filename, *doc_bbox, **kwargs)
 
     def save_avi(self, filename, vid_width=800, vid_fps=24, **kwargs):
         """
