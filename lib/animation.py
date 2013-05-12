@@ -119,6 +119,7 @@ class Animation(object):
             raster_frames = data['xsheet']['raster_frame_lists'][0]
 
             self.frames = FrameList(len(raster_frames), self.opacities)
+            self.framerate = data['xsheet']['framerate']
             self.cleared = True
 
             for i, d in enumerate(raster_frames):

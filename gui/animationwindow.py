@@ -34,6 +34,7 @@ class ToolWidget(gtk.VBox):
         self.is_playing = False
 
         self.set_size_request(200, 150)
+        self.app.doc.model.doc_observers.append(self.doc_structure_modified_cb)
         
         # create list:
         self.listmodel = self.create_list()
@@ -190,8 +191,9 @@ class ToolWidget(gtk.VBox):
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
 
-        framerate_adjustment = gtk.Adjustment(value=24, lower=1, upper=120, step_incr=1.0)
-        self.framerate_entry = gtk.SpinButton(adjustment=framerate_adjustment)
+        self.framerate_adjustment = gtk.Adjustment(value=self.ani.framerate, lower=1, upper=120, step_incr=1.0)
+        self.framerate_adjustment.connect("value-changed", self.on_framerate_changed)
+        self.framerate_entry = gtk.SpinButton(adjustment=self.framerate_adjustment)
         framerate_lbl = gtk.Label(_('Frame rate:'))
         framerate_hbox = gtk.HBox()
         framerate_hbox.pack_start(framerate_lbl, expand=False)
@@ -376,6 +378,9 @@ class ToolWidget(gtk.VBox):
         else:
             self.add_cel_button.hide()
             self.remove_cel_button.show()
+
+    def doc_structure_modified_cb(self, *args):
+        self.framerate_adjustment.set_value(self.ani.framerate)
     
     def on_row_changed(self, treesel):
         model, it = treesel.get_selected()
@@ -494,6 +499,9 @@ class ToolWidget(gtk.VBox):
         self.app.preferences[pref] = checkbox.get_active()
         self.ani.toggle_opacity(attr, checkbox.get_active())
         self.queue_draw()
+
+    def on_framerate_changed(self, adj):
+        self.ani.framerate = adj.get_value()
 
     def on_smallicons_toggled(self, checkbox):
         self.app.preferences["xsheet.small_icons"] = checkbox.get_active()
