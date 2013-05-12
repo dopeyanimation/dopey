@@ -135,6 +135,9 @@ class FrameList(list):
     
     def get_selected(self):
         return self[self.idx]
+
+    def get_absolute_position(self):
+        return self.index(self.get_selected())
     
     def select(self, n):
         if not 0 <= n <= len(self)-1:

@@ -12,6 +12,7 @@ from gettext import gettext as _
 import json
 import tempfile
 from subprocess import call
+import jack
 
 import pixbufsurface
 
@@ -270,10 +271,14 @@ class Animation(object):
 
     def play_animation(self):
         self.player_state = "play"
+        if self.transport_enabled:
+            jack.transport_start()
         self.doc.call_doc_observers()
 
     def pause_animation(self):
         self.player_state = "pause"
+        if self.transport_enabled:
+            jack.transport_stop()
 
     def playpause_animation(self):
         if self.player_state != "play":
@@ -284,6 +289,9 @@ class Animation(object):
 
     def stop_animation(self):
         self.player_state = "stop"
+        if self.transport_enabled:
+            jack.transport_stop()
+            jack.transport_locate(0)
 
     def player_next(self, use_lightbox=False):
         prev_idx = self.frames.idx

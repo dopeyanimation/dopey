@@ -8,6 +8,7 @@
 
 import gtk
 import pango
+import jack
 
 from gettext import gettext as _
 import gobject
@@ -207,6 +208,10 @@ class AnimationTool (gtk.VBox):
         framerate_hbox.pack_start(framerate_lbl, False, False)
         framerate_hbox.pack_start(self.framerate_entry, False, False)
 
+        jack_transport_cb = gtk.CheckButton(_("JACK Transport"))
+        jack_transport_cb.connect('toggled', self.on_jacktransport_toggled)
+        jack_transport_cb.set_tooltip_text(_("Enable JACK transport on playback"))
+
         icons_cb = gtk.CheckButton(_("Small icons"))
         icons_cb.set_active(self.app.preferences.get("xsheet.small_icons", False))
         icons_cb.connect('toggled', self.on_smallicons_toggled)
@@ -234,6 +239,7 @@ class AnimationTool (gtk.VBox):
 
         preferences_vbox = gtk.VBox()
         preferences_vbox.pack_start(framerate_hbox, expand=False)
+        preferences_vbox.pack_start(jack_transport_cb, expand=False)
         preferences_vbox.pack_start(icons_cb, expand=False)
         preferences_vbox.pack_start(play_lightbox_cb, expand=False)
         preferences_vbox.pack_start(showprev_cb, expand=False)
@@ -488,9 +494,11 @@ class AnimationTool (gtk.VBox):
         gobject.timeout_add(ms_per_frame, self._call_player, use_lightbox)
 
     def on_animation_play(self, button):
+        self.transport_findframe()
         self.ani.play_animation()
 
     def on_animation_pause(self, button):
+        self.transport_findframe()
         self.ani.pause_animation()
 
     def on_animation_stop(self, button):
@@ -510,6 +518,38 @@ class AnimationTool (gtk.VBox):
 
     def on_framerate_changed(self, adj):
         self.ani.framerate = adj.get_value()
+
+    def on_jacktransport_toggled(self, checkbox):
+        self.ani.transport_enabled = checkbox.get_active()
+
+        if checkbox.get_active():
+            # try to connect to jack server
+            jack.attach('mypaint-xsheet')
+            self.transport_findframe()
+        else:
+            jack.detach()
+            
+
+    def transport_findframe(self):
+        # locate current position
+        current_frame_index = self.ani.frames.get_absolute_position()
+        current_time = 0
+
+        if current_frame_index != 0:
+            current_time = int(round(jack.get_sample_rate()*(current_frame_index/self.ani.framerate)))
+
+        print 'sample rate: ' + str(jack.get_sample_rate())
+        print 'current frame: ' + str(current_frame_index)
+        print 'frame rate: ' + str(self.ani.framerate)
+        print 'current_time: ' + str(current_time)
+
+        jack.transport_locate(current_time)
+
+        print 'transport frame: ' + str(jack.get_current_transport_frame())
+
+        time = float(jack.get_current_transport_frame()) / jack.get_sample_rate()
+        print "current time: %f s" % time
+
 
     def on_smallicons_toggled(self, checkbox):
         self.app.preferences["xsheet.small_icons"] = checkbox.get_active()
