@@ -1,0 +1,343 @@
+Note: This is currently a direct clone of the SourceForge project at http://py-jack.sourceforge.net/
+
+Original readme follows.
+------------------------
+
+PyJack version 0.5.2
+Original code by Andrew W. Schmeder <andy@a2hd.com>, in2003
+Transport support by Il'dar Akhmetgaleev <akhilman at gmail dot com>, in Jan 14 2008
+Revision and packaging by falkTX <falktx@gmail.com>, in Feb 2010
+Implemented changes by the Clam Team <falktx@gmail.com>, in Mar 2010
+More Jack implementations by falkTX <falktx@gmail.com>, in Apr 2010
+
+This is open source software released under the GPL license.
+The full text of this license is found in the file 'LICENSE',
+included with this source code package.
+
+This software is presently distributed from http://www.a2hd.com.
+Please check that site for the latest version.
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Description:
+
+  PyJack is a module written in C which exposes the Jack API to Python.
+For information about Jack see http://jackit.sourceforge.net.  This
+enables a Python program to connect to and interact with pro-audio
+applications which use the Jack Audio Server.
+
+------------------------------------------------------------------------
+Purpose:
+
+- To show that it can be done.
+
+- For programmers who want to prototype DSP and sound synthesis
+algorithms using Numeric Python and similar tools.  PyJack provides the
+means to capture and playback audio.
+
+-  For patchbay applications; A powerful Jack patchbay can be written
+in Python using this module.  This is planned for the future.
+
+------------------------------------------------------------------------
+Installation:
+
+  This package uses the excellent and simple Python distutils.
+  Installation is very simple.  It works something like this;
+  
+# tar -xzvf pyjack-0.*.tar.gz           (unpack archive)
+# cd pyjack-0.*                         (cd to source dir)
+# (sudo) python setup.py install        (install...)
+
+------------------------------------------------------------------------
+Demos:
+
+  Demos can be found in the "demos" directory
+  
+------------------------------------------------------------------------
+Realtime Issues:
+
+  Python is known to be relatively slow (compared to C/C++),
+and non-realtime due to memory management details.  Because of this,
+Python is -NOT- a suitable language for realtime audio processing!
+This means that it is unacceptable to place the Python intepreter 
+"inside" of a Jack client.  
+  PyJack therefore uses a "semi-detached" method.  The PyJack 
+client consists of two threads; a Jack client thread and a Python
+thread.  The Jack client thread is run in realtime context; it never
+blocks, it is entirely deterministic, and does not touch any Python
+data structures nor the interpreter.  The Jack client thread merely
+copies audio data in/out of socket buffers.  On the Python side,
+calls to jack.process() copy audio data in/out of the other end of
+those sockets providing the connection to Python via Numeric arrays
+of floats.  In any case, use of a large buffer size (e.g. 1024 samples)
+is recommended.
+  In order to capture or playback audio without missing a block,
+Python must call jack.process() at least once every 500*(N/Sr)
+milliseconds.  (N = jack.get_buffer_size(), Sr = jack.get_sample_rate()).
+If this rate is not kept up, you may get jack.InputSyncError or 
+jack.OutputSyncError exceptions thrown by jack.process().
+  Typically you will want to use the following design for a DSP
+prototyping program:
+
+  1.  Attach to the jack server (jack.attach)
+      Create input and output ports (jack.register_port)
+      Connect inputs and outputs to jack graph (jack.connect)
+      Activate client (jack.activate)
+  2.  Preallocate matricies for input and output audio data
+  3.  Capture X seconds of audio (jack.process)
+  4.  Process audio using your algorithm
+      It does not matter how long this takes...
+  5.  Playback X seconds of audio (jack.process)
+  6.  Detach from jack server (jack.detach)
+
+  See the example code to get started; testtone.py and capture.py.
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+Module Documentation and Usage Examples:
+
+Example: Importing the module:
+>>> import jack
+>>> dir(jack)
+['CanMonitor', ... ]
+>>> print jack.attach.__doc__
+Attach client to the Jack server
+
+------------------------------------------------------------------------
+Exceptions Thrown by the Jack module:
+
+  These are called jack.Error, jack.InputSyncError, etc.
+  
+jack.Error:
+  A general exception thrown when things go wrong.  Usually something 
+  bad, like "can't connect to server", or "failed to connect ports"
+
+jack.NotConnectedError:
+  Thrown when you try to access a jack API function before the client 
+  has been attached.   
+
+jack.UsageError:
+  Thrown when you are misusing the PyJack API.  For example, trying to 
+  call jack.activate() when the client has already been activated.
+
+jack.InputSyncError:
+jack.OutputSyncError:
+  Often the low level jack client thread is not synchronized with the 
+  Python side.  This exception will be thrown to warn you that there a 
+  potential synchronization problem.  jack.OutputSyncError is extremely 
+  uncommon, you should not ever see that error.  jack.InputSyncError is 
+  very common, for example if you have activated the client but do not 
+  start calling jack.process() immediately.
+
+>>> import jack
+>>> import time
+>>> jack.attach("test")
+... etc
+>>> jack.activate()
+>>> time.sleep(1)
+>>> jack.process(output, input)
+
+  Here you will get a InputSyncError, because you have been sleeping 
+  for 1 second, the data in the audio buffer is about 1 second old.  
+  In other words, the input stream has been stopped for 1 second, 
+  holding old data. In spite of getting this error, you _will_ get 
+  the old audio data in your input array.
+
+  Say that you want to write a monitoring application in Python; Now, 
+  having a toolkit running along with audio processing in realtime is 
+  nearly impossible (I've tried it; there is just not enough time to 
+  redraw the screen without getting an InputSyncError). Basically what 
+  you will want to do is only call jack.process() a few times per 
+  second (say 5 times per second).  Each time you call jack.process() 
+  it will throw an InputSyncError, but you know that the audio data is 
+  at most 1/5th of a second old; that is probably good enough for a 
+  very simple metering of the input without making the GUI requirements 
+  too extreme.
+
+------------------------------------------------------------------------
+Jack Port Flags:
+
+jack.IsInput
+jack.IsOutput
+jack.CanMonitor
+jack.IsPhysical
+jack.IsTerminal
+
+  These are bit flags which indicate the properties of Jack ports.  Use 
+  the bitwise operators (| and &) with them; 
+  
+Example:
+>>> print jack.get_port_flags('alsa_pcm:capture_1')
+22
+>>> print (jack.get_port_flags('alsa_pcm:capture_1') & jack.IsInput) > 0
+0
+>>> print (jack.get_port_flags('alsa_pcm:capture_1') & jack.IsOutput) > 0
+1
+>>> print (jack.get_port_flags('alsa_pcm:capture_1') & jack.IsPhysical) > 0
+1
+>>> print (jack.get_port_flags('alsa_pcm:capture_1') & jack.IsTerminal) > 0
+1
+>>> print (jack.get_port_flags('alsa_pcm:capture_1') & jack.CanMonitor) > 0
+0
+
+  When creating ports, you will want to use a bitwise | of the flags;
+  
+>>> jack.register_port("input_1", jack.IsInput | jack.CanMonitor)
+>>> jack.register_port("input_1", jack.IsOutput | jack.CanMonitor)
+
+------------------------------------------------------------------------
+Function calls in the jack module:
+
+---
+jack.attach(name)
+  Attach to the jack server using the given client name.
+  All other function calls in the jack module require that you call
+  this function first.  (otherwise you will get a NotConnectedError).
+
+>>> jack.attach("foo_client")
+
+---
+jack.detach()
+  Detach from the jack server
+  
+>>> jack.detach()
+>>> jack.get_sample_rate()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+jack.NotConnectedError: Jack connection has not yet been established.
+
+---
+jack.register_port(name, flags)
+  Create a new port for this client with the given flags.
+  Once a port is created it cannot be 'unregistered'.
+  (The Jack API does permit this, but the PyJack module does not support it.)
+
+---
+jack.activate()
+  Enables callbacks to the realtime jack thread.
+  This must be called before jack.process() is used.
+  Enabling the realtime thread has minimal CPU overhead.
+  
+---
+jack.deactivate()
+  Disables Jack callbacks to the realtime thread.
+  Opposite of jack.activate()
+  jack.process() cannot be used after jack.deactivate() is called,
+  until jack.activate() is called again.
+
+---
+jack.process()
+  This function exchanges audio between Python and the realtime jack thread.
+  
+  It requires two arguments, which are both 2D Numeric Python arrays.
+  The arrays -must- be of type 'Float'.  The size in the first dimenision
+  must match the number of inputs or outputs, and the size of the second
+  dimension must match the buffer size.  See capture.py and testtone.py
+  for examples of how this works.  Following is a part of the code from
+  testtone.py.  In this example there is only one input port and one output
+  port.  input.shape = (1, 1024), output.shape = (1, 144000).
+  Notice that process will modify entries in the input array.
+
+input = Numeric.zeros((1,N), 'f')    # note the float type here...
+output = Numeric.reshape(
+    Numeric.sin(
+        2*Numeric.pi*440.0 * (Numeric.arange(0, sec, 1.0/(Sr), 'f')[0:int(Sr*sec)])
+    ), (1, Sr*sec)).astype('f')
+
+i = 0
+while i < output.shape[1] - N:
+    try:
+        jack.process(output[:,i:i+N], input)
+        i += N
+    except jack.InputSyncError:
+        pass
+    except jack.OutputSyncError:
+        pass
+
+---
+jack.get_ports()
+  Returns a list of all registered ports in the Jack graph.
+  The name of a port looks like: "client_name:port_name"
+
+>>> jack.get_ports()
+['alsa_pcm:capture_1', 'alsa_pcm:capture_2', 'alsa_pcm:capture_3', ... ]
+
+---
+jack.get_port_flags()
+  Returns an integer which is the bitwise-or of all flags for a given port.
+
+>>> jack.get_port_flags('alsa_pcm:playback_6')
+21
+
+---
+jack.get_connections()
+  Returns a list of ports connected to the given port.
+  If nothing is connected, returns a list of length zero.
+  
+>>> jack.get_connections('alsa_pcm:capture_1')
+['foo_client:input_1']
+
+---
+jack.connect(source, destination)
+  Connect two ports on the Jack graph.
+  Note that source must have the IsOutput flag, and
+  destination must have the IsInput flag.
+  If you want to recieve or send audio, you must
+  connect your client's inputs/outputs (those
+  ports registered via jack.register_port()) to
+  something else which is generating or recieving
+  audio, e.g. the alsa_pcm ports.
+  You can connect ports which belong to other clients
+  as well, e.g. for a patchbay application.
+  
+  At the time of writing, there is a bug in the Jack
+  API which causes audio data to be missing from
+  input buffers if ports are connected before 
+  jack.activate() is called.  Until this is fixed,
+  please make sure that you call jack.activate() 
+  prior to using jack.connect().
+  
+---
+jack.disconnect(source, destination)
+  Break a connection established by jack.connect().
+ 
+---
+jack.get_buffer_size()
+  Returns the current buffer size used by the Jack server.
+  If this number is small you may have a lot of synchronization problems.
+  
+---
+jack.get_sample_rate()
+  Returns the current sample rate used by the Jack server.
+  
+---
+jack.check_events()
+  Check if any asynchronous event callbacks have been raised since
+  the last call to jack.check_events().
+  Use of this function does -NOT- require that you be presently attached
+  to the Jack server; however the values will not change unless you are!
+
+>>> jack.check_events()
+{'graph_ordering': 0, 'shutdown': 0, 'port_registration': 0, 'hangup': 0}
+
+If graph_ordering == 1:
+  Then a pair of ports somewhere in the jack graph has been connected or 
+disconnected.
+
+If port_registration == 1:
+  Then a port has been added or removed from the jack graph.
+  
+If shutdown == 1:
+  Then the Jack server has shutdown; your client is no longer attached.
+  
+If hangup == 1:
+  Then the Jack server decided to kill the PyJack client for some reason;
+  the client is no longer attached.
+  
+  Any flag which is raised is immediatly reset to zero when this 
+  function is called.
+  
+------------------------------------------------------------------------
+
+
