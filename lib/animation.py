@@ -252,10 +252,14 @@ class Animation(object):
         opacities, visible = self.frames.get_opacities()
 
         for cel, opa in opacities.items():
+            if cel is None:
+                continue
             cel.opacity = opa
             self._notify_canvas_observers(cel)
 
         for cel, vis in visible.items():
+            if cel is None:
+                continue
             cel.visible = vis
             self._notify_canvas_observers(cel)
 
