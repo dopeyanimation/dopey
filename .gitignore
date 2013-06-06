@@ -18,6 +18,7 @@ lib/mypaintlib.py
 lib/mypaintlib_wrap.cpp
 lib/mypaintlib_wrap.os
 mypaint
+desktop/mypaint-ora-thumbnailer
 options.cache
 *.mo
 *.pot
