@@ -7,3 +7,5 @@ MyPaint-xsheet is a temporary name until I can think of a better one. This progr
 ## Building, MyPaint credits, and License
 
 For building instructions and information about the contributors to MyPaint, see README.mypaint. For information about the license of this program, see LICENSE.
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/davissorenson/mypaint-xsheet/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
