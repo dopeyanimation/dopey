@@ -1,5 +1,10 @@
+#include "numpy/numpyconfig.h"
+#ifdef NPY_1_7_API_VERSION
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#endif
 #include "Python.h"
 #include "numpy/arrayobject.h"
+
 #include "mapping.hpp"
 #include "surface.hpp"
 #include "brush.hpp"
