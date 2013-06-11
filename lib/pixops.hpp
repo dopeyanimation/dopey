@@ -55,42 +55,17 @@ void tile_downscale_rgba16(PyObject *src, PyObject *dst, int dst_x, int dst_y) {
 
 
 // Composite one tile over another.
-
 template <typename B>
 static inline void
-tile_composite_data (PyObject *src_obj,
-                     PyObject *dst_obj,
-                     const bool dst_has_alpha,
-                     const float src_opacity)
+tile_composite_data (const fix15_short_t *src_p,
+                       fix15_short_t *dst_p,
+                       const bool dst_has_alpha,
+                       const float src_opacity)
 {
-  PyArrayObject* src = ((PyArrayObject*)src_obj);
-  PyArrayObject* dst = ((PyArrayObject*)dst_obj);
-#ifdef HEAVY_DEBUG
-  assert(PyArray_DIM(src, 0) == MYPAINT_TILE_SIZE);
-  assert(PyArray_DIM(src, 1) == MYPAINT_TILE_SIZE);
-  assert(PyArray_DIM(src, 2) == 4);
-  assert(PyArray_TYPE(src) == NPY_UINT16);
-  assert(PyArray_ISCARRAY(src));
-
-  assert(PyArray_DIM(dst, 0) == MYPAINT_TILE_SIZE);
-  assert(PyArray_DIM(dst, 1) == MYPAINT_TILE_SIZE);
-  assert(PyArray_DIM(dst, 2) == 4);
-  assert(PyArray_TYPE(dst) == NPY_UINT16);
-  assert(PyArray_ISCARRAY(dst));
-
-  assert(PyArray_STRIDES(dst)[0] == 4*sizeof(fix15_short_t)*MYPAINT_TILE_SIZE);
-  assert(PyArray_STRIDES(dst)[1] == 4*sizeof(fix15_short_t));
-  assert(PyArray_STRIDES(dst)[2] ==   sizeof(fix15_short_t));
-#endif
-
   const fix15_short_t opac = fix15_short_clamp(src_opacity * fix15_one);
   if (opac == 0)
     return;
 
-  const fix15_short_t* const src_p = (fix15_short_t *)
-                                        PyArray_DATA(src);
-  fix15_short_t*       const dst_p = (fix15_short_t *)
-                                        PyArray_DATA(dst);
   if (dst_has_alpha) {
     BufferComp<BufferCompOutputRGBA, MYPAINT_TILE_SIZE*MYPAINT_TILE_SIZE*4, B>
         ::composite_src_over(src_p, dst_p, opac);
@@ -101,184 +76,15 @@ tile_composite_data (PyObject *src_obj,
   }
 }
 
-
-void
-tile_composite_normal (PyObject *src,
-                       PyObject *dst,
-                       const bool dst_has_alpha,
-                       const float src_opacity)
-{
-    tile_composite_data<NormalBlendMode>(src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_multiply (PyObject *src,
-                         PyObject *dst,
-                         const bool dst_has_alpha,
-                         const float src_opacity)
-{
-    tile_composite_data<MultiplyBlendMode>(src,dst,dst_has_alpha,src_opacity);
-}
-
-
-void
-tile_composite_screen (PyObject *src,
-                       PyObject *dst,
-                       const bool dst_has_alpha,
-                       const float src_opacity)
-{
-    tile_composite_data<ScreenBlendMode>(src,dst,dst_has_alpha,src_opacity);
-}
-
-
-void
-tile_composite_overlay (PyObject *src,
-                        PyObject *dst,
-                        const bool dst_has_alpha,
-                        const float src_opacity)
-{
-    tile_composite_data<OverlayBlendMode>(src,dst,dst_has_alpha,src_opacity);
-}
-
-
-void
-tile_composite_hard_light (PyObject *src,
-                           PyObject *dst,
-                           const bool dst_has_alpha,
-                           const float src_opacity)
-{
-    tile_composite_data<HardLightBlendMode>(src,dst,dst_has_alpha,src_opacity);
-}
-
-
-void
-tile_composite_lighten (PyObject *src,
-                        PyObject *dst,
-                        const bool dst_has_alpha,
-                        const float src_opacity)
-{
-    tile_composite_data<LightenBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_darken (PyObject *src,
-                       PyObject *dst,
-                       const bool dst_has_alpha,
-                       const float src_opacity)
-{
-    tile_composite_data<DarkenBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_soft_light (PyObject *src,
-                           PyObject *dst,
-                           const bool dst_has_alpha,
-                           const float src_opacity)
-{
-    tile_composite_data<SoftLightBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_color_dodge (PyObject *src,
-                            PyObject *dst,
-                            const bool dst_has_alpha,
-                            const float src_opacity)
-{
-    tile_composite_data<ColorDodgeBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_color_burn (PyObject *src,
-                           PyObject *dst,
-                           const bool dst_has_alpha,
-                           const float src_opacity)
-{
-    tile_composite_data<ColorBurnBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_difference (PyObject *src,
-                           PyObject *dst,
-                           const bool dst_has_alpha,
-                           const float src_opacity)
-{
-    tile_composite_data<DifferenceBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_exclusion (PyObject *src,
-                          PyObject *dst,
-                          const bool dst_has_alpha,
-                          const float src_opacity)
-{
-    tile_composite_data<ExclusionBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-void
-tile_composite_hue (PyObject *src,
-                    PyObject *dst,
-                    const bool dst_has_alpha,
-                    const float src_opacity)
-{
-    tile_composite_data<HueBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_saturation (PyObject *src,
-                           PyObject *dst,
-                           const bool dst_has_alpha,
-                           const float src_opacity)
-{
-    tile_composite_data<SaturationBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_color (PyObject *src,
-                      PyObject *dst,
-                      const bool dst_has_alpha,
-                      const float src_opacity)
-{
-    tile_composite_data<ColorBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-void
-tile_composite_luminosity (PyObject *src,
-                           PyObject *dst,
-                           const bool dst_has_alpha,
-                           const float src_opacity)
-{
-    tile_composite_data<LuminosityBlendMode>
-        (src, dst, dst_has_alpha, src_opacity);
-}
-
-
-
-
 // used to e.g. copy the background before starting to composite over it
 //
 // simply array copying (numpy assignment operator) is about 13 times slower, sadly
 // The above comment is true when the array is sliced; it's only about two
 // times faster now, in the current usecae.
+void tile_copy_rgba16_into_rgba16_c(uint16_t *src, uint16_t *dst) {
+  memcpy(dst, src, MYPAINT_TILE_SIZE*MYPAINT_TILE_SIZE*4*sizeof(uint16_t));
+}
+
 void tile_copy_rgba16_into_rgba16(PyObject * src, PyObject * dst) {
   PyArrayObject* src_arr = ((PyArrayObject*)src);
   PyArrayObject* dst_arr = ((PyArrayObject*)dst);
@@ -301,8 +107,6 @@ void tile_copy_rgba16_into_rgba16(PyObject * src, PyObject * dst) {
   assert(PyArray_STRIDES(src_arr)[2] ==   sizeof(uint16_t));
 #endif
 
-  memcpy(PyArray_DATA(dst_arr), PyArray_DATA(src_arr),
-        MYPAINT_TILE_SIZE*MYPAINT_TILE_SIZE*4*sizeof(uint16_t));
   /* the code below can be used if it is not ISCARRAY, but only ISBEHAVED:
   char * src_p = PyArray_DATA(src_arr);
   char * dst_p = PyArray_DATA(dst_arr);
@@ -312,6 +116,9 @@ void tile_copy_rgba16_into_rgba16(PyObject * src, PyObject * dst) {
     dst_p += dst_arr->strides[0];
   }
   */
+
+  tile_copy_rgba16_into_rgba16_c((uint16_t *)PyArray_DATA(src_arr), 
+                                 (uint16_t *)PyArray_DATA(dst_arr));
 }
 
 void tile_clear(PyObject * dst) {
@@ -759,4 +566,85 @@ void tile_perceptual_change_strokemap(PyObject * a_obj, PyObject * b_obj, PyObje
     }
   }
 }
+
+enum BlendingMode {
+    BlendingModeInvalid,
+    BlendingModeNormal,
+    BlendingModeMultiply,
+    BlendingModeScreen,
+    BlendingModeOverlay,
+    BlendingModeDarken,
+    BlendingModeLighten,
+    BlendingModeHardLight,
+    BlendingModeSoftLight,
+    BlendingModeColorBurn,
+    BlendingModeColorDodge,
+    BlendingModeDifference,
+    BlendingModeExclusion,
+    BlendingModeHue,
+    BlendingModeSaturation,
+    BlendingModeColor,
+    BlendingModeLuminosity,
+    BlendingModes
+};
+
+typedef void (*TileCompositeFunction) (const fix15_short_t *src,
+                           fix15_short_t *dst,
+                           const bool dst_has_alpha,
+                           const float src_opacity);
+
+static TileCompositeFunction
+blendingmode_functions[BlendingModes] = {
+    NULL,
+    tile_composite_data<NormalBlendMode>,
+    tile_composite_data<MultiplyBlendMode>,
+    tile_composite_data<ScreenBlendMode>,
+    tile_composite_data<OverlayBlendMode>,
+    tile_composite_data<DarkenBlendMode>,
+    tile_composite_data<LightenBlendMode>,
+    tile_composite_data<HardLightBlendMode>,
+    tile_composite_data<SoftLightBlendMode>,
+    tile_composite_data<ColorBurnBlendMode>,
+    tile_composite_data<ColorDodgeBlendMode>,
+    tile_composite_data<DifferenceBlendMode>,
+    tile_composite_data<ExclusionBlendMode>,
+    tile_composite_data<HueBlendMode>,
+    tile_composite_data<SaturationBlendMode>,
+    tile_composite_data<ColorBlendMode>,
+    tile_composite_data<LuminosityBlendMode>
+};
+
+void
+tile_composite (enum BlendingMode mode, PyObject *src_obj,
+                     PyObject *dst_obj,
+                     const bool dst_has_alpha,
+                     const float src_opacity)
+{
+  PyArrayObject* src = ((PyArrayObject*)src_obj);
+  PyArrayObject* dst = ((PyArrayObject*)dst_obj);
+#ifdef HEAVY_DEBUG
+  assert(PyArray_DIM(src, 0) == MYPAINT_TILE_SIZE);
+  assert(PyArray_DIM(src, 1) == MYPAINT_TILE_SIZE);
+  assert(PyArray_DIM(src, 2) == 4);
+  assert(PyArray_TYPE(src) == NPY_UINT16);
+  assert(PyArray_ISCARRAY(src));
+
+  assert(PyArray_DIM(dst, 0) == MYPAINT_TILE_SIZE);
+  assert(PyArray_DIM(dst, 1) == MYPAINT_TILE_SIZE);
+  assert(PyArray_DIM(dst, 2) == 4);
+  assert(PyArray_TYPE(dst) == NPY_UINT16);
+  assert(PyArray_ISCARRAY(dst));
+
+  assert(PyArray_STRIDES(dst)[0] == 4*sizeof(fix15_short_t)*MYPAINT_TILE_SIZE);
+  assert(PyArray_STRIDES(dst)[1] == 4*sizeof(fix15_short_t));
+  assert(PyArray_STRIDES(dst)[2] ==   sizeof(fix15_short_t));
+#endif
+
+  const fix15_short_t* const src_p = (fix15_short_t *)PyArray_DATA(src);
+  fix15_short_t*       const dst_p = (fix15_short_t *)PyArray_DATA(dst);
+
+  TileCompositeFunction blend_func = blendingmode_functions[mode];
+  blend_func(src_p, dst_p, dst_has_alpha, src_opacity);
+}
+
 
