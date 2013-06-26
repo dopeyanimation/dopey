@@ -1,0 +1,73 @@
+require 'ember-dev'
+
+distros = {
+  "runtime"           => %w(ember-metal rsvp container ember-runtime),
+  "template-compiler" => %w(ember-handlebars-compiler),
+  "data-deps"         => %w(ember-metal rsvp container ember-runtime ember-states),
+  "full"              => %w(ember-metal rsvp container ember-runtime ember-views metamorph handlebars ember-handlebars-compiler ember-handlebars ember-routing ember-application ember-states ember-testing),
+  "old-router"        => %w(ember-metal rsvp container ember-runtime ember-views ember-states ember-viewstates metamorph handlebars ember-handlebars-compiler ember-handlebars ember-old-router)
+}
+
+class AddMicroLoader < Rake::Pipeline::Filter
+  LOADER = File.expand_path("packages/loader/lib/main.js")
+
+  def initialize(options={}, &block)
+    super(&block)
+    @global = options[:global]
+  end
+
+  def generate_output(inputs, output)
+    output.write "(function() {\n" unless @global
+
+    output.write File.read(LOADER)
+
+    inputs.each do |input|
+      output.write input.read
+    end
+
+    output.write "\n})();\n" unless @global
+  end
+
+  def additional_dependencies(input)
+    [ LOADER ]
+  end
+end
+
+#MEGAHAX
+ember_spade_postprocess = "filter AddMicroLoader, :global => true"
+
+instance_eval File.read(EmberDev.support_path.join('Assetfile'))
+
+distros.each do |name, modules|
+  name = name == "full" ? "ember" : "ember-#{name}"
+
+  input "dist/modules" do
+    module_paths = modules.map{|m| "#{m}.js" }
+    match "{#{module_paths.join(',')}}" do
+      concat(module_paths){ ["#{name}.js", "#{name}.prod.js"] }
+      filter HandlebarsPrecompiler
+      filter AddMicroLoader unless name == "ember-template-compiler"
+    end
+
+    # Add debug to the main distro
+    match "{#{name}.js,ember-debug.js}" do
+      filter VersionInfo
+      concat ["ember-debug.js"], "#{name}.js" unless name == "ember-template-compiler"
+      filter EmberStub if name == "ember-template-compiler"
+    end
+
+    # Strip dev code
+    match "#{name}.prod.js" do
+      filter(EmberStripDebugMessagesFilter) { ["#{name}.prod.js", "min/#{name}.js"] }
+    end
+
+    # Minify
+    match "min/#{name}.js" do
+      uglify{ "#{name}.min.js" }
+      filter VersionInfo
+      filter EmberLicenseFilter
+    end
+  end
+end
+
+# vim: filetype=ruby

@@ -1,0 +1,21 @@
+{
+  "name": "ember-debug",
+  "summary": "Debugging for Ember",
+  "description": "Debugging helpers for Ember",
+  "homepage": "http://www.emberjs.com",
+  "author": "Peter Wagenet",
+  "version": "1.0.0-rc4",
+
+  "directories": {
+    "lib": "lib"
+  },
+
+  "bpm:build": {
+    "bpm_libs.js": {
+      "files": ["lib"],
+      "modes":        "*"
+    }
+  }
+
+}
+
