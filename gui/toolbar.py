@@ -66,7 +66,7 @@ class ToolbarManager:
             self.on_toolbar1_popup_context_menu)
         self.toolbar1_popup = self.app.ui_manager\
             .get_widget('/toolbar1-settings-menu')
-        self.menu_button = MainMenuButton(_("MyPaint"), draw_window.popupmenu)
+        self.menu_button = MainMenuButton(_("Dopey"), draw_window.popupmenu)
         self.menu_button.set_border_width(0)
         menu_toolitem = gtk.ToolItem()
         menu_toolitem.add(self.menu_button)

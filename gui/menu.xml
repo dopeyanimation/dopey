@@ -271,6 +271,7 @@
       </menu>
       <separator/>
       <menuitem action='About'/>
+      <menuitem action='AboutMyPaint'/>
     </menu>
   </menubar>
 </ui>

@@ -1103,9 +1103,17 @@ Perhaps an increasing amount.
       <child>
         <object class="GtkAction" id="About">
           <property name="label" translatable="yes"
-            context="Menu|Help|">About MyPaint</property>
+            context="Menu|Help|">About Dopey</property>
           <property name="icon-name">gtk-about</property>
           <signal name="activate" handler="about_cb"/>
+        </object>
+      </child>
+      <child>
+        <object class="GtkAction" id="AboutMyPaint">
+          <property name="label" translatable="yes"
+            context="Menu|Help|">About MyPaint</property>
+          <property name="icon-name">gtk-about</property>
+          <signal name="activate" handler="about_mypaint_cb"/>
         </object>
       </child>
       <!-- Debugging menu -->

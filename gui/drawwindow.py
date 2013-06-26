@@ -259,7 +259,7 @@ class Window (windowing.MainWindow, layout.MainWindow):
             popupmenu.append(item)
         if owner is not None:
             popupmenu.attach_to_widget(owner, None)
-        popupmenu.set_title("MyPaint")
+        popupmenu.set_title("Dopey")
         popupmenu.connect("selection-done", self.popupmenu_done_cb)
         popupmenu.connect("deactivate", self.popupmenu_done_cb)
         popupmenu.connect("cancel", self.popupmenu_done_cb)
@@ -269,9 +269,9 @@ class Window (windowing.MainWindow, layout.MainWindow):
 
     def update_title(self, filename):
         if filename:
-            self.set_title("MyPaint - %s" % os.path.basename(filename))
+            self.set_title("Dopey - %s" % os.path.basename(filename))
         else:
-            self.set_title("MyPaint")
+            self.set_title("Dopey")
 
     # INPUT EVENT HANDLING
     def drag_data_received(self, widget, context, x, y, selection, info, t):
@@ -783,9 +783,40 @@ class Window (windowing.MainWindow, layout.MainWindow):
         if filename:
             self.app.brushmanager.import_brushpack(filename,  self)
 
+    def about_cb(self, action):
+        d = gtk.AboutDialog()
+        d.set_transient_for(self)
+        d.set_program_name("Dopey")
+        d.set_version(self.app.version)
+        d.set_copyright(_("Copyright (C) 2013\nDavis Sorenson and Manuel Quiñones"))
+        d.set_website("http://github.com/davissorenson/dopey")
+        d.set_logo(self.app.pixmaps.mypaint_logo)
+        d.set_license(
+            _(u"This program is free software; you can redistribute it and/or modify "
+              u"it under the terms of the GNU General Public License as published by "
+              u"the Free Software Foundation; either version 2 of the License, or "
+              u"(at your option) any later version.\n"
+              u"\n"
+              u"This program is distributed in the hope that it will be useful, "
+              u"but WITHOUT ANY WARRANTY. See the COPYING file for more details.")
+            )
+        d.set_wrap_license(True)
+        d.set_authors([
+            # (in order of appearance)
+            u"Manuel Quiñones (%s)" % _('programming'),
+            u"Davis Sorenson (%s)" % _('programming')
+            ])
+        d.set_artists([
+            u"Unclear, do you know? (Possibly Manuel Quiñones) (%s)" % _('tool icons'),
+            ])
+        d.set_translator_credits(_("translator-credits"));
+
+        d.run()
+        d.destroy()
+
     # INFORMATION
     # TODO: Move into dialogs.py?
-    def about_cb(self, action):
+    def about_mypaint_cb(self, action):
         d = gtk.AboutDialog()
         d.set_transient_for(self)
         d.set_program_name("MyPaint")
