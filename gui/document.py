@@ -19,7 +19,7 @@ from gettext import gettext as _
 
 import lib.document
 from lib import command, helpers, layer, tiledsurface
-import tileddrawwidget, stategroup
+import stategroup
 from brushmanager import ManagedBrush
 import dialogs
 import canvasevent
@@ -167,12 +167,12 @@ class Document (CanvasController):
     PAN_UP = 3   #: Stepwise panning direction: up
     PAN_DOWN = 4   #: Stepwise panning direction: down
 
-    def __init__(self, app, leader=None):
+
+    def __init__(self, app, tdw, model, leader=None):
         self.app = app
-        self.model = lib.document.Document(self.app.brush)
+        self.model = model
         self.ani = animation.Animation(self)
 
-        tdw = tileddrawwidget.TiledDrawWidget(self.app, self.model)
         CanvasController.__init__(self, tdw)
         self.modes.observers.append(self.mode_stack_changed_cb)
 
@@ -233,7 +233,7 @@ class Document (CanvasController):
             self.action_group = leader.action_group # hack, but needed by tdw
         else:
             # This doc owns the Actions which are (sometimes) passed on to
-            # followers to perform. It's model is also the main 'document'
+            # followers to perform. Its model is also the main 'document'
             # being worked on by the user.
             self.init_actions()
             self.init_context_actions()
