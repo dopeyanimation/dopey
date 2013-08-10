@@ -29,13 +29,14 @@ def get_app():
     return Application._INSTANCE
 
 
-import pygtkcompat
+import gtk2compat
 import filehandling
 import keyboard
 import brushmanager
 import windowing
 import document
 import layout
+import backgroundwindow
 import brushmodifier
 import linemode
 import colors
@@ -122,16 +123,13 @@ class Application (object):
             print 'see https://gna.org/bugs/?18460 for possible solutions'
             sys.exit(1)
 
-        if pygtkcompat.USE_GTK3:
-            gtk.Window.set_default_icon_name('mypaint')
-        else:
-            gtk.window_set_default_icon_name('mypaint')
+        gtk.Window.set_default_icon_name('mypaint')
 
         # Stock items, core actions, and menu structure
-        builder_xml = join(self.datapath, "gui", "mypaint.xml")
+        resources_xml = join(self.datapath, "gui", "resources.xml")
         self.builder = gtk.Builder()
         self.builder.set_translation_domain("mypaint")
-        self.builder.add_from_file(builder_xml)
+        self.builder.add_from_file(resources_xml)
         factory = self.builder.get_object("stock_icon_factory")
         factory.add_default()
 
@@ -142,7 +140,7 @@ class Application (object):
 
         self.pixmaps = PixbufDirectory(join(self.datapath, 'pixmaps'))
         self.cursor_color_picker = gdk.Cursor(
-                  pygtkcompat.gdk.display_get_default(),
+                  gtk2compat.gdk.display_get_default(),
                   self.pixmaps.cursor_color_picker,
                   1, 30)
         self.cursors = CursorCache(self)
@@ -205,14 +203,24 @@ class Application (object):
         self.kbm.start_listening()
         self.filehandler.doc = self.doc
         self.filehandler.filename = None
-        pygtkcompat.gtk.accel_map_load(join(self.user_confpath,
+        gtk2compat.gtk.accel_map_load(join(self.user_confpath,
                                             'accelmap.conf'))
 
-        # Load the background settings window.
-        # FIXME: this line shouldn't be needed, but we need to load this up
-        # front to get any non-default background that the user has configured
-        # from the preferences.
-        self.layout_manager.get_subwindow_by_role("backgroundWindow")
+        # Load the default background
+        for datapath in [self.user_datapath, self.datapath]:
+            bg_path = join(datapath, backgroundwindow.BACKGROUNDS_SUBDIR,
+                           backgroundwindow.DEFAULT_BACKGROUND)
+            if not os.path.exists(bg_path):
+                continue
+            bg, errors = backgroundwindow.load_background(bg_path)
+            if bg:
+                self.doc.model.set_background(bg, make_default=True)
+                break
+            else:
+                print "warning: failed to load default bg %r" % (bg_path,)
+                if errors:
+                    for error in errors:
+                        print u"warning: %s" % (error,)
 
         # And the brush settings window, or things like eraser mode will break.
         # FIXME: brush_adjustments should not be dependent on this
@@ -478,8 +486,8 @@ class Application (object):
         # init extended input devices
         self.pressure_devices = []
 
-        if pygtkcompat.USE_GTK3:
-            display = pygtkcompat.gdk.display_get_default()
+        if gtk2compat.USE_GTK3:
+            display = gtk2compat.gdk.display_get_default()
             device_mgr = display.get_device_manager()
             for device in device_mgr.list_devices(gdk.DeviceType.SLAVE):
                 if device.get_source() == gdk.InputSource.KEYBOARD:
@@ -596,7 +604,7 @@ class Application (object):
         print ''
 
     def save_gui_config(self):
-        pygtkcompat.gtk.accel_map_save(join(self.user_confpath, 'accelmap.conf'))
+        gtk2compat.gtk.accel_map_save(join(self.user_confpath, 'accelmap.conf'))
         self.save_settings()
 
     def message_dialog(self, text, type=gtk.MESSAGE_INFO, flags=0,
@@ -613,7 +621,7 @@ class Application (object):
         if long_text is not None:
             buf = gtk.TextBuffer()
             buf.set_text(long_text)
-            tv = gtk.TextView(buf)
+            tv = gtk.TextView.new_with_buffer(buf)
             tv.show()
             tv.set_editable(False)
             tv.set_wrap_mode(gtk.WRAP_WORD_CHAR)
@@ -697,7 +705,7 @@ class DeviceUseMonitor (object):
         # small problem with this code: it doesn't work well with brushes that
         # have (eraser not in [1.0, 0.0])
 
-        if pygtkcompat.USE_GTK3:
+        if gtk2compat.USE_GTK3:
             new_device.name = new_device.props.name
             new_device.source = new_device.props.input_source
 
@@ -803,7 +811,7 @@ class CursorCache (object):
             hot_x = 1
             hot_y = 1
 
-        cursor_pixbuf = pygtkcompat.GdkPixbufCompat.new(gdk.COLORSPACE_RGB,
+        cursor_pixbuf = gtk2compat.GdkPixbufCompat.new(gdk.COLORSPACE_RGB,
                                                         True, 8, 32, 32)
         cursor_pixbuf.fill(0x00000000)
 

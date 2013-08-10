@@ -9,8 +9,8 @@
 """Overlays for TDWs showing information about the TDW state.
 """
 
-import pygtkcompat
-if pygtkcompat.USE_GTK3:
+import gtk2compat
+if gtk2compat.USE_GTK3:
     from gi.repository import PangoCairo
 
 import gtk
@@ -19,10 +19,23 @@ import gobject
 import cairo
 import pango
 from math import pi
-from tileddrawwidget import Overlay
 from lib.helpers import clamp
 
 from gettext import gettext as _
+
+
+class Overlay:
+    """Base class/interface for objects which paint things over a TDW.
+    """
+
+    def paint(self, cr):
+        """Paint information onto a TiledDrawWidget.
+
+        The drawing interface is very simple. `cr` is a Cairo context in either
+        display coordinates or model coordinates: which one you get depends on
+        which list the Overlay is appended to on its tdw.
+        """
+        pass
 
 
 class FadingOverlay (Overlay):
@@ -148,7 +161,7 @@ class ScaleOverlay (FadingOverlay):
         layout = self.tdw.create_pango_layout(text)
 
         # Set a bold font
-        if pygtkcompat.USE_GTK3:
+        if gtk2compat.USE_GTK3:
             font = layout.get_font_description()
             if font is None: # inherited from context
                 font = layout.get_context().get_font_description()
@@ -183,7 +196,7 @@ class ScaleOverlay (FadingOverlay):
         rgba = self.text_rgba[:]
         rgba[3] *= self.alpha
         cr.set_source_rgba(*rgba)
-        if pygtkcompat.USE_GTK3:
+        if gtk2compat.USE_GTK3:
             PangoCairo.show_layout(cr, layout)
         else:
             cr.show_layout(layout)

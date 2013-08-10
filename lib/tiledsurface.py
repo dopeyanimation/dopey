@@ -88,11 +88,24 @@ class SurfaceSnapshot:
 
 if use_gegl:
 
-    class GeglSurface(mypaintlib.GeglBackedSurface):
+    class GeglSurface():
 
-        def __init__(self, mipmap_level=0):
-            mypaintlib.GeglBackedSurface.__init__(self, self)
+        def __init__(self, mipmap_level=0, looped=False, looped_size=(0,0)):
             self.observers = []
+            self._backend = mypaintlib.GeglBackedSurface(self)
+
+            # Forwarding API
+            self.begin_atomic = self._backend.begin_atomic
+            self.end_atomic = self._backend.end_atomic
+            self.get_color = self._backend.get_color
+            self.get_alpha = self._backend.get_alpha
+            self.draw_dab = self._backend.draw_dab
+#            self.set_symmetry_state = self._backend.set_symmetry_state
+            self.get_node = self._backend.get_node
+
+        @property
+        def backend(self):
+            return self._backend
 
         def notify_observers(self, *args):
             for f in self.observers:
@@ -141,10 +154,14 @@ if use_gegl:
         def set_symmetry_state(self, enabled, center_axis):
             pass
 
-class MyPaintSurface(mypaintlib.TiledSurface):
+# TODO:
+# - move the tile storage from MyPaintSurface to a separate class
+class MyPaintSurface():
     # the C++ half of this class is in tiledsurface.hpp
-    def __init__(self, mipmap_level=0, looped=False, looped_size=(0,0)):
-        mypaintlib.TiledSurface.__init__(self, self)
+    def __init__(self, mipmap_level=0, mipmap_surfaces=None, looped=False, looped_size=(0,0)):
+
+        # TODO: pass just what it needs access to, not all of self
+        self._backend = mypaintlib.TiledSurface(self)
         self.tiledict = {}
         self.observers = []
 
@@ -155,12 +172,38 @@ class MyPaintSurface(mypaintlib.TiledSurface):
         self.looped_size = looped_size
 
         self.mipmap_level = mipmap_level
-        self.mipmap = None
-        self.parent = None
+        self.mipmaps = mipmap_surfaces
 
-        if mipmap_level < MAX_MIPMAP_LEVEL:
-            self.mipmap = Surface(mipmap_level+1)
-            self.mipmap.parent = self
+        if mipmap_level == 0:
+            mipmaps = [self]
+            for level in range(1, MAX_MIPMAP_LEVEL+1):
+                s = MyPaintSurface(mipmap_level=level, mipmap_surfaces=mipmaps)
+                mipmaps.append(s)
+            self.mipmaps = mipmaps
+
+            # for quick lookup
+            for level, s in enumerate(mipmaps):
+                try:
+                    s.parent = mipmaps[level-1]
+                except IndexError:
+                    s.parent = None
+                try:
+                    s.mipmap = mipmaps[level+1]
+                except IndexError:
+                    s.mipmap = None
+
+        # Forwarding API
+        self.set_symmetry_state = self._backend.set_symmetry_state
+        self.begin_atomic = self._backend.begin_atomic
+        self.end_atomic = self._backend.end_atomic
+        self.get_color = self._backend.get_color
+        self.get_alpha = self._backend.get_alpha
+        self.draw_dab = self._backend.draw_dab
+
+
+    @property
+    def backend(self):
+        return self._backend
 
     def notify_observers(self, *args):
         for f in self.observers:
@@ -182,6 +225,25 @@ class MyPaintSurface(mypaintlib.TiledSurface):
         yield numpy_tile
         self._set_tile_numpy(tx, ty, numpy_tile, readonly)
 
+    def _regenerate_mipmap(self, t, tx, ty):
+        t = Tile()
+        self.tiledict[(tx, ty)] = t
+        empty = True
+
+        for x in xrange(2):
+            for y in xrange(2):
+                src = self.parent.tiledict.get((tx*2 + x, ty*2 + y), transparent_tile)
+                if src is mipmap_dirty_tile:
+                    src = self.parent._regenerate_mipmap(src, tx*2 + x, ty*2 + y)
+                mypaintlib.tile_downscale_rgba16(src.rgba, t.rgba, x*N/2, y*N/2)
+                if src.rgba is not transparent_tile.rgba:
+                    empty = False
+        if empty:
+            # rare case, no need to speed it up
+            del self.tiledict[(tx, ty)]
+            t = transparent_tile
+        return t
+
     def _get_tile_numpy(self, tx, ty, readonly):
         # OPTIMIZE: do some profiling to check if this function is a bottleneck
         #           yes it is
@@ -200,20 +262,7 @@ class MyPaintSurface(mypaintlib.TiledSurface):
                 t = Tile()
                 self.tiledict[(tx, ty)] = t
         if t is mipmap_dirty_tile:
-            # regenerate mipmap
-            t = Tile()
-            self.tiledict[(tx, ty)] = t
-            empty = True
-            for x in xrange(2):
-                for y in xrange(2):
-                    with self.parent.tile_request(tx*2 + x, ty*2 + y, True) as src:
-                        mypaintlib.tile_downscale_rgba16(src, t.rgba, x*N/2, y*N/2)
-                        if src is not transparent_tile.rgba:
-                            empty = False
-            if empty:
-                # rare case, no need to speed it up
-                del self.tiledict[(tx, ty)]
-                t = transparent_tile
+            t = self._regenerate_mipmap(t, tx, ty)
         if t.readonly and not readonly:
             # shared memory, get a private copy for writing
             t = t.copy()
@@ -227,10 +276,14 @@ class MyPaintSurface(mypaintlib.TiledSurface):
         pass # Data can be modified directly, no action needed
 
     def _mark_mipmap_dirty(self, tx, ty):
-        if self.mipmap_level > 0:
-            self.tiledict[(tx, ty)] = mipmap_dirty_tile
-        if self.mipmap:
-            self.mipmap._mark_mipmap_dirty(tx/2, ty/2)
+        #assert self.mipmap_level == 0
+        for level, mipmap in enumerate(self.mipmaps):
+            if level == 0:
+                continue
+            fac = 2**(level)
+            if mipmap.tiledict.get((tx/fac, ty/fac), None) == mipmap_dirty_tile:
+                break
+            mipmap.tiledict[(tx/fac, ty/fac)] = mipmap_dirty_tile
 
     def blit_tile_into(self, dst, dst_has_alpha, tx, ty, mipmap_level=0):
         # used mainly for saving (transparent PNG)

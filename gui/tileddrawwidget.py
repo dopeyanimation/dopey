@@ -6,7 +6,7 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
-import pygtkcompat
+import gtk2compat
 import gobject
 import cairo
 import gtk
@@ -30,18 +30,6 @@ def _make_testbed_model():
     return lib.document.Document(brush)
 
 
-class Overlay:
-    """Base class/interface for objects which paint things over a TDW.
-    """
-
-    def paint(self, cr):
-        """Paint information onto a TiledDrawWidget.
-
-        The drawing interface is very simple. `cr` is a Cairo context in either
-        display coordinates or model coordinates: which one you get depends on
-        which list the Overlay is appended to on its tdw.
-        """
-        pass
 
 
 #class CanvasEventBox(gtk.EventBox):
@@ -133,8 +121,6 @@ class TiledDrawWidget (gtk.EventBox):
             # handled in drawwindow.py:
             | gdk.BUTTON_PRESS_MASK
             | gdk.BUTTON_RELEASE_MASK)
-        if not pygtkcompat.USE_GTK3:
-            self.set_extension_events (gdk.EXTENSION_EVENTS_ALL)
         self.last_painting_pos = None
 
 
@@ -441,36 +427,37 @@ class DrawCursorMixin:
             self.update_cursor()
 
 
+def calculate_transformation_matrix(scale, rotation, translation_x, translation_y, mirrored):
 
-def tile_is_visible(cr, tx, ty, clip_region, sparse, translation_only):
-    if not sparse:
-        return True
+    scale = scale
+    # check if scale is almost a power of two
+    scale_log2 = log(scale, 2)
+    scale_log2_rounded = round(scale_log2)
+    if abs(scale_log2-scale_log2_rounded) < 0.01:
+        scale = 2.0**scale_log2_rounded
 
-    # it is worth checking whether this tile really will be visible
-    # (to speed up the L-shaped expose event during scrolling)
-    # (speedup clearly visible; slowdown measurable when always executing this code)
-    N = tiledsurface.N
-    if translation_only:
-        x, y = cr.user_to_device(tx*N, ty*N)
-        bbox = (int(x), int(y), N, N)
-    else:
-        corners = [(tx*N, ty*N), ((tx+1)*N, ty*N), (tx*N, (ty+1)*N), ((tx+1)*N, (ty+1)*N)]
-        corners = [cr.user_to_device(x_, y_) for (x_, y_) in corners]
-        bbox = helpers.rotated_rectangle_bbox(corners)
+    # maybe we should check if rotation is almost a multiple of 90 degrees?
 
-    if pygtkcompat.USE_GTK3:
-        c_r = gdk.Rectangle()
-        c_r.x, c_r.y, c_r.width, c_r.height = clip_region
-        bb_r = gdk.Rectangle()
-        bb_r.x, bb_r.y, bb_r.width, bb_r.height = bbox
-        intersects, isect_r = gdk.rectangle_intersect(bb_r, c_r)
-        if not intersects:
-            return False
-    else:
-        if clip_region.rect_in(bbox) == gdk.OVERLAP_RECTANGLE_OUT:
-            return False
+    matrix = cairo.Matrix()
+    matrix.translate(translation_x, translation_y)
+    matrix.rotate(rotation)
+    matrix.scale(scale, scale)
 
-    return True
+    # Align the translation such that (0,0) maps to an integer
+    # screen pixel, to keep image rendering fast and sharp.
+    x, y = matrix.transform_point(0, 0)
+    inverse = cairo.Matrix(*list(matrix))
+    assert not inverse.invert()
+    x, y = inverse.transform_point(round(x), round(y))
+    matrix.translate(x, y)
+
+    if mirrored:
+        m = list(matrix)
+        m[0] = -m[0]
+        m[2] = -m[2]
+        matrix = cairo.Matrix(*m)
+
+    return matrix
 
 class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
     """Render the document model to screen.
@@ -481,10 +468,7 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
     def __init__(self, app=None, document=None):
         gtk.DrawingArea.__init__(self)
 
-        if pygtkcompat.USE_GTK3:
-            self.connect("draw", self.draw_cb)
-        else:
-            self.connect("expose-event", self.expose_cb)
+        self.connect("draw", self.draw_cb)
 
         self.connect("size-allocate", self.size_allocate_cb)
         self.connect("state-changed", self.state_changed_cb)
@@ -499,6 +483,7 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         self.scale = 1.0
         self.rotation = 0.0
         self.mirrored = False
+        self.cached_transformation_matrix = None
 
         self.current_layer_solo = False
         self.show_layers_above = True
@@ -515,11 +500,51 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         # and saving, we need to avoid drawing partially-loaded files.
 
         self.is_sensitive = True    # just mirrors gtk.STATE_INSENSITIVE
-        self.snapshot_pixmap = None
+        self.snapshot_pixmap = None # FIXME: not used, see draw_cb()
 
         # Overlays
         self.model_overlays = []
         self.display_overlays = []
+
+
+    def _invalidate_cached_transform_matrix(self):
+        self.cached_transformation_matrix = None
+
+    def _get_x(self):
+        return self._translation_x
+    def _set_x(self, val):
+        self._translation_x = val
+        self._invalidate_cached_transform_matrix()
+    translation_x = property(_get_x, _set_x)
+
+    def _get_y(self):
+        return self._translation_y
+    def _set_y(self, val):
+        self._translation_y = val
+        self._invalidate_cached_transform_matrix()
+    translation_y = property(_get_y, _set_y)
+
+    def _get_scale(self):
+        return self._scale
+    def _set_scale(self, val):
+        self._scale = val
+        self._invalidate_cached_transform_matrix()
+    scale = property(_get_scale, _set_scale)
+
+    def _get_rotation(self):
+        return self._rotation
+    def _set_rotation(self, val):
+        self._rotation = val
+        self._invalidate_cached_transform_matrix()
+    rotation = property(_get_rotation, _set_rotation)
+
+    def _get_mirrored(self):
+        return self._mirrored
+    def _set_mirrored(self, val):
+        self._mirrored = val
+        self._invalidate_cached_transform_matrix()
+    mirrored = property(_get_mirrored, _set_mirrored)
+
 
     def state_changed_cb(self, widget, oldstate):
         # Keeps track of the sensitivity state, and regenerates
@@ -529,7 +554,7 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             self.snapshot_pixmap = None
         else:
             if self.snapshot_pixmap is None:
-                if not pygtkcompat.USE_GTK3:
+                if not gtk2compat.USE_GTK3:
                     # FIXME: we'll have to come up with a better way of doing this.
                     self.snapshot_pixmap = self.get_snapshot()
         self.is_sensitive = sensitive
@@ -566,33 +591,18 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         self.update_cursor()
 
     def draw_cb(self, widget, cr):
-
+        #TODO: (GTK3 migration fallout)
+        #if self.snapshot_pixmap:
+        #  ...should display snapshot instead of normal content, I think
+        #  (if it's only during loading, we could also just render blank instead?)
+        #else:
         self.repaint(cr, None)
         return True
-
-    def expose_cb(self, widget, event):
-
-        if self.snapshot_pixmap:
-            gc = self.get_style().fg_gc[self.get_state()]
-            area = event.area
-            x,y,w,h = area.x, area.y, area.width, area.height
-            self.window.draw_drawable(gc, self.snapshot_pixmap, x,y, x,y, w,h)
-        else:
-
-            cr = self.window.cairo_create()
-
-            ## actually this is only neccessary if we are not answering an expose event
-            #cr.rectangle(*device_bbox)
-            #cr.clip()
-
-            self.repaint(cr, event.area)
-        return True
-
 
     def display_to_model(self, disp_x, disp_y):
         """Converts display coordinates to model coordinates.
         """
-        matrix = self._get_model_view_transformation()
+        matrix = cairo.Matrix(*self._get_model_view_transformation())
         assert not matrix.invert()
         view_model = matrix
         return view_model.transform_point(disp_x, disp_y)
@@ -606,38 +616,12 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
 
 
     def _get_model_view_transformation(self):
-
-        scale = self.scale
-        # check if scale is almost a power of two
-        scale_log2 = log(scale, 2)
-        scale_log2_rounded = round(scale_log2)
-        if abs(scale_log2-scale_log2_rounded) < 0.01:
-            scale = 2.0**scale_log2_rounded
-
-        rotation = self.rotation
-        # maybe we should check if rotation is almost a multiple of 90 degrees?
-
-        matrix = cairo.Matrix()
-        matrix.translate(self.translation_x, self.translation_y)
-        matrix.rotate(rotation)
-        matrix.scale(scale, scale)
-
-        # Align the translation such that (0,0) maps to an integer
-        # screen pixel, to keep image rendering fast and sharp.
-        x, y = matrix.transform_point(0, 0)
-        inverse = cairo.Matrix(*list(matrix))
-        assert not inverse.invert()
-        x, y = inverse.transform_point(round(x), round(y))
-        matrix.translate(x, y)
-
-        if self.mirrored:
-            m = list(matrix)
-            m[0] = -m[0]
-            m[2] = -m[2]
-            matrix = cairo.Matrix(*m)
-
-        #assert not matrix.invert()
-        return matrix
+        if self.cached_transformation_matrix is None:
+            matrix = calculate_transformation_matrix(self.scale, self.rotation,
+                                                     self.translation_x, self.translation_y, self.mirrored)
+            self.cached_transformation_matrix = matrix
+        
+        return self.cached_transformation_matrix
 
     def is_translation_only(self):
         return self.rotation == 0.0 and self.scale == 1.0 and not self.mirrored
@@ -655,8 +639,8 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         return layers
 
     def repaint(self, cr, device_bbox=None):
-        cr, surface, sparse, mipmap_level, clip_region = self.render_prepare(cr, device_bbox)
-        self.render_execute(cr, surface, sparse, mipmap_level, clip_region)
+        transformation, surface, sparse, mipmap_level, clip_region = self.render_prepare(cr, device_bbox)
+        self.render_execute(cr, transformation, surface, sparse, mipmap_level, clip_region)
         # Model coordinate space:
         cr.restore()  # CONTEXT2<<<
         for overlay in self.model_overlays:
@@ -672,43 +656,69 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
 
 
     def render_get_clip_region(self, cr, device_bbox):
+        # Could this be an alternative?
+        #x0, y0, x1, y1 = cr.clip_extents()
+        #sparse = True
+        #clip_region = (x0, y0, x1-x0, y1-y0)
+        #return clip_region, sparse
 
         # Get the area which needs to be updated, in device coordinates, and
         # determine whether the render is "sparse", [TODO: define what this
         # means]
         x, y, w, h = device_bbox
         cx, cy = x+w/2, y+h/2
-        if pygtkcompat.USE_GTK3:
-            # As of 2012-07-08, Ubuntu Precise (LTS, unfortunately) and Debian
-            # unstable(!) use python-cairo 1.8.8, which is too old to support
-            # the cairo.Region return from Gdk.Window.get_clip_region() we
-            # really need. They'll be important to support for a while, so we
-            # have to use an inefficient workaround using the complete clip
-            # rectangle for the update.
-            #
-            # http://stackoverflow.com/questions/6133622/
-            # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=653588
-            # http://packages.ubuntu.com/python-cairo
-            # http://packages.debian.org/python-cairo
 
-            clip_exists, rect = gdk.cairo_get_clip_rectangle(cr)
-            if clip_exists:
-                # It's a wrapped cairo_rectangle_int_t, CairoRectangleInt
-                area = (rect.x, rect.y, rect.width, rect.height)
-                clip_region = area
-                sparse = (cx < rect.x or cx > rect.x+rect.width
-                          or cy < rect.y or cy > rect.y+rect.height)
-            else:
-                clip_region = None
-                sparse = False
+        # This was from the GTK2 version:
+        # clip_region = self.get_window().get_clip_region()
+        # sparse = not clip_region.contains_point(cx, cy)
 
-            # clip_region = self.get_window().get_clip_region()
-            # sparse = not clip_region.contains_point(cx, cy)
+        # As of 2012-07-08, Ubuntu Precise (LTS, unfortunately) and Debian
+        # unstable(!) use python-cairo 1.8.8, which is too old to support
+        # the cairo.Region return from Gdk.Window.get_clip_region() we
+        # really need. They'll be important to support for a while, so we
+        # have to use an inefficient workaround using the complete clip
+        # rectangle for the update.
+        #
+        # http://stackoverflow.com/questions/6133622/
+        # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=653588
+        # http://packages.ubuntu.com/python-cairo
+        # http://packages.debian.org/python-cairo
+
+        clip_exists, rect = gdk.cairo_get_clip_rectangle(cr)
+        if clip_exists:
+            # It's a wrapped cairo_rectangle_int_t, CairoRectangleInt
+            area = (rect.x, rect.y, rect.width, rect.height)
+            clip_region = area
+            sparse = (cx < rect.x or cx > rect.x+rect.width
+                      or cy < rect.y or cy > rect.y+rect.height)
         else:
-            clip_region = self.window.get_clip_region()
-            sparse = not clip_region.point_in(cx, cy)
+            clip_region = None
+            sparse = False
 
         return clip_region, sparse
+
+    def tile_is_visible(self, tx, ty, transformation, clip_region, sparse, translation_only):
+        if not sparse:
+            return True
+
+        # it is worth checking whether this tile really will be visible
+        # (to speed up the L-shaped expose event during scrolling)
+        # (speedup clearly visible; slowdown measurable when always executing this code)
+        N = tiledsurface.N
+        if translation_only:
+            x, y = transformation.transform_point(tx*N, ty*N)
+            bbox = (int(x), int(y), N, N)
+        else:
+            corners = [(tx*N, ty*N), ((tx+1)*N, ty*N), (tx*N, (ty+1)*N), ((tx+1)*N, (ty+1)*N)]
+            corners = [transformation.transform_point(x_, y_) for (x_, y_) in corners]
+            bbox = helpers.rotated_rectangle_bbox(corners)
+
+        c_r = gdk.Rectangle()
+        c_r.x, c_r.y, c_r.width, c_r.height = clip_region
+        bb_r = gdk.Rectangle()
+        bb_r.x, bb_r.y, bb_r.width, bb_r.height = bbox
+        intersects, isect_r = gdk.rectangle_intersect(bb_r, c_r)
+        return intersects
 
 
     def render_prepare(self, cr, device_bbox):
@@ -728,10 +738,7 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             cr.set_source_rgb(tmp, tmp, tmp)
             cr.paint()
 
-        # bye bye device coordinates
-        cr.save()   # >>>CONTEXT1
-        cr.set_matrix(self._get_model_view_transformation())
-        cr.save()   # >>>CONTEXT2
+        transformation = cairo.Matrix(*self._get_model_view_transformation())
 
         # choose best mipmap
         hq_zoom = False
@@ -745,13 +752,16 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             mipmap_level = max(0, int(ceil(log(1/self.scale,2))))
         # OPTIMIZE: if we would render tile scanlines, we could probably use the better one above...
         mipmap_level = min(mipmap_level, tiledsurface.MAX_MIPMAP_LEVEL)
-        cr.scale(2**mipmap_level, 2**mipmap_level)
+        transformation.scale(2**mipmap_level, 2**mipmap_level)
 
-        translation_only = self.is_translation_only()
+        # bye bye device coordinates
+        cr.save()   # >>>CONTEXT1
+        cr.transform(transformation)
+        cr.save()   # >>>CONTEXT2
 
         # calculate the final model bbox with all the clipping above
         x1, y1, x2, y2 = cr.clip_extents()
-        if not translation_only:
+        if not self.is_translation_only():
             # Looks like cairo needs one extra pixel rendered for interpolation at the border.
             # If we don't do this, we get dark stripe artefacts when panning while zoomed.
             x1 -= 1
@@ -767,15 +777,11 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         # https://bugs.freedesktop.org/show_bug.cgi?id=28670
         surface = pixbufsurface.Surface(x1, y1, x2-x1+1, y2-y1+1)
 
-        del x1, y1, x2, y2, w, h
+        return transformation, surface, sparse, mipmap_level, clip_region
 
-        return cr, surface, sparse, mipmap_level, clip_region
-
-    def render_execute(self, cr, surface, sparse, mipmap_level, clip_region):
+    def render_execute(self, cr, transformation, surface, sparse, mipmap_level, clip_region):
         translation_only = self.is_translation_only()
         model_bbox = surface.x, surface.y, surface.w, surface.h
-
-        #print 'model bbox', model_bbox
 
         # not sure if it is a good idea to clip so tightly
         # has no effect right now because device_bbox is always smaller
@@ -798,35 +804,36 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             layers.insert(idx+1, self.overlay_layer)
 
         # Composite
-        tiles = [(tx, ty) for tx, ty in surface.get_tiles() if tile_is_visible(cr, tx, ty, clip_region, sparse, translation_only)]
+        tiles = []
+        for tx, ty in surface.get_tiles():
+            if self.tile_is_visible(tx, ty, transformation, clip_region, sparse, translation_only):
+                tiles.append((tx, ty))
         self.doc.render_into(surface, tiles, mipmap_level, layers, background)
 
-        if translation_only and not pygtkcompat.USE_GTK3:
-            # not sure why, but using gdk directly is notably faster than the same via cairo
-            x, y = cr.user_to_device(surface.x, surface.y)
-            self.window.draw_pixbuf(None, surface.pixbuf, 0, 0, int(x), int(y),
-                                    dither=gdk.RGB_DITHER_MAX)
-        else:
-            #print 'Position (screen coordinates):', cr.user_to_device(surface.x, surface.y)
-            if pygtkcompat.USE_GTK3:
-                gdk.cairo_set_source_pixbuf(cr, surface.pixbuf,
-                                            round(surface.x), round(surface.y))
-            else:
-                cr.set_source_pixbuf(surface.pixbuf, round(surface.x), round(surface.y))
-            pattern = cr.get_source()
+        # The speedup below worked for GTK2, is there is an equivalent for GTK3?
+        #if translation_only:
+        #    # not sure why, but using gdk directly is notably faster than the same via cairo
+        #    x, y = self.model_to_display(surface.x, surface.y)
+        #    self.window.draw_pixbuf(None, surface.pixbuf, 0, 0, int(x), int(y),
+        #                            dither=gdk.RGB_DITHER_MAX)
 
-            # We could set interpolation mode here (eg nearest neighbour)
-            #pattern.set_filter(cairo.FILTER_NEAREST)  # 1.6s
-            #pattern.set_filter(cairo.FILTER_FAST)     # 2.0s
-            #pattern.set_filter(cairo.FILTER_GOOD)     # 3.1s
-            #pattern.set_filter(cairo.FILTER_BEST)     # 3.1s
-            #pattern.set_filter(cairo.FILTER_BILINEAR) # 3.1s
+        #print 'Position (screen coordinates):', cr.model_to_display(surface.x, surface.y)
+        gdk.cairo_set_source_pixbuf(cr, surface.pixbuf,
+                                    round(surface.x), round(surface.y))
+        pattern = cr.get_source()
 
-            if self.scale > 2.8:
-                # pixelize at high zoom-in levels
-                pattern.set_filter(cairo.FILTER_NEAREST)
+        # We could set interpolation mode here (eg nearest neighbour)
+        #pattern.set_filter(cairo.FILTER_NEAREST)  # 1.6s
+        #pattern.set_filter(cairo.FILTER_FAST)     # 2.0s
+        #pattern.set_filter(cairo.FILTER_GOOD)     # 3.1s
+        #pattern.set_filter(cairo.FILTER_BEST)     # 3.1s
+        #pattern.set_filter(cairo.FILTER_BILINEAR) # 3.1s
 
-            cr.paint()
+        if self.scale > 2.8:
+            # pixelize at high zoom-in levels
+            pattern.set_filter(cairo.FILTER_NEAREST)
+
+        cr.paint()
 
         if self.doc.frame_enabled:
             # Draw a overlay for all the area outside the "document area"
@@ -860,7 +867,9 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             # It might be worth it if it was done only once per
             # redraw, instead of once per motion event. Maybe try to
             # implement something like "queue_scroll" with priority
-            # similar to redraw?
+            # similar to redraw? (The GTK commit responsible for bug
+            # http://bugzilla.gnome.org/show_bug.cgi?id=702392 might
+            # solve this problem, I think.)
             self.window.scroll(int(-dx), int(-dy))
         else:
             self.queue_draw()
