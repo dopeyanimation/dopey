@@ -25,7 +25,6 @@ import pango
 import gtk
 from gtk import gdk
 
-from application import get_app
 import pixbuflist
 import dialogs
 import brushmanager
@@ -51,7 +50,7 @@ class ToolWidget (gtk.VBox):
         self.brushgroups = BrushGroupsList()
 
         self.scroll = scroll = gtk.ScrolledWindow()
-        scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         scroll.add_with_viewport(self.brushgroups)
 
         expander = gtk.Expander(label=None)
@@ -67,21 +66,20 @@ class ToolWidget (gtk.VBox):
         self.pack_start(gtk.HSeparator(), expand=False)
         self.pack_start(expander, expand=False, fill=False)
 
-        self.scroll.set_size_request(48, 48)
-        self.expander.set_size_request(48, -1)
 
     def show_cb(self, widget):
-        assert self.get_window() is None
         assert not self.expander_prefs_loaded
         is_expanded = bool(self.app.preferences.get(self.EXPANDER_PREFS_KEY, False))
         self.expander.set_expanded(is_expanded)
         self.expander_prefs_loaded = True
+
 
     def common_settings_expanded_cb(self, expander, *junk):
         if not self.expander_prefs_loaded:
             return
         is_expanded = bool(expander.get_expanded())
         self.app.preferences[self.EXPANDER_PREFS_KEY] = is_expanded
+
 
 def get_common_settings_widget(app):
     """Return a widget with controls for manipulating common settings"""
@@ -117,12 +115,19 @@ def get_common_settings_widget(app):
     return settings_box
 
 class BrushList(pixbuflist.PixbufList):
+
+    ICON_SIZE = 48
+    MIN_WIDTH_NICONS = 1
+    NATURAL_WIDTH_NICONS = 4
+    MIN_HEIGHT_NICONS = 1
+
     def __init__(self, app, group):
         self.app = app
         self.bm = app.brushmanager
         self.brushes = self.bm.groups[group]
         self.group = group
-        pixbuflist.PixbufList.__init__(self, self.brushes, 48, 48,
+        s = self.ICON_SIZE
+        pixbuflist.PixbufList.__init__(self, self.brushes, s, s,
                                        namefunc = lambda x: x.name,
                                        pixbuffunc = lambda x: x.preview)
         # Support device changing with the same event as that used
@@ -133,6 +138,27 @@ class BrushList(pixbuflist.PixbufList):
         self.set_selected(self.bm.selected_brush)
         self.bm.brushes_observers.append(self.brushes_modified_cb)
         self.bm.selected_brush_observers.append(self.brush_selected_cb)
+
+
+    def do_get_request_mode(self):
+        return gtk.SizeRequestMode.HEIGHT_FOR_WIDTH
+
+
+    def do_get_preferred_width(self):
+        return (self.MIN_WIDTH_NICONS * self.ICON_SIZE,
+                self.NATURAL_WIDTH_NICONS * self.ICON_SIZE)
+
+
+    def do_get_preferred_height_for_width(self, width):
+        icons_wide = max(1, int(width / self.ICON_SIZE))
+        num_brushes = len(self.brushes)
+        icons_tall = max(int(num_brushes / icons_wide),
+                         max(self.MIN_HEIGHT_NICONS, 1))
+        if icons_tall * icons_wide  < num_brushes:
+            icons_tall += 1
+        return (icons_tall * self.ICON_SIZE,
+                icons_tall * self.ICON_SIZE)
+
 
     def brushes_modified_cb(self, brushes):
         if brushes is self.brushes:
@@ -198,6 +224,7 @@ class BrushGroupsList(gtk.VBox):
 
     def __init__(self):
         gtk.VBox.__init__(self)
+        from application import get_app
         app = get_app()
         self.app = app
         self.bm = app.brushmanager
@@ -245,7 +272,7 @@ class GroupSelector (gtk.DrawingArea):
 
     def __init__(self):
         gtk.DrawingArea.__init__(self)
-
+        from application import get_app
         app = get_app()
         self.app = app
         self.bm = app.brushmanager
@@ -284,9 +311,6 @@ class GroupSelector (gtk.DrawingArea):
                                 'Ctrl: select multiple\n'
                                 'Middle-click: toggle group\n'
                                 'Right-click: groups menu'))
-
-        if not gtk2compat.USE_GTK3:
-            self.connect("size-request", self.on_size_request)
 
         # Style change detection, and default styles.
         # Layout colors, represented independently of GTK/GDK.
@@ -377,34 +401,13 @@ class GroupSelector (gtk.DrawingArea):
         return layout
 
 
-    def on_size_request(self, widget, req):
-        # PyGTK/gtk2 size-request handler
-        parent = self.parent.parent
-        parent_width = parent.get_allocation().width
-        # The above is potentially the "adopt natural size" value, -1, at
-        # first, but we should respect it if it's set. Doing so might result
-        # in fewer redraws.
-        layout = self.lay_out_group_names(parent_width)
-        w, h = layout.get_pixel_size()
-        h += 2 * self.VERTICAL_MARGIN
-        req.width = -1
-        req.height = h
-
-
     def do_get_request_mode(self):
-        # PyGI/gtk3 sizing
-        # Width first, then height
         return gtk.SizeRequestMode.HEIGHT_FOR_WIDTH
 
     def do_get_preferred_width(self):
-        # PyGI/gtk3 sizing
-        # Enough width to lay out 1 or 2 short words, but ideally a little
-        # more. In most cases, the parent determines everything.
-        return (50, 100)
+        return (100, 300)
 
     def do_get_preferred_height_for_width(self, width):
-        # PyGI/gtk3 sizing
-        # Height is determined by the layout once we have a concrrete width.
         layout = self.lay_out_group_names(width)
         w, h = layout.get_pixel_size()
         h += 2 * self.VERTICAL_MARGIN
@@ -474,10 +477,6 @@ class GroupSelector (gtk.DrawingArea):
             PangoCairo.show_layout(cr, layout)
         else:
             cr.show_layout(layout)
-
-        # Catch reflows, which maybe result in more or fewer rows.
-        self.set_size_request(-1, -1)  # "ask again, give me my natural size"
-        self.queue_resize_no_redraw()
 
         self.layout = layout
 
