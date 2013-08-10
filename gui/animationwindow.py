@@ -566,7 +566,6 @@ class AnimationTool (gtk.VBox):
         self.ani.paste_cel()
 
     def show_cb(self, widget):
-        assert not self.expander_prefs_loaded
         if self.app.preferences.get("xsheet.expander-controls", False):
             self.controls_expander.set_expanded(True)
         if self.app.preferences.get("xsheet.expander-preferences", False):
