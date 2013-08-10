@@ -50,6 +50,7 @@ import previewwindow
 import framewindow
 import scratchwindow
 import inputtestwindow
+import colortools
 import brushmodifier
 import toolbar
 import linemode
@@ -187,12 +188,12 @@ class Application (object):
 
         # Workspace widget. Manages layout of toolwindows, and autohide in
         # fullscreen.
-        self.workspace = self.builder.get_object("app_workspace")
-        self.workspace.build_from_layout(self.preferences["workspace.layout"])
-        self.workspace.connect("floating-window-created",
-                               self._floating_window_created_cb)
+        workspace = self.builder.get_object("app_workspace")
+        workspace.build_from_layout(self.preferences["workspace.layout"])
+        workspace.floating_window_created += self._floating_window_created_cb
         fs_autohide_action = self.builder.get_object("FullscreenAutohide")
-        fs_autohide_action.set_active(self.workspace.autohide_enabled)
+        fs_autohide_action.set_active(workspace.autohide_enabled)
+        self.workspace = workspace
 
         # Working document: viewer widget
         app_canvas = self.builder.get_object("app_canvas")

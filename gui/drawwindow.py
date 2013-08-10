@@ -107,7 +107,6 @@ class DrawWindow (gtk.Window):
         # Window handling
         self._updating_toggled_item = False
         self.is_fullscreen = False
-        self._window_map = {}
 
         # Enable drag & drop
         if not gtk2compat.USE_GTK3:
@@ -131,9 +130,9 @@ class DrawWindow (gtk.Window):
 
         self.app.filehandler.current_file_observers.append(self.update_title)
 
-        ## Park the focus on the main tdw rather than on the toolbar. Default
-        ## activation doesn't really mean much for MyPaint's main window, so
-        ## it's safe to do this and it looks better.
+        # Park the focus on the main tdw rather than on the toolbar. Default
+        # activation doesn't really mean much for MyPaint's main window, so
+        # it's safe to do this and it looks better.
         #self.main_widget.set_can_default(True)
         #self.main_widget.set_can_focus(True)
         #self.main_widget.grab_focus()
@@ -160,13 +159,9 @@ class DrawWindow (gtk.Window):
         topbar.toolbar = self.toolbar
 
         # Workspace setup
-        # One day maybe Glade will support custom signals and hook these up
-        # automatically. For now, connect them here, since toggle_window_cb
-        # is connected to this object.
-        self.app.workspace.connect("tool-widget-added",
-                                   self.app_workspace_tool_widget_added_cb)
-        self.app.workspace.connect("tool-widget-removed",
-                                   self.app_workspace_tool_widget_removed_cb)
+        ws = self.app.workspace
+        ws.tool_widget_shown += self.app_workspace_tool_widget_shown_cb
+        ws.tool_widget_hidden += self.app_workspace_tool_widget_hidden_cb
 
 
     def _init_actions(self):
@@ -354,16 +349,24 @@ class DrawWindow (gtk.Window):
 
     # Window handling
     def toggle_window_cb(self, action):
+        """Handles a variety of window-toggling GtkActions.
+
+        Handled here:
+
+        * Workspace-managed tool widgets which require no constructor args.
+        * Regular app subwindows, exposed via its get_subwindow() method.
+
+        """
         action_name = action.get_name()
         if action_name.endswith("Tool"):
             gtype_name = "MyPaint%s" % (action.get_name(),)
             workspace = self.app.workspace
             if action.get_active():
-                if not workspace.has_tool_widget(gtype_name):
-                    widget = workspace.add_tool_widget(gtype_name)
+                if not workspace.get_tool_widget_shown(gtype_name, []):
+                    workspace.show_tool_widget(gtype_name, [])
             else:
-                while workspace.has_tool_widget(gtype_name):
-                    widget = workspace.remove_tool_widget(gtype_name)
+                if workspace.get_tool_widget_shown(gtype_name, []):
+                    workspace.hide_tool_widget(gtype_name, [])
         elif self.app.has_subwindow(action_name):
             window = self.app.get_subwindow(action_name)
             if action.get_active():
@@ -377,7 +380,8 @@ class DrawWindow (gtk.Window):
             logger.warning("unknown window or tool %r" % (action_name,))
 
 
-    def app_workspace_tool_widget_added_cb(self, workspace, page, gtype_name):
+    def app_workspace_tool_widget_shown_cb(self, ws, widget):
+        gtype_name = widget.__gtype_name__
         assert gtype_name.startswith("MyPaint")
         action_name = gtype_name.replace("MyPaint", "", 1)
         action = self.app.builder.get_object(action_name)
@@ -385,7 +389,8 @@ class DrawWindow (gtk.Window):
             action.set_active(True)
 
 
-    def app_workspace_tool_widget_removed_cb(self, workspace, page, gtype_name):
+    def app_workspace_tool_widget_hidden_cb(self, ws, widget):
+        gtype_name = widget.__gtype_name__
         assert gtype_name.startswith("MyPaint")
         action_name = gtype_name.replace("MyPaint", "", 1)
         action = self.app.builder.get_object(action_name)
@@ -603,19 +608,28 @@ class DrawWindow (gtk.Window):
 
 
     def palette_next_cb(self, action):
-        lm = self.app.layout_manager
-        combined = lm.get_tool_by_role('colorWindow').widget
-        pal_view = combined.get_palette_view()
-        pal_view.grid.select_next()
-        combined.show_palette_view()
+        mgr = self.app.brush_color_manager
+        color = mgr.get_color()
+        newcolor = mgr.palette.move_match_position(1, mgr.get_color())
+        if newcolor:
+            mgr.set_color(newcolor)
+        # TODO: show the palette panel if hidden
 
 
     def palette_prev_cb(self, action):
-        lm = self.app.layout_manager
-        combined = lm.get_tool_by_role('colorWindow').widget
-        pal_view = combined.get_palette_view()
-        pal_view.grid.select_previous()
-        combined.show_palette_view()
+        mgr = self.app.brush_color_manager
+        color = mgr.get_color()
+        newcolor = mgr.palette.move_match_position(-1, mgr.get_color())
+        if newcolor:
+            mgr.set_color(newcolor)
+        # TODO: show the palette panel if hidden
+
+
+    def palette_add_current_color_cb(self, action):
+        """Action callback: append the current color to the palette"""
+        mgr = self.app.brush_color_manager
+        color = mgr.get_color()
+        mgr.palette.append(color, name=None, unique=True, match=True)
 
 
     def quit_cb(self, *junk):

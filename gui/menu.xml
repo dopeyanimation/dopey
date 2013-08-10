@@ -146,6 +146,12 @@
     <menu action='ColorMenu'>
       <!-- Color choice using fancy dialogs -->
       <menuitem action='CombinedColorTool'/>
+      <menuitem action='HCYWheelTool'/>
+      <menuitem action='HSVWheelTool'/>
+      <menuitem action='PaletteTool'/>
+      <menuitem action='HSVTriangleTool'/>
+      <menuitem action='HSVCubeTool'/>
+      <menuitem action='ComponentSlidersTool'/>
       <!-- Picking and reusing -->
       <separator/>
       <menuitem action='FlipColorPickMode'/>
@@ -169,6 +175,7 @@
       <separator/>
       <menuitem action='PalettePrev'/>
       <menuitem action='PaletteNext'/>
+      <menuitem action='PaletteAddCurrentColor'/>
     </menu>
     <menu action='LayerMenu'>
       <!-- All layers: general -->
