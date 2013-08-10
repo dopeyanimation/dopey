@@ -15,6 +15,7 @@ from gi.repository import Gtk
 from gettext import gettext as _
 
 import workspace
+import widgets
 
 # Old-style "Page" classes to be adapted (refactor these one day)
 from colors.hcywheel import HCYAdjusterPage
@@ -66,14 +67,6 @@ class _PageToolAdapter (Gtk.VBox, ColorAdjuster):
         size = workspace.TOOL_WIDGET_MIN_WIDTH
         self.set_size_request(size, size*0.9)
 
-
-    def _bookmark_button_clicked_cb(self, button):
-        # Same as the PaletteAddCurrentColor
-        mgr = self.get_color_manager()
-        col = mgr.get_color()
-        mgr.palette.append(col, name=None, unique=True, match=True)
-
-
     def set_color_manager(self, manager):
         ColorAdjuster.set_color_manager(self, manager)
         for adj in self._adjusters:
@@ -108,5 +101,15 @@ class HSVCubeTool (_PageToolAdapter):
 class ComponentSlidersTool (_PageToolAdapter):
     __gtype_name__ = 'MyPaintComponentSlidersTool'
     PAGE_CLASS = ComponentSlidersAdjusterPage
+
+
+class ColorAdjustersToolItem (widgets.MenuOnlyToolButton):
+    """Toolbar item for launching any of the available color adjusters
+
+    This is instantiated by the app's UIManager using a FactoryAction which
+    must be named "ColorAdjusters" (see factoryaction.py).
+    """
+
+    __gtype_name__ = 'MyPaintColorAdjustersToolItem'
 
 

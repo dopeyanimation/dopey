@@ -363,20 +363,22 @@ class DrawWindow (gtk.Window):
         if action_name.endswith("Tool"):
             gtype_name = "MyPaint%s" % (action.get_name(),)
             workspace = self.app.workspace
-            if action.get_active():
-                if not workspace.get_tool_widget_shown(gtype_name, []):
-                    workspace.show_tool_widget(gtype_name, [])
-            else:
-                if workspace.get_tool_widget_shown(gtype_name, []):
-                    workspace.hide_tool_widget(gtype_name, [])
+            showing = workspace.get_tool_widget_showing(gtype_name, [])
+            active = action.get_active()
+            if active and not showing:
+                workspace.show_tool_widget(gtype_name, [])
+            elif showing and not active:
+                workspace.hide_tool_widget(gtype_name, [])
         elif self.app.has_subwindow(action_name):
             window = self.app.get_subwindow(action_name)
-            if action.get_active():
-                if not window.get_visible():
+            active = action.get_active()
+            visible = window.get_visible()
+            if active:
+                if not visible:
                     window.show_all()
                 window.present()
-            else:
-                if window.get_visible():
+            elif visible:
+                if not active:
                     window.hide()
         else:
             logger.warning("unknown window or tool %r" % (action_name,))
@@ -387,7 +389,7 @@ class DrawWindow (gtk.Window):
         assert gtype_name.startswith("MyPaint")
         action_name = gtype_name.replace("MyPaint", "", 1)
         action = self.app.builder.get_object(action_name)
-        if not action.get_active():
+        if action and not action.get_active():
             action.set_active(True)
 
 
@@ -396,7 +398,7 @@ class DrawWindow (gtk.Window):
         assert gtype_name.startswith("MyPaint")
         action_name = gtype_name.replace("MyPaint", "", 1)
         action = self.app.builder.get_object(action_name)
-        if action.get_active():
+        if action and action.get_active():
             action.set_active(False)
 
 
@@ -615,7 +617,9 @@ class DrawWindow (gtk.Window):
         newcolor = mgr.palette.move_match_position(1, mgr.get_color())
         if newcolor:
             mgr.set_color(newcolor)
-        # TODO: show the palette panel if hidden
+        # Show the palette panel if hidden
+        workspace = self.app.workspace
+        workspace.show_tool_widget("MyPaintPaletteTool", [])
 
 
     def palette_prev_cb(self, action):
@@ -624,7 +628,9 @@ class DrawWindow (gtk.Window):
         newcolor = mgr.palette.move_match_position(-1, mgr.get_color())
         if newcolor:
             mgr.set_color(newcolor)
-        # TODO: show the palette panel if hidden
+        # Show the palette panel if hidden
+        workspace = self.app.workspace
+        workspace.show_tool_widget("MyPaintPaletteTool", [])
 
 
     def palette_add_current_color_cb(self, *args, **kwargs):
@@ -632,7 +638,9 @@ class DrawWindow (gtk.Window):
         mgr = self.app.brush_color_manager
         color = mgr.get_color()
         mgr.palette.append(color, name=None, unique=True, match=True)
-        # TODO: show the palette panel if hidden
+        # Show the palette panel if hidden
+        workspace = self.app.workspace
+        workspace.show_tool_widget("MyPaintPaletteTool", [])
 
 
     def quit_cb(self, *junk):
@@ -668,8 +676,13 @@ class DrawWindow (gtk.Window):
     def import_brush_pack_cb(self, *junk):
         format_id, filename = dialogs.open_dialog(_("Import brush package..."), self,
                                  [(_("MyPaint brush package (*.zip)"), "*.zip")])
-        if filename:
-            self.app.brushmanager.import_brushpack(filename,  self)
+        if not filename:
+            return
+        imported = self.app.brushmanager.import_brushpack(filename,  self)
+        logger.info("Imported brush groups %r", imported)
+        workspace = self.app.workspace
+        for groupname in imported:
+            workspace.show_tool_widget("MyPaintBrushGroupTool", (groupname,))
 
     def about_cb(self, action):
         d = gtk.AboutDialog()

@@ -97,6 +97,39 @@ class TiledDrawWidget (gtk.EventBox):
         self.connect("enter-notify-event", self.enter_notify_cb)
         self.__tdw_refs.insert(0, weakref.ref(self))
 
+        self._last_alloc_pos = (0, 0)
+        self.connect("size-allocate", self._size_allocate_cb)
+
+        #: Scroll to match appearing/disappearing sidebars and toolbars.
+        self.scroll_on_allocate = True
+
+
+    def _size_allocate_cb(self, widget, alloc):
+        """Allow for allocation changes under certain circumstances
+
+        We need to allow for changes like toolbars or sidebars appearing or
+        disappearing on the top or the left.  The canvas position should remain
+        stationary on the screen in these cases.  This size-allocate handler
+        deals with that by issuing appropriate scroll() events.
+
+        See also `scroll_on_allocate`.
+
+        """
+        # Capture the last allocated position in toplevel coords
+        toplevel = self.get_toplevel()
+        new_pos = self.translate_coordinates(toplevel, alloc.x, alloc.y)
+        old_pos = self._last_alloc_pos
+        self._last_alloc_pos = new_pos
+        # When things change measurably, scroll to make up the difference
+        if not self.scroll_on_allocate:
+            return
+        if None in (old_pos, new_pos):
+            return
+        if old_pos != new_pos:
+            dx = new_pos[0] - old_pos[0]
+            dy = new_pos[1] - old_pos[1]
+            self.renderer.scroll(dx, dy)
+
 
     def set_model(self, model):
         assert self.doc is None
@@ -150,6 +183,17 @@ class TiledDrawWidget (gtk.EventBox):
     @property
     def mirrored(self):
         return self.renderer.mirrored
+
+
+    @property
+    def pixelize_threshold(self):
+        return self.renderer.pixelize_threshold
+
+
+    @pixelize_threshold.setter
+    def pixelize_threshold(self, n):
+        self.renderer.pixelize_threshold = n
+
 
     @property
     def display_overlays(self):
@@ -331,29 +375,44 @@ class DrawCursorMixin:
 
     """
 
+
+    def init_draw_cursor(self):
+        """Initialize internal fields for DrawCursorMixin"""
+        self._override_cursor = None
+        self._first_map_cb_id = self.connect("map", self._first_map_cb)
+
+    def _first_map_cb(self, widget, *a):
+        """Updates the cursor on the first map"""
+        assert self.get_window() is not None
+        assert self.get_mapped()
+        self.disconnect(self._first_map_cb_id)
+        self._first_map_cb_id = None
+        self.update_cursor()
+
+
     def update_cursor(self):
         # Callback for updating the cursor
+        if not self.get_mapped():
+            return
         window = self.get_window()
         app = self.app
         if window is None:
-            logger.debug("update_cursor: no window")
+            logger.error("update_cursor: no window")
             return
-        override_cursor = getattr(self, '_override_cursor', None)
+        override_cursor = self._override_cursor
         if override_cursor is not None:
-            c = self._override_cursor
-            logger.debug("update_cursor: using override cursor")
+            c = override_cursor
         elif self.get_state() == gtk.STATE_INSENSITIVE:
-            logger.debug("update_cursor: insensitive drawing widget")
             c = None
         elif self.doc is None:
-            logger.debug("update_cursor: no document")
+            logger.error("update_cursor: no document")
             return
         elif self.doc.layer.locked or not self.doc.layer.visible:
             # Cursor to represent that one cannot draw.
             # Often a red circle with a diagonal bar through it.
             c = gdk.Cursor(gdk.CIRCLE)
         elif app is None:
-            logger.debug("update_cursor: no app")
+            logger.error("update_cursor: no app")
             return
         # Last two cases only pertain to FreehandOnlyMode cursors.
         # XXX refactor: bad for separation of responsibilities, put the
@@ -363,7 +422,6 @@ class DrawCursorMixin:
         else:
             radius, style = self._get_cursor_info()
             c = cursor.get_brush_cursor(radius, style, self.app.preferences)
-        logger.debug("update_cursor: setting cursor to %r", c)
         window.set_cursor(c)
 
 
@@ -375,7 +433,7 @@ class DrawCursorMixin:
         choose normally again.
         """
         self._override_cursor = cursor
-        self.update_cursor()
+        gobject.idle_add(self.update_cursor)
 
 
     def _get_cursor_info(self):
@@ -447,10 +505,10 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
 
     def __init__(self, tdw):
         gtk.DrawingArea.__init__(self)
+        self.init_draw_cursor()
 
         self.connect("draw", self.draw_cb)
 
-        self.connect("size-allocate", self.size_allocate_cb)
         self.connect("state-changed", self.state_changed_cb)
 
         self._tdw = tdw
@@ -485,6 +543,9 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         self.model_overlays = []
         self.display_overlays = []
 
+        # Pizelize at high zoom-ins.
+        # The icon editor needs to be able to adjust this.
+        self.pixelize_threshold = 2.8
 
     @property
     def app(self):
@@ -545,17 +606,6 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             if self.snapshot_pixmap is None:
                 logger.debug("TODO: generate a static snapshot pixmap")
         self.is_sensitive = sensitive
-
-    def size_allocate_cb(self, widget, alloc):
-        # Allowance for changes like toolbars or other UI elements appearing
-        # or disappearing on the left (within the same gdk window)
-        new_pos = alloc.x, alloc.y
-        old_pos = getattr(self, '_stored_pos', new_pos)
-        if old_pos != new_pos:
-            dx = new_pos[0] - old_pos[0]
-            dy = new_pos[1] - old_pos[1]
-            self.scroll(dx, dy)
-        self._stored_pos = new_pos
 
 
     def canvas_modified_cb(self, x, y, w, h):
@@ -825,8 +875,8 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         #pattern.set_filter(cairo.FILTER_BEST)     # 3.1s
         #pattern.set_filter(cairo.FILTER_BILINEAR) # 3.1s
 
-        if self.scale > 2.8:
-            # pixelize at high zoom-in levels
+        # Pixelize at high zoom-in levels
+        if self.scale > self.pixelize_threshold:
             pattern.set_filter(cairo.FILTER_NEAREST)
 
         cr.paint()

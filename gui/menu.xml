@@ -92,7 +92,7 @@
     <menu action='BrushMenu'>
       <!-- Brush choice from the user's collection -->
       <menuitem action='BrushChooserPopup'/>
-      <menuitem action='BrushSelectionTool'/>
+      <menuitem action='BrushGroups'/>
       <!-- Basic brush settings -->
       <separator/>
       <menuitem action='Bigger'/>
@@ -101,7 +101,8 @@
       <menuitem action='LessOpaque'/>
       <!-- Detailed brush settings -->
       <separator/>
-      <menuitem action='BrushSettingsWindow'/>
+      <menuitem action='BrushEditorWindow'/>
+      <menuitem action='BrushIconEditorWindow'/>
       <separator/>
       <menu action='BlendMode'>
         <menuitem action='BlendModeNormal'/>

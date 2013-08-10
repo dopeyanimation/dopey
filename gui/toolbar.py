@@ -33,7 +33,7 @@ MERGEABLE_XML = [
     ("toolbar1_scrap", 'gui/toolbar-scrap.xml', _("Scraps switcher")),
     ("toolbar1_edit", 'gui/toolbar-edit.xml', _("Undo and Redo")),
     ("toolbar1_blendmodes", 'gui/toolbar-blendmodes.xml', _("Blend Modes")),
-    ("toolbar1_linemodes", 'gui/toolbar-linemodes.xml', _("Line Mode")), #FIXME: make plural (string freeze hack)
+    ("toolbar1_linemodes", 'gui/toolbar-linemodes.xml', _("Line Modes")),
     ("toolbar1_view_modes", 'gui/toolbar-view-modes.xml', _("View (Main)")),
     ("toolbar1_view_manips", 'gui/toolbar-view-manips.xml', _("View (Alternative/Secondary)")),
     ("toolbar1_view_resets", 'gui/toolbar-view-resets.xml', _("View (Resetting)")),
@@ -410,12 +410,7 @@ class BrushDropdownToolItem (gtk.ToolItem):
         section_vbox.pack_start(evbox, True, True)
 
         # List editor button
-        list_editor_button = gtk.ToggleButton()
-        list_editor_action = self.app.find_action("BrushSelectionTool")
-        list_editor_button.set_related_action(list_editor_action)
-        close_panel_cb = lambda *a: self.dropdown_button.panel_hide()
-        list_editor_button.connect("clicked", close_panel_cb)
-        section_vbox.pack_start(list_editor_button, False, False)
+        # FIXME: perhaps list out the brush groups now?
 
         # Brush history
         section_frame = widgets.section_frame(_("Recently Used"))
@@ -572,9 +567,17 @@ class BrushSettingsDropdownToolItem (gtk.ToolItem):
         self.vbox.pack_start(frame, True, True)
 
         widget = gtk.ToggleButton()
-        action = self.app.find_action("BrushSettingsWindow")
+        action = self.app.find_action("BrushEditorWindow")
         widget.set_related_action(action)
         #widget.set_label(_("Edit All Settings"))
+        hbox.pack_start(widget, True, True)
+        widget.connect("toggled", lambda a: self.button.panel_hide())
+        sg_slider_width.add_widget(widget)
+
+        widget = gtk.ToggleButton()
+        action = self.app.find_action("BrushIconEditorWindow")
+        widget.set_related_action(action)
+        #widget.set_label(_("Edit Icon"))
         hbox.pack_start(widget, True, True)
         widget.connect("toggled", lambda a: self.button.panel_hide())
         sg_slider_width.add_widget(widget)
