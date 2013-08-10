@@ -180,27 +180,27 @@ Perhaps an increasing amount.
       <!-- Actions affecting the current document -->
       <!-- Dropdown ToolActions: defined in gui.toolbar -->
       <child>
-        <object class="MyPaintCustomToolAction" id="ColorDropdown">
+        <object class="MyPaintFactoryAction" id="ColorDropdown">
           <property name="tooltip" translatable="yes" context="toolbar|"
-            >Current Color</property>
+            >Current color</property>
         </object>
       </child>
       <child>
-        <object class="MyPaintCustomToolAction" id="BrushDropdown">
+        <object class="MyPaintFactoryAction" id="BrushDropdown">
           <property name="tooltip" translatable="yes" context="toolbar|"
-            >Current Brush</property>
+            >Current brush</property>
         </object>
       </child>
       <child>
-        <object class="MyPaintCustomToolAction" id="BrushSettingsDropdown">
+        <object class="MyPaintFactoryAction" id="BrushSettingsDropdown">
           <property name="tooltip" translatable="yes" context="toolbar|"
             >Brush settings</property>
         </object>
       </child>
       <child>
-        <object class="MyPaintCustomToolAction" id="LineDropdown">
+        <object class="MyPaintFactoryAction" id="LineDropdown">
           <property name="tooltip" translatable="yes" context="toolbar|"
-            >Line Mode</property>
+            >Line mode</property>
         </object>
       </child>
       <!-- Undo stack -->
@@ -1270,17 +1270,6 @@ Perhaps an increasing amount.
         <accelerator key="b" modifiers="GDK_CONTROL_MASK"/>
       </child>
       <child>
-        <object class="GtkToggleAction" id="CombinedColorTool">
-          <property name="icon-name">mypaint-tool-paint-color</property>
-          <property name="label" translatable="yes"
-            context="Menu|Color|">Colors Window</property>
-          <property name="tooltip" translatable="yes"
-            >Set the color used for painting</property>
-          <signal name="activate" handler="toggle_window_cb"/>
-        </object>
-        <accelerator key="c" modifiers="GDK_SHIFT_MASK"/>
-      </child>
-      <child>
         <object class="GtkToggleAction" id="HCYWheelTool">
           <property name="icon-name">mypaint-tool-hcywheel</property>
           <property name="label" translatable="yes"
@@ -1300,6 +1289,7 @@ The circular slices are equiluminant.</property>
             >Set the color from a loadable, editable palette.</property>
           <signal name="activate" handler="toggle_window_cb"/>
         </object>
+        <accelerator key="c" modifiers="GDK_SHIFT_MASK"/>
       </child>
       <child>
         <object class="GtkToggleAction" id="HSVWheelTool">

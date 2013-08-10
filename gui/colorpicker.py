@@ -6,17 +6,24 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
+## Imports
+
 import math
+
+from gettext import gettext as _
 import gtk2compat
 import gobject
 import gtk
 from gtk import gdk
-import windowing
 import cairo
+
+import windowing
 import canvasevent
 from overlays import rounded_box, Overlay
 import colors
 
+
+## Color picking mode, with a preview rectangle overlay
 
 class ColorPickMode (canvasevent.SpringLoadedDragMode,
                      canvasevent.OneshotDragModeMixin):
@@ -35,6 +42,15 @@ class ColorPickMode (canvasevent.SpringLoadedDragMode,
     @property
     def inactive_cursor(self):
         return self.doc.app.cursor_color_picker
+
+
+    @classmethod
+    def get_name(cls):
+       return _(u"Pick Color")
+
+
+    def get_usage(self):
+        return _(u"Click to set the color used for painting")
 
 
     def stackable_on(self, mode):
@@ -231,4 +247,25 @@ class ColorPickPreviewOverlay (Overlay):
             cr.stroke()
 
         self._previous_area = area
+
+
+## More conventional color-picking button, with grab
+
+
+class BrushColorPickerButton (colors.ColorPickerButton):
+    """Color picker button that sets the app's working brush color."""
+
+    __gtype_name__ = "MyPaintBrushColorPickerButton"
+
+    def __init__(self):
+        colors.ColorPickerButton.__init__(self)
+        self.connect("realize", self._init_color_manager)
+
+    def _init_color_manager(self, widget):
+        from application import get_app
+        app = get_app()
+        mgr = app.brush_color_manager
+        assert mgr is not None
+        self.set_color_manager(mgr)
+
 

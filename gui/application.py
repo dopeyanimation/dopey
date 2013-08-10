@@ -55,7 +55,8 @@ import brushmodifier
 import toolbar
 import linemode
 import colors
-from colorwindow import BrushColorManager
+import colorpreview
+from brushcolor import BrushColorManager
 from overlays import LastPaintPosOverlay
 from overlays import ScaleOverlay
 from buttonmap import ButtonMapping
@@ -725,6 +726,14 @@ class Application (object):
             action.set_active(False)
 
 
+    ## Special UI areas
+
+    @property
+    def statusbar(self):
+        """Returns the application statusbar."""
+        return self.builder.get_object("app_statusbar")
+
+
     ## Workspace callbacks
 
     def _floating_window_created_cb(self, workspace, floatwin):
@@ -995,8 +1004,21 @@ class CursorCache (object):
         if icon_name is not None:
             # Look up icon via the user's current theme
             icon_theme = gtk.icon_theme_get_default()
-            icon_size = min(gtk.icon_size_lookup(gtk.ICON_SIZE_SMALL_TOOLBAR))
-            icon_pixbuf = icon_theme.load_icon(icon_name, icon_size, 0)
+            for icon_size in gtk.ICON_SIZE_SMALL_TOOLBAR, gtk.ICON_SIZE_MENU:
+                valid, width, height = gtk.icon_size_lookup(icon_size)
+                if not valid:
+                    continue
+                size = min(width, height)
+                if size > 24:
+                    continue
+                flags = 0
+                icon_pixbuf = icon_theme.load_icon(icon_name, size, flags)
+                if icon_pixbuf:
+                    break
+            if not icon_pixbuf:
+                logger.warning("Can't find icon %r for cursor: search path=%r",
+                               icon_name)
+                logger.debug("Search path: %r", icon_theme.get_search_path())
         else:
             icon_pixbuf = None
 

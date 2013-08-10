@@ -37,8 +37,6 @@ class _PageToolAdapter (Gtk.VBox, ColorAdjuster):
     #: Subclasses must override this and set a __gtype_name__.
     PAGE_CLASS = None
 
-    HAS_FOOTER = False
-
     def __init__(self):
         """Construct a tool widget with subwidgets from self.PAGE_CLASS."""
         # Superclass setup
@@ -55,42 +53,18 @@ class _PageToolAdapter (Gtk.VBox, ColorAdjuster):
         self.pack_start(page_widget, True, True)
         self._adjusters = []
         self._adjusters.append(page)
-        # Common footer for all adapted widgets.
-        if self.HAS_FOOTER:
-            picker = ColorPickerButton()
-            self._adjusters.append(picker)
-            comparator = PreviousCurrentColorAdjuster()
-            self._adjusters.append(comparator)
-            bookmark_btn = borderless_button(
-                        icon_name="bookmark-new",
-                        tooltip=_("Add color to Palette"))
-            bookmark_btn.connect("clicked", self._bookmark_button_clicked_cb)
-            properties_desc = self.PAGE_CLASS.get_properties_description()
-            if properties_desc is not None:
-                properties_btn = borderless_button(stock_id=Gtk.STOCK_PROPERTIES,
-                                                   tooltip=properties_desc)
-                properties_btn.connect("clicked",
-                                       self._properties_button_clicked_cb, page)
-            else:
-                properties_btn = borderless_button(stock_id=Gtk.STOCK_PROPERTIES)
-                properties_btn.set_sensitive(False)
-            footer = Gtk.HBox()
-            footer.set_spacing(3)
-            footer.pack_start(picker, False, False)
-            footer.pack_start(comparator, True, True)
-            footer.pack_start(bookmark_btn, False, False)
-            footer.pack_start(properties_btn, False, False)
-            self.pack_start(footer, False, False)
+        # Properties button
+        properties_desc = self.PAGE_CLASS.get_properties_description()
+        if properties_desc is not None:
+            show_props = lambda *a: page.show_properties()
+            self.tool_widget_properties = show_props
         # Adjuster setup
         from application import get_app
         self._app = get_app()
         self.set_color_manager(self._app.brush_color_manager)
         # Sizing.
         size = workspace.TOOL_WIDGET_MIN_WIDTH
-        if self.HAS_FOOTER:
-            self.set_size_request(size, size*1.1)
-        else:
-            self.set_size_request(size, size*0.9)
+        self.set_size_request(size, size*0.9)
 
 
     def _bookmark_button_clicked_cb(self, button):
@@ -98,10 +72,6 @@ class _PageToolAdapter (Gtk.VBox, ColorAdjuster):
         mgr = self.get_color_manager()
         col = mgr.get_color()
         mgr.palette.append(col, name=None, unique=True, match=True)
-
-
-    def _properties_button_clicked_cb(self, widget, page):
-        page.show_properties()
 
 
     def set_color_manager(self, manager):
@@ -113,7 +83,6 @@ class _PageToolAdapter (Gtk.VBox, ColorAdjuster):
 class HCYWheelTool (_PageToolAdapter):
     __gtype_name__ = 'MyPaintHCYWheelTool'
     PAGE_CLASS = HCYAdjusterPage
-    HAS_FOOTER = True
 
 
 class HSVWheelTool (_PageToolAdapter):
@@ -124,7 +93,6 @@ class HSVWheelTool (_PageToolAdapter):
 class PaletteTool (_PageToolAdapter):
     __gtype_name__ = 'MyPaintPaletteTool'
     PAGE_CLASS = PalettePage
-    HAS_FOOTER = True
 
 
 class HSVTriangleTool (_PageToolAdapter):
