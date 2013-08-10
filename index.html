@@ -3,36 +3,92 @@
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title></title>
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title></title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width">
 
-        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+		<link rel="stylesheet" href="assets/css/main.css">
+		<script src="assets/js/vendor/modernizr.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script>window.jQuery || document.write('<script src="assets/js/vendor/jquery.min.js"><\/script>')</script>
+		<script src="assets/js/vendor/handlebars.js"></script>
+		<script src="assets/js/vendor/ember.js"></script>
+	</head>
+	<body>
+		<!--[if lt IE 8]>
+			<p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+		<![endif]-->
 
-        <link rel="stylesheet" href="assets/css/main.css">
-        <script src="assets/js/vendor/modernizr.js"></script>
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="assets/js/vendor/jquery.min.js"><\/script>')</script>
-        <script src="assets/js/vendor/handlebars.js"></script>
-        <script src="assets/js/vendor/ember.js"></script>
-    </head>
-    <body>
-        <!--[if lt IE 7]>
-            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
-        <![endif]-->
+		<header class="top">
+			<div class="squish">
+				<div class="logo">
+					<a href="#"><img src="" alt="Dopey 2D Animation"></a>
+				</div>
+				<nav>
+					<ul>
+						<li><a href="#">Download</a></li>
+						<li><a href="#">Features</a></li>
+						<li><a href="#">Wiki</a></li>
+						<li class="fork"><a href="#">Fork</a></li>
+					</ul>
+				</nav>
+			</div>
+		</header>
 
-        <!-- Add your site or application content here -->
-        <p>Hello world! This is HTML5 Boilerplate.</p>
+		<div role="main">
+			<section>
+				<div id="hero">
+					<div class="slider">
+						<div>
+							<img src="" alt="">
+							<div class="overlay squish">
+								<h1>Animate in both D's</h1>
+								<h2>Download &ndash; <span>Free/Open Source</span></h2>
+							</div>
+						</div>
+						<div>
+							<img src="" alt="">
+							<div class="overlay squish">
+								<h1>Groundbreaking technology simulates stuff that's pretty cheap really</h1>
+							</div>
+						</div>
+					</div>
+				</div>
 
-        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
-        <script>
-            var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
-            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-            g.src='//www.google-analytics.com/ga.js';
-            s.parentNode.insertBefore(g,s)}(document,'script'));
-        </script>
-    </body>
+				<div id="lookatthis" class="squish">
+					<!-- neat.bourbon.io told me to do this -->
+					<div class="this">
+						<aside><img src="" alt=""></aside>
+						<article>
+							<h1>Animation ya'll</h1>
+							<p>Look, you can animate</p>
+						</article>
+					</div>
+					<div class="this">
+						<article>
+							<h1>Neat-e-o</h1>
+							<p>It's really cool</p>
+						</article>
+						<aside><img src="" alt=""></aside>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<footer class="bottom">
+			<div class="squish">
+				<small>&copy; 2013 Davis Sorenson</small>
+			</div>
+		</footer>
+
+		<script>
+			var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
+			(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+			g.src='//www.google-analytics.com/ga.js';
+			s.parentNode.insertBefore(g,s)}(document,'script'));
+		</script>
+	</body>
 </html>
