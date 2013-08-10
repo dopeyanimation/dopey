@@ -7,6 +7,8 @@
 # (at your option) any later version.
 
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 import gtk
 from gtk import gdk
@@ -88,7 +90,7 @@ class BrushManipulationWidget(gtk.VBox):
         brushes = self.bm.get_group_brushes(group, make_active=True)
         brushes.insert(0, b)
         b.persistent = True   # Brush was saved
-        for f in self.bm.brushes_observers: f(brushes)
+        self.bm.notify_brushes_observers(brushes)
 
         self.bm.select_brush(b)
 
@@ -117,11 +119,11 @@ class BrushManipulationWidget(gtk.VBox):
                         dialogs.error(self, _('A brush with this name already exists!'))
                         return
 
-        print 'renaming brush', repr(src_brush.name), '-->', repr(dst_name)
+        logger.info("Renaming brush %r --> %r", src_brush.name, dst_name)
         if dst_deleted:
             deleted_brushes = self.bm.get_group_brushes(brushmanager.DELETED_BRUSH_GROUP)
             deleted_brushes.remove(dst_deleted)
-            for f in self.bm.brushes_observers: f(deleted_brushes)
+            self.bm.notify_brush_observers(deleted_brushes)
 
         # save src as dst
         src_name = src_brush.name
@@ -163,14 +165,14 @@ class BrushManipulationWidget(gtk.VBox):
                     brushes[idx] = replacement
                 else:
                     del brushes[idx]
-                for f in self.bm.brushes_observers: f(brushes)
+                self.bm.notify_brush_observers(brushes)
                 assert b not in brushes, 'Brush exists multiple times in the same group!'
 
         if not b.delete_from_disk():
             # stock brush can't be deleted
             deleted_brushes = self.bm.get_group_brushes(brushmanager.DELETED_BRUSH_GROUP)
             deleted_brushes.insert(0, b)
-            for f in self.bm.brushes_observers: f(deleted_brushes)
+            self.bm.notify_brush_observers(deleted_brushes)
 
 
 class BrushIconEditorWidget(gtk.VBox):
@@ -194,7 +196,8 @@ class BrushIconEditorWidget(gtk.VBox):
         model = lib.document.Document(self.app.brush)
         self.tdw = tileddrawwidget.TiledDrawWidget()
         self.tdw.set_model(model)
-        self.tdw.set_size_request(brushmanager.preview_w*2, brushmanager.preview_h*2)
+        self.tdw.set_size_request(brushmanager.PREVIEW_W*2,
+                                  brushmanager.PREVIEW_H*2)
         self.tdw.scale = 2.0
 
         tdw_box = gtk.HBox()
@@ -241,7 +244,7 @@ class BrushIconEditorWidget(gtk.VBox):
             self.tdw.doc.load_from_pixbuf(pixbuf)
 
     def get_preview_pixbuf(self):
-        w, h = brushmanager.preview_w, brushmanager.preview_h
+        w, h = brushmanager.PREVIEW_W, brushmanager.PREVIEW_H
         return self.tdw.doc.render_as_pixbuf(0, 0, w, h, alpha=False)
 
     def update_preview_cb(self, window):
@@ -254,7 +257,7 @@ class BrushIconEditorWidget(gtk.VBox):
         b.save()
         for brushes in self.bm.groups.itervalues():
             if b in brushes:
-                for f in self.bm.brushes_observers: f(brushes)
+                self.bm.notify_brush_observers(brushes)
 
     def brush_selected_cb(self, managed_brush, brushinfo):
         # Update brush icon preview if it is not in edit mode

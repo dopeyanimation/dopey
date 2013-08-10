@@ -6,6 +6,9 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
+import logging
+logger = logging.getLogger(__name__)
+
 from gettext import gettext as _
 import gtk
 from gtk import gdk
@@ -16,8 +19,11 @@ import gtk2compat
 import windowing
 
 
-class Window(windowing.SubWindow):
-    def __init__(self, app):
+class InputTestWindow (windowing.SubWindow):
+
+    def __init__(self):
+        from application import get_app
+        app = get_app()
         windowing.SubWindow.__init__(self, app)
         self.last_selected_brush = None
 
@@ -72,7 +78,7 @@ class Window(windowing.SubWindow):
     def map_cb(self, *junk):
         if self.initialized:
             return
-        print 'Event statistics enabled.'
+        logger.info('Event statistics enabled.')
         self.initialized = True
         self.app.doc.tdw.connect("event", self.event_cb)
         self.app.drawWindow.connect("event", self.event_cb)
@@ -159,7 +165,7 @@ class Window(windowing.SubWindow):
         return msg
 
     def report(self, msg):
-        print msg
+        logger.info(msg)
         self.log.append(msg)
         self.log = self.log[-28:]
         buf = self.tv.get_buffer()
