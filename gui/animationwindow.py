@@ -21,14 +21,22 @@ from lib.framelist import DEFAULT_ACTIVE_CELS
 COLUMNS_NAME = ('frame_index', 'frame_data')
 COLUMNS_ID = dict((name, i) for i, name in enumerate(COLUMNS_NAME))
 
-class ToolWidget(gtk.VBox):
+class AnimationTool (gtk.VBox):
 
     stock_id = 'mypaint-tool-animation'
     
     tool_widget_title = _("Animation")
+
+    tool_widget_icon_name = "mypaint-tool-animation"
+    tool_widget_title = _("Animation")
+    tool_widget_description = _("Create cel-based animation")
+
+    __gtype_name__ = 'MyPaintAnimationTool'
     
-    def __init__(self, app):
+    def __init__(self):
         gtk.VBox.__init__(self)
+        from application import get_app
+        app = get_app()
         self.app = app
         self.ani = app.doc.ani.model
         self.is_playing = False
@@ -50,7 +58,7 @@ class ToolWidget(gtk.VBox):
         self.add_columns()
         
         layers_scroll = gtk.ScrolledWindow()
-        layers_scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        layers_scroll.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         layers_scroll.set_placement(gtk.CORNER_TOP_RIGHT)
         layers_scroll.add(self.treeview)
 
