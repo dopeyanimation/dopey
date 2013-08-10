@@ -1,8 +1,0 @@
-{
-  "name": "ember.js",
-  "version": "1.0.0-rc4",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/emberjs/ember.js"
-  }
-}
