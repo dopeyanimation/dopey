@@ -466,14 +466,42 @@ table {
   src: local("Muli"), url(../fonts/Muli-Regular.ttf) format("ttf"); }
 
 html, body {
-  font-family: Muli, Lato, "Open Sans", "Helvetica Neue", Helvetica, sans-serif; }
+  font-family: Muli, Lato, "Open Sans", "Helvetica Neue", Helvetica, sans-serif;
+  background-color: #eee; }
+
+::-webkit-selection {
+  color: #eeeeee;
+  background-color: #222222; }
+
+::-moz-selection {
+  color: #eeeeee;
+  background-color: #222222; }
+
+::-o-selection {
+  color: #eeeeee;
+  background-color: #222222; }
+
+::selection {
+  color: #eeeeee;
+  background-color: #222222; }
+
+h1, h2, h3 {
+  text-transform: uppercase; }
+  h1.large, h2.large, h3.large {
+    text-transform: none; }
+
+h1 {
+  font-size: 1em; }
+  h1.large {
+    font-size: 2em; }
 
 a {
   text-decoration: none;
   color: #222222; }
 
 p a {
-  font-weight: bold; }
+  font-weight: bold;
+  font-size: 0.9em; }
 
 .squish {
   *zoom: 1;
@@ -501,7 +529,7 @@ p a {
 
 .fork a, header li.fork a {
   display: inline !important;
-  border-radius: 2px;
+  border-radius: 3px;
   color: #eeeeee;
   background-color: #222222;
   width: auto;
@@ -509,10 +537,29 @@ p a {
   padding-bottom: 0.1em !important;
   padding-left: 22px !important;
   padding-right: 0.6em !important;
-  margin: 0 0.3em; }
+  margin: 0 0.3em;
+  border: 1px solid #666; }
   .fork a:hover, header li.fork a:hover {
     color: #222222;
+    background-color: #fff;
+    border-color: #bbb; }
+
+.calltoaction {
+  text-transform: uppercase;
+  background-color: #222222;
+  display: inline-block;
+  height: 1.8em;
+  line-height: 1.8em; }
+  .calltoaction a {
+    color: #eeeeee;
+    padding: 0 1em;
+    display: block;
+    width: 100%;
+    height: 100%; }
+  .calltoaction:hover {
     background-color: #fff; }
+    .calltoaction:hover a {
+      color: #222222; }
 
 header.top {
   background-color: #eeeeee; }
@@ -604,19 +651,22 @@ header.top {
   display: block;
   float: left;
   margin-right: 2.35765%;
-  width: 23.23176%;
+  width: 26.07503%;
   margin-left: 72.50334%;
   position: absolute;
   bottom: 0;
-  background-color: #333;
+  background-color: #222222;
   margin-bottom: 2em;
-  height: 2.3rem;
+  height: 2.7em;
   text-transform: uppercase;
   text-align: center; }
   #download-button:last-child {
     margin-right: 0; }
   #download-button a {
-    color: #eeeeee; }
+    color: #eeeeee;
+    display: block;
+    width: 100%;
+    height: 100%; }
   #download-button h2 {
     display: inline-block;
     vertical-align: baseline;
@@ -628,7 +678,11 @@ header.top {
   #download-button span {
     font-size: 0.65em; }
   #download-button > * {
-    line-height: 2.3rem; }
+    line-height: 2.7em; }
+  #download-button:hover {
+    background-color: #eeeeee; }
+    #download-button:hover a {
+      color: #222222; }
 
 #lookatthis .this {
   display: block;
@@ -657,15 +711,16 @@ header.top {
     margin-right: 0; }
 
 footer.bottom {
-  background-color: #222222;
-  color: #eeeeee;
+  background-color: #ddd;
+  color: #444;
+  border-top: 1px solid #cecece;
   text-transform: uppercase;
   margin-top: 2em;
-  padding-top: 3em; }
+  padding: 1.5em 0; }
   footer.bottom .inner {
-    font-size: 0.8em; }
+    font-size: 0.7em; }
   footer.bottom a {
-    color: #eeeeee; }
+    color: #444; }
   footer.bottom .inner {
     display: block;
     float: left;
@@ -677,7 +732,8 @@ footer.bottom {
     display: block;
     float: left;
     margin-right: 2.35765%;
-    width: 100%; }
+    width: 48.82117%;
+    margin-left: 25.58941%; }
     footer.bottom nav:last-child {
       margin-right: 0; }
     footer.bottom nav ul {
@@ -686,7 +742,7 @@ footer.bottom {
       display: block;
       float: left;
       margin-right: 2.35765%;
-      width: 31.76157%; }
+      width: 23.23176%; }
       footer.bottom nav ul:last-child {
         margin-right: 0; }
       footer.bottom nav ul.right {
@@ -695,7 +751,8 @@ footer.bottom {
     display: block;
     float: left;
     margin-right: 2.35765%;
-    width: 100%;
-    margin: 2em 0 1em 0; }
+    width: 23.23176%; }
     footer.bottom .copyright:last-child {
       margin-right: 0; }
+    footer.bottom .copyright small {
+      font-size: 1em; }

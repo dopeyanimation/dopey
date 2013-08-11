@@ -1,5 +1,22 @@
 html, body {
 	font-family: $muli-family;
+	background-color: #eee;
+}
+
+@include selection($text-light, #222);
+
+h1, h2, h3 {
+	text-transform: uppercase;
+	&.large {
+		text-transform: none;
+	}
+}
+
+h1 {
+	font-size: 1em;
+	&.large {
+		font-size: 2em;
+	}
 }
 
 a {
@@ -9,6 +26,7 @@ a {
 
 p a {
 	font-weight: bold;
+	font-size: 0.9em;
 }
 
 .squish {
@@ -31,7 +49,7 @@ p a {
 	$horizontal-padding: 0.6em;
 	a {
 		display: inline !important;
-		border-radius: 2px;
+		border-radius: 3px;
 		color: $text-light;
 		background-color: $text-dark;
 		width: auto;
@@ -40,9 +58,32 @@ p a {
 		padding-left: 22px !important;
 		padding-right: $horizontal-padding !important;
 		margin: 0 0.3em;
+		border: 1px solid #666;
 		&:hover {
 			color: $text-dark;
 			background-color: #fff;
+			border-color: #bbb;
+		}
+	}
+}
+
+$calltoaction-height: 1.8em;
+
+.calltoaction {
+	text-transform: uppercase;
+	background-color: $text-dark;
+	display: inline-block;
+	height: $calltoaction-height;
+	line-height: $calltoaction-height;
+	a {
+		color: $text-light;
+		padding: 0 1em;
+		@include real-fill-parent;
+	}
+	&:hover {
+		background-color: #fff;
+		a {
+			color: $text-dark;
 		}
 	}
 }

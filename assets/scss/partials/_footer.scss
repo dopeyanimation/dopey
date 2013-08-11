@@ -1,24 +1,26 @@
 footer.bottom {
-	background-color: $text-dark;
-	color: $text-light;
+	background-color: #ddd;
+	color: #444;
+	border-top: 1px solid #cecece;
 	text-transform: uppercase;
 	margin-top: 2em;
-	padding-top: 3em;
+	padding: 1.5em 0;
 	.inner {
-		font-size: 0.8em;
+		font-size: 0.7em;
 	}
 	a {
-		color: $text-light;
+		color: #444;
 	}
 	.inner {
 		@include span-columns(12);
 	}
 	nav {
-		@include span-columns(12);
+		@include span-columns(6);
+		@include shift(3);
 		ul {
 			margin: 0;
 			padding: 0;
-			@include span-columns(4);
+			@include span-columns(3);
 			&.left {
 			}
 			&.right {
@@ -27,9 +29,9 @@ footer.bottom {
 		}
 	}
 	.copyright {
-		@include span-columns(12);
-		margin: 2em 0 1em 0;
+		@include span-columns(3);
 		small {
+			font-size: 1em;
 		}
 	}
 }
