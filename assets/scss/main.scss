@@ -2,8 +2,11 @@
 @import 'vendor/bourbon/bourbon';
 @import 'vendor/neat/neat';
 
+@import 'partials/variables';
 @import 'partials/mixins';
+@import 'partials/fonts';
 
 @import 'partials/shared';
 @import 'partials/header';
+@import 'partials/home';
 @import 'partials/footer';

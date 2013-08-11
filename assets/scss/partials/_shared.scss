@@ -1,3 +1,48 @@
+html, body {
+	font-family: $muli-family;
+}
+
+a {
+	text-decoration: none;
+	color: $text-dark;
+}
+
+p a {
+	font-weight: bold;
+}
+
 .squish {
 	@include outer-container;
+}
+
+.octoface {
+	@include inline-block;
+	background-image: url(#{$images-path}/icons/octoface.svg);
+	background-size: 18px auto;
+	background-position: left;
+	background-repeat: no-repeat;
+	&:hover {
+		background-image: url(#{$images-path}/icons/octoface-dark.svg);
+	}
+}
+
+.fork, header li.fork {
+	$vertical-padding: 0.1em;
+	$horizontal-padding: 0.6em;
+	a {
+		display: inline !important;
+		border-radius: 2px;
+		color: $text-light;
+		background-color: $text-dark;
+		width: auto;
+		padding-top: $vertical-padding !important;
+		padding-bottom: $vertical-padding !important;
+		padding-left: 22px !important;
+		padding-right: $horizontal-padding !important;
+		margin: 0 0.3em;
+		&:hover {
+			color: $text-dark;
+			background-color: #fff;
+		}
+	}
 }

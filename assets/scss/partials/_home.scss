@@ -1,0 +1,78 @@
+$hero-height: 500px;
+
+#hero {
+	height: $hero-height;
+	.overlay {
+		h1 {
+			@include span-columns(10 + (1/2));
+			@include shift(1/2);
+		}
+	}
+}
+
+.slider {
+	position: relative;
+	.slide {
+		position: absolute;
+		height: $hero-height;
+		width: 100%;
+		background-position: center center;
+		background-size: cover;
+		&.tube {
+			color: $text-light;
+			background-image: url(#{$images-path}/tube.jpg);
+		}
+		&.other {
+			color: $text-light;
+			background-color: #111;
+		}
+		.squish {
+			height: 100%;
+			position: relative;
+		}
+	}
+}
+
+#download-button {
+	@include span-columns(3);
+	@include shift(8 + (1/2));
+	position: absolute;
+	bottom: 0;
+	background-color: #333;
+	margin-bottom: 2em;
+	$download-button-height: 2.3rem;
+	height: $download-button-height;
+	text-transform: uppercase;
+	text-align: center;
+	a {
+		color: $text-light;
+	}
+	h2 {
+		@include inline-block;
+		font-size: 1.1em;
+		margin: 0;
+	}
+	span {
+		font-size: 0.65em;
+	}
+	& > * {
+		line-height: $download-button-height;
+	}
+}
+
+#lookatthis {
+	.this {
+		@include span-columns(12);
+		margin-top: 2em;
+		aside {
+			@include span-columns(5);
+		}
+		article {
+			@include span-columns(7);
+		}
+		aside + article,
+		article + aside {
+			@include omega;
+		}
+	}
+}

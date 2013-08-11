@@ -459,6 +459,22 @@ table {
   -moz-box-sizing: border-box;
   box-sizing: border-box; }
 
+@font-face {
+  font-family: 'Muli';
+  font-style: normal;
+  font-weight: 400;
+  src: local("Muli"), url(../fonts/Muli-Regular.ttf) format("ttf"); }
+
+html, body {
+  font-family: Muli, Lato, "Open Sans", "Helvetica Neue", Helvetica, sans-serif; }
+
+a {
+  text-decoration: none;
+  color: #222222; }
+
+p a {
+  font-weight: bold; }
+
 .squish {
   *zoom: 1;
   max-width: 68em;
@@ -470,39 +486,216 @@ table {
   .squish:after {
     clear: both; }
 
-header.top .logo {
-  display: block;
-  float: left;
-  margin-right: 2.35765%;
-  width: 31.76157%; }
-  header.top .logo:last-child {
-    margin-right: 0; }
-header.top nav {
-  display: block;
-  float: left;
-  margin-right: 2.35765%;
-  width: 65.88078%; }
-  header.top nav:last-child {
-    margin-right: 0; }
-  header.top nav ul {
-    display: inline-block;
-    vertical-align: baseline;
-    zoom: 1;
-    *display: inline;
-    *vertical-align: auto;
-    padding: 0;
-    float: right; }
-    header.top nav ul li {
+.octoface {
+  display: inline-block;
+  vertical-align: baseline;
+  zoom: 1;
+  *display: inline;
+  *vertical-align: auto;
+  background-image: url(../i/icons/octoface.svg);
+  background-size: 18px auto;
+  background-position: left;
+  background-repeat: no-repeat; }
+  .octoface:hover {
+    background-image: url(../i/icons/octoface-dark.svg); }
+
+.fork a, header li.fork a {
+  display: inline !important;
+  border-radius: 2px;
+  color: #eeeeee;
+  background-color: #222222;
+  width: auto;
+  padding-top: 0.1em !important;
+  padding-bottom: 0.1em !important;
+  padding-left: 22px !important;
+  padding-right: 0.6em !important;
+  margin: 0 0.3em; }
+  .fork a:hover, header li.fork a:hover {
+    color: #222222;
+    background-color: #fff; }
+
+header.top {
+  background-color: #eeeeee; }
+  header.top .logo {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 23.23176%;
+    height: 2.6em;
+    padding-left: 1em; }
+    header.top .logo:last-child {
+      margin-right: 0; }
+    header.top .logo h1, header.top .logo a {
       display: inline-block;
       vertical-align: baseline;
       zoom: 1;
       *display: inline;
       *vertical-align: auto;
+      height: 100%;
+      width: 100%; }
+    header.top .logo h1 {
+      margin: 0;
       text-transform: uppercase;
-      padding: 0.5em 2em;
-      list-style-type: none;
-      float: left; }
-  header.top nav a {
+      font-size: 1em;
+      line-height: 2.6em; }
+  header.top nav {
     display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 74.41059%;
+    padding-right: 1em; }
+    header.top nav:last-child {
+      margin-right: 0; }
+    header.top nav ul {
+      display: inline-block;
+      vertical-align: baseline;
+      zoom: 1;
+      *display: inline;
+      *vertical-align: auto;
+      margin: 0;
+      padding: 0;
+      height: 2.6em;
+      line-height: 2.6em;
+      float: right; }
+      header.top nav ul li {
+        display: block;
+        height: 100%;
+        float: left;
+        font-size: 0.75em;
+        font-weight: bold;
+        text-transform: uppercase;
+        list-style-type: none; }
+    header.top nav a {
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding: 0 0.8em; }
+
+#hero {
+  height: 500px; }
+  #hero .overlay h1 {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 87.20529%;
+    margin-left: 4.2649%; }
+    #hero .overlay h1:last-child {
+      margin-right: 0; }
+
+.slider {
+  position: relative; }
+  .slider .slide {
+    position: absolute;
+    height: 500px;
     width: 100%;
-    height: 100%; }
+    background-position: center center;
+    background-size: cover; }
+    .slider .slide.tube {
+      color: #eeeeee;
+      background-image: url(../i/tube.jpg); }
+    .slider .slide.other {
+      color: #eeeeee;
+      background-color: #111; }
+    .slider .slide .squish {
+      height: 100%;
+      position: relative; }
+
+#download-button {
+  display: block;
+  float: left;
+  margin-right: 2.35765%;
+  width: 23.23176%;
+  margin-left: 72.50334%;
+  position: absolute;
+  bottom: 0;
+  background-color: #333;
+  margin-bottom: 2em;
+  height: 2.3rem;
+  text-transform: uppercase;
+  text-align: center; }
+  #download-button:last-child {
+    margin-right: 0; }
+  #download-button a {
+    color: #eeeeee; }
+  #download-button h2 {
+    display: inline-block;
+    vertical-align: baseline;
+    zoom: 1;
+    *display: inline;
+    *vertical-align: auto;
+    font-size: 1.1em;
+    margin: 0; }
+  #download-button span {
+    font-size: 0.65em; }
+  #download-button > * {
+    line-height: 2.3rem; }
+
+#lookatthis .this {
+  display: block;
+  float: left;
+  margin-right: 2.35765%;
+  width: 100%;
+  margin-top: 2em; }
+  #lookatthis .this:last-child {
+    margin-right: 0; }
+  #lookatthis .this aside {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 40.29137%; }
+    #lookatthis .this aside:last-child {
+      margin-right: 0; }
+  #lookatthis .this article {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 57.35098%; }
+    #lookatthis .this article:last-child {
+      margin-right: 0; }
+  #lookatthis .this aside + article,
+  #lookatthis .this article + aside {
+    margin-right: 0; }
+
+footer.bottom {
+  background-color: #222222;
+  color: #eeeeee;
+  text-transform: uppercase;
+  margin-top: 2em;
+  padding-top: 3em; }
+  footer.bottom .inner {
+    font-size: 0.8em; }
+  footer.bottom a {
+    color: #eeeeee; }
+  footer.bottom .inner {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 100%; }
+    footer.bottom .inner:last-child {
+      margin-right: 0; }
+  footer.bottom nav {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 100%; }
+    footer.bottom nav:last-child {
+      margin-right: 0; }
+    footer.bottom nav ul {
+      margin: 0;
+      padding: 0;
+      display: block;
+      float: left;
+      margin-right: 2.35765%;
+      width: 31.76157%; }
+      footer.bottom nav ul:last-child {
+        margin-right: 0; }
+      footer.bottom nav ul.right {
+        margin-right: 0; }
+  footer.bottom .copyright {
+    display: block;
+    float: left;
+    margin-right: 2.35765%;
+    width: 100%;
+    margin: 2em 0 1em 0; }
+    footer.bottom .copyright:last-child {
+      margin-right: 0; }
