@@ -51,8 +51,8 @@ def burn_versions(target, source, env):
 
 # User-facing executable Python code
 # MyPaint app
-env.Command('mypaint', 'mypaint.py', [burn_versions, Chmod('$TARGET', 0755)])
-AlwaysBuild('mypaint') # especially if the "python_binary" option was changed
+env.Command('dopey', 'mypaint.py', [burn_versions, Chmod('$TARGET', 0755)])
+AlwaysBuild('dopey') # especially if the "python_binary" option was changed
 
 # Thumbnailer script
 env.Command('desktop/mypaint-ora-thumbnailer', 'desktop/mypaint-ora-thumbnailer.py', [burn_versions, Chmod('$TARGET', 0755)])
@@ -70,9 +70,9 @@ env.Clean('.', Glob('lib/*.pyc'))
 ## Installation
 
 # Painting resources
-install_tree(env, '$prefix/share/mypaint', 'backgrounds')
-install_tree(env, '$prefix/share/mypaint', 'pixmaps')
-install_tree(env, '$prefix/share/mypaint', 'palettes')
+install_tree(env, '$prefix/share/dopey', 'backgrounds')
+install_tree(env, '$prefix/share/dopey', 'pixmaps')
+install_tree(env, '$prefix/share/dopey', 'palettes')
 
 # Desktop resources and themeable internal icons
 install_tree(env, '$prefix/share', 'desktop/icons')
@@ -81,15 +81,15 @@ install_perms(env, '$prefix/bin', 'desktop/mypaint-ora-thumbnailer', perms=0755)
 install_perms(env, '$prefix/share/thumbnailers', 'desktop/mypaint-ora.thumbnailer')
 
 # location for achitecture-dependent modules
-install_perms(env, '$prefix/lib/mypaint', mypaintlib)
+install_perms(env, '$prefix/lib/dopey', mypaintlib)
 
 # Program and supporting UI XML
-install_perms(env, '$prefix/bin', 'mypaint', perms=0755)
-install_perms(env, '$prefix/share/mypaint/gui', Glob('gui/*.xml'))
-install_perms(env, '$prefix/share/mypaint/gui', Glob('gui/*.glade'))
-install_perms(env, "$prefix/share/mypaint/lib",      Glob("lib/*.py"))
-install_perms(env, "$prefix/share/mypaint/gui",      Glob("gui/*.py"))
-install_perms(env, "$prefix/share/mypaint/gui/colors", Glob("gui/colors/*.py"))
+install_perms(env, '$prefix/bin', 'dopey', perms=0755)
+install_perms(env, '$prefix/share/dopey/gui', Glob('gui/*.xml'))
+install_perms(env, '$prefix/share/dopey/gui', Glob('gui/*.glade'))
+install_perms(env, "$prefix/share/dopey/lib",      Glob("lib/*.py"))
+install_perms(env, "$prefix/share/dopey/gui",      Glob("gui/*.py"))
+install_perms(env, "$prefix/share/dopey/gui/colors", Glob("gui/colors/*.py"))
 
 
 Return('mypaintlib')
