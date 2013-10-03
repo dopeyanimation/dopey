@@ -103,15 +103,16 @@ class BrushEditorWindow (SubWindow):
             for s in brushsettings.settings_visible:
                 adj = self.app.brush_adjustment[s.cname]
                 self._base_adj[s.cname] = adj
+            # The application instance manages value-changed callbacks itself.
         else:
             for s in brushsettings.settings_visible:
                 adj = Gtk.Adjustment(value=s.default,
                                      lower=s.min, upper=s.max,
                                      step_incr=0.01, page_incr=0.1)
                 self._base_adj[s.cname] = adj
-        for cname, adj in self._base_adj.iteritems():
-            adj.connect('value-changed', self.base_value_adj_changed_cb,
-                        cname)
+            changed_cb = self._testmode_base_value_adj_changed_cb
+            for cname, adj in self._base_adj.iteritems():
+                adj.connect('value-changed', changed_cb, cname)
         # Per-input scale maxima and minima
         for inp in brushsettings.inputs:
             name = inp.name
@@ -595,14 +596,19 @@ class BrushEditorWindow (SubWindow):
 
     def _update_setting_ui(self, expanders=False):
         """Updates all the UI elements for the current setting"""
-        # Update base value slider
+        # Update base value adjuster and slider
         if self._setting is None:
             return
-        scale = self._builder.get_object("base_value_scale")
         base_adj = self._base_adj[self._setting.cname]
+        # Update its value if running in test mode
+        # Normally the app will do this itself
+        if not self.app:
+            newvalue = self._brush.get_base_value(self._setting.cname)
+            base_adj.set_value(newvalue)
+        # Associate the base value scale with the right adjustment
+        scale = self._builder.get_object("base_value_scale")
         if scale.get_adjustment() is not base_adj:
             scale.set_adjustment(base_adj)
-        base_adj.set_value(self._brush.get_base_value(self._setting.cname))
         # Update brush dynamics curves and sliders
         for inp in brushsettings.inputs:
             # check whether we really need to update anything
@@ -767,8 +773,9 @@ class BrushEditorWindow (SubWindow):
 
     ## Adjuster change callbacks
 
-    def base_value_adj_changed_cb(self, adj, cname):
-        """User adjusted the setting's base value using the scale"""
+    def _testmode_base_value_adj_changed_cb(self, adj, cname):
+        """User adjusted the setting's base value using the scale (test only)
+        """
         value = adj.get_value()
         self._brush.set_base_value(cname, value)
 
@@ -936,7 +943,7 @@ def _test():
     win.connect("delete-event", lambda *a: Gtk.main_quit())
     win.show_all()
     Gtk.main()
-    
+
 
 
 if __name__ == '__main__':

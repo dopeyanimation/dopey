@@ -9,6 +9,9 @@
 import struct
 import zlib
 from numpy import *
+import logging
+logger = logging.getLogger(__name__)
+
 from gettext import gettext as _
 
 import tiledsurface
@@ -65,13 +68,14 @@ COMPOSITE_OPS = [
 DEFAULT_COMPOSITE_OP = COMPOSITE_OPS[0][0]
 VALID_COMPOSITE_OPS = set([n for n,d,s in COMPOSITE_OPS])
 
-class Layer:
+class Layer (object):
     """Representation of a layer in the document model.
 
     The actual content of the layer is held by the surface implementation.
     This is an internal detail that very few consumers should care about."""
 
     def __init__(self, name="", compositeop=DEFAULT_COMPOSITE_OP):
+        object.__init__(self)
         self._surface = tiledsurface.Surface()
         self.opacity = 1.0
         self.name = name
@@ -120,9 +124,58 @@ class Layer:
         self._surface.end_atomic()
         return split
 
+
+    def flood_fill(self, x, y, color, bbox, tolerance, dst_layer=None):
+        """Fills a point on the surface with a colour
+
+        :param x: Starting point X coordinate
+        :param y: Starting point Y coordinate
+        :param color: an RGB color
+        :type color: tuple
+        :param bbox: Bounding box: limits the fill
+        :type bbox: lib.helpers.Rect or equivalent 4-tuple
+        :param tolerance: how much filled pixels are permitted to vary
+        :type tolerance: float [0.0, 1.0]
+        :param dst_layer: Optional target layer (default is self!)
+        :type dst_surface: Layer
+
+        The `tolerance` parameter controls how much pixels are permitted to
+        vary from the starting colour.  We use the 4D Euclidean distance from
+        the starting point to each pixel under consideration as a metric,
+        scaled so that its range lies between 0.0 and 1.0.
+
+        The default target layer is `self`. This method invalidates the filled
+        area of the target layer's surface, queueing a redraw if it is part of
+        a visible document.
+        """
+        if dst_layer is None:
+            dst_layer = self
+        self._surface.flood_fill(x, y, color, bbox, tolerance,
+                                 dst_surface=dst_layer._surface)
+
+
     def clear(self):
         self.strokes = [] # contains StrokeShape instances (not stroke.Stroke)
         self._surface.clear()
+
+
+    def trim(self, rect):
+        """Trim the layer to a rectangle, discarding data outside it
+
+        :param rect: A trimming rectangle in model coordinates
+        :type rect: tuple (x, y, w, h)
+
+        Only complete tiles are discarded by this method.
+        """
+        self._surface.trim(rect)
+        empty_strokes = []
+        for stroke in self.strokes:
+            if not stroke.trim(rect):
+                empty_strokes.append(stroke)
+        for stroke in empty_strokes:
+            logger.debug("Removing emptied stroke %r", stroke)
+            self.strokes.remove(stroke)
+
 
     def load_from_surface(self, surface):
         self.strokes = []
@@ -190,6 +243,11 @@ class Layer:
     def load_strokemap_from_file(self, f, translate_x, translate_y):
         assert not self.strokes
         brushes = []
+        N = tiledsurface.N
+        x = int(translate_x//N) * N
+        y = int(translate_y//N) * N
+        dx = translate_x % N
+        dy = translate_y % N
         while True:
             t = f.read(1)
             if t == 'b':
@@ -200,8 +258,11 @@ class Layer:
                 brush_id, length = struct.unpack('>II', f.read(2*4))
                 stroke = strokemap.StrokeShape()
                 tmp = f.read(length)
-                stroke.init_from_string(tmp, translate_x, translate_y)
+                stroke.init_from_string(tmp, x, y)
                 stroke.brush_string = brushes[brush_id]
+                # Translate non-aligned strokes
+                if (dx, dy) != (0, 0):
+                    stroke.translate(dx, dy)
                 self.strokes.append(stroke)
             elif t == '}':
                 break
@@ -216,25 +277,36 @@ class Layer:
             mode=self.compositeop
             )
 
-    def merge_into(self, dst):
+    def merge_into(self, dst, strokemap=True):
+        """Merge this layer into another, modifying only the target
+
+        :param dst: The target layer
+        :param strokemap: Set to false to ignore the layers' strokemaps.
+
+        The target layer must always have an alpha channel. After this
+        operation, the target layer's opacity is set to 1.0 and it is made
+        visible.
         """
-        Merge this layer into dst, modifying only dst.
-        Dst always has an alpha channel.
-        """
+        # Flood-fill uses this for its newly created and working layers,
+        # but it should not construct a strokemap for what it does.
+        if strokemap:
+            dst.strokes.extend(self.strokes)
+        # Normalize the target layer's effective opacity to 1.0 without
+        # changing its appearance
+        if dst.effective_opacity < 1.0:
+            for tx, ty in dst._surface.get_tiles():
+                with dst._surface.tile_request(tx, ty, readonly=False) as surf:
+                    surf[:,:,:] = dst.effective_opacity * surf[:,:,:]
+            dst.opacity = 1.0
+            dst.visible = True
         # We must respect layer visibility, because saving a
         # transparent PNG just calls this function for each layer.
         src = self
-        dst.strokes.extend(self.strokes)
-        for tx, ty in dst._surface.get_tiles():
-            with dst._surface.tile_request(tx, ty, readonly=False) as surf:
-                surf[:,:,:] = dst.effective_opacity * surf[:,:,:]
-
         for tx, ty in src._surface.get_tiles():
             with dst._surface.tile_request(tx, ty, readonly=False) as surf:
                 src._surface.composite_tile(surf, True, tx, ty,
                     opacity=self.effective_opacity,
                     mode=self.compositeop)
-        dst.opacity = 1.0
 
     def convert_to_normal_mode(self, get_bg):
         """

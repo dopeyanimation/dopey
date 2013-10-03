@@ -19,9 +19,11 @@ logger = logging.getLogger(__name__)
 
 import gtk2compat
 import buttonmap
+from brushlib import brushsettings
 
 import math
 from numpy import isfinite
+from collections import deque
 
 import gobject
 import gtk
@@ -358,16 +360,25 @@ class InteractionMode (object):
         itself a modifier, handlers of multiple types of event, and when the
         triggering event isn't available. Pointer button event handling should
         use ``event.state & gtk.accelerator_get_default_mod_mask()``.
-
         """
-        if gtk2compat.USE_GTK3:
-            display = gdk.Display.get_default()
-        else:
-            display = gdk.display_get_default()
+        display = gdk.Display.get_default()
         screen, x, y, modifiers = display.get_pointer()
         modifiers &= gtk.accelerator_get_default_mod_mask()
         return modifiers
 
+    def current_position(self):
+        """Returns the current client pointer position on the main TDW
+
+        For use in enter() methods: since the mode may be being entered by the
+        user pressing a key, no position is available at this point. Normal
+        event handlers should use their argument GdkEvents to determing position.
+        """
+        disp = self.doc.tdw.get_display()
+        mgr = disp.get_device_manager()
+        dev = mgr.get_client_pointer()
+        win = self.doc.tdw.get_window()
+        underwin, x, y, mods = win.get_device_position(dev)
+        return x, y
 
 
 class ScrollableModeMixin (InteractionMode):
@@ -412,9 +423,54 @@ class FreehandOnlyMode (InteractionMode):
     This mode can be used with the basic CanvasController, and in the absence
     of the main application.
 
+    To improve application responsiveness, this mode uses an internal queue for
+    capturing input data. First the raw motion data from the stylus are queued;
+    an idle routine then tidies up this data and feeds it onward. The presence
+    of an input capture queue means that long queued strokes can be terminated
+    by entering a new mode, or by pressing Escape.
     """
 
+    ## Class constants
+
     is_live_updateable = True
+
+    # Motion queue processing (raw data capture)
+    #
+    # This first queue is an initial attempt at a workaround to the first
+    # problem described below in PyGI+GTK3 environments. The Right Thing To Do
+    # generally is to spend as little time as possible directly handling each
+    # event received, so this should be relatively uncontroversial.
+    # Disconnecting stroke rendering from event processing also buys the user
+    # the ability to quit out of a slowly/laggily rendering stroke if desired.
+
+    MOTION_QUEUE_PRIORITY = gobject.PRIORITY_DEFAULT_IDLE
+    MAX_QUEUED_MOTION_EVENTS = 200
+
+    # Stroke queue processing (EXPERIMENTAL)
+    #
+    # This second queue interpolates strokes into very short timeslices as an
+    # attempted workaround for what seems to be generally slower processing of
+    # strokes under PyGI+GTK3 than under PyGTK2 (don't. ask. me. why.)
+    # Essentially make chunks of work for the renderer smaller so that control
+    # can return more quickly to capturing pen data.
+    #
+    # Unhelpful, but related: later versions of GTK3 (3.8+) discard successive
+    # motion events received in the same frame. This may be ameliorated by
+    # this code too.
+    #
+    # https://gna.org/bugs/?21003
+    # https://gna.org/bugs/?20822
+    # https://bugzilla.gnome.org/show_bug.cgi?id=702392
+    #
+    # It's proving controversial though, so make it optional:
+    # https://mail.gna.org/public/mypaint-discuss/2013-09/msg00000.html
+    STROKE_QUEUE_ENABLED = False
+    STROKE_QUEUE_TIMESLICE = 0.0025
+    MAX_QUEUED_STROKES = 1000
+    STROKE_QUEUE_PRIORITY = gobject.PRIORITY_LOW
+
+
+    ## Metadata
 
 
     @classmethod
@@ -427,20 +483,66 @@ class FreehandOnlyMode (InteractionMode):
                   "with the current settings")
 
 
+    ## Mode stack & current mode
+
+
     def enter(self, **kwds):
+        """Enter freehand mode"""
         super(FreehandOnlyMode, self).enter(**kwds)
-        self.reset_drawing_state()
+        self._reset_drawing_state()
+        self._last_stroketo_info = None   # The last model.stroke_to issued,
+                                          # used for clean mode exits.
 
 
     def leave(self, **kwds):
-        self.reset_drawing_state()
+        """Leave freehand mode"""
         super(FreehandOnlyMode, self).leave(**kwds)
+        # Clear queue(s)
+        self._reset_drawing_state()
+        # Cleanly tail off if this mode ever sent stroke data to the model.
+        if self._last_stroketo_info:
+            # Tail off cleanly if the user interrupts a still-queued stroke.
+            # Rationale: if there's lots of input queued up, Escape still exits
+            # the mode (this is a feature, not a bug). However, if we don't
+            # reset the brush engine's idea of pressure fast, it can result in
+            # a *huge* stroke from the last processed position to wherever the
+            # cursor is right now. This would be counterproductive for the very
+            # case where users would most want to bail out: accidental huge
+            # strokes with a big complex brush.
+            model,dtime,x,y,pressure,xtilt,ytilt = self._last_stroketo_info
+            self._last_stroketo_info = None
+            pressure = 0.0
+            dtime = 0.0
+            model.stroke_to(dtime, x, y, pressure, xtilt, ytilt)
+            # Split the stroke
+            # Rationale: if the user is exiting freehand mode it's because they
+            # have finished drawing and now want to do something else. Put an
+            # undo history break here.
+            model.split_stroke()
 
 
-    def reset_drawing_state(self):
+    def _reset_drawing_state(self):
         self.last_event_had_pressure_info = False
-        # Windows stuff
-        self.motions = []
+
+        # 1st queue: raw motion data -> clean-up
+        # This allows us to handle incoming events fast, hopefully under 5ms
+        self._motion_queue = deque([], self.MAX_QUEUED_MOTION_EVENTS)
+        self._motion_processing_cbid = None
+
+        # 1.5th queue: raw data which was delivered with an identical timestamp
+        # to the previous one.  Happens on Windows due to differing clock
+        # granularities.
+        self._zero_dtime_motions = []
+
+        # 2nd queue: cleaned-up data -> stroke processing
+        # Output-side queue of finely-grained stroke data which is processed
+        # in an idle callback.
+        self._stroke_queue = deque()
+        if not hasattr(self, "_stroke_queue_idle_cbid"):
+            self._stroke_queue_idle_cbid = None
+
+
+    ## Input handling
 
 
     def button_press_cb(self, tdw, event):
@@ -489,40 +591,76 @@ class FreehandOnlyMode (InteractionMode):
 
 
     def motion_notify_cb(self, tdw, event, button1_pressed=None):
+        """Motion event handler: queues raw input and returns"""
         # Purely responsible for drawing.
         if not tdw.is_sensitive:
-            return super(FreehandOnlyMode, self).motion_notify_cb(tdw, event)
+            return False
+        # Extract the raw readings
+        x = event.x
+        y = event.y
+        time = event.time
+        pressure = event.get_axis(gdk.AXIS_PRESSURE)
+        xtilt = event.get_axis(gdk.AXIS_XTILT)
+        ytilt = event.get_axis(gdk.AXIS_YTILT)
+        device = event.get_source_device()
+        state = event.state 
+        last_event_time, last_x, last_y = self.doc.get_last_event_info(tdw)
+        # Queue it and fire off background processing if needed
+        event_data = (tdw, last_event_time, last_x, last_y,
+                      time, device, state, x, y, pressure, xtilt, ytilt,
+                      button1_pressed)
+        self._motion_queue.append(event_data)
+        if not self._motion_processing_cbid:
+            cbid = gobject.idle_add(self._motion_queue_idle_cb,
+                                    priority=self.MOTION_QUEUE_PRIORITY)
+            self._motion_processing_cbid = cbid
 
+
+    ## Motion queue processing
+
+    def _motion_queue_idle_cb(self):
+        """Idle callback, calls _handle_motion_event() for each queued event"""
+        qlen = len(self._motion_queue)
+        if qlen > 0:
+            event_data = self._motion_queue.popleft()
+            # DEBUGGING: we should be able to collect ~100 to ~200 events
+            # per second during a long stroke of a simple brush.
+            if qlen > self.MAX_QUEUED_MOTION_EVENTS * 0.9:
+                dtime = (event_data[4] - event_data[1]) / 1000.0
+                dtime_avg = (sum([m[4] - m[1] for m in self._motion_queue])
+                             / (len(self._motion_queue)*1000.0))
+                qlen = len(self._motion_queue)
+                logger.warning("Long motion queue: len=%d (last dtime=%.3f, "
+                               "avg=%.3f)", qlen, dtime, dtime_avg)
+            self._handle_motion_event(*event_data)
+        if qlen == 0:
+            self._motion_processing_cbid = None
+            return False
+        else:
+            return True
+
+
+    def _handle_motion_event(self, tdw, last_event_time, last_x, last_y, time,
+                             device, state, x, y, pressure, xtilt, ytilt,
+                             button1_pressed):
+        """Process one motion event from the motion queue"""
         model = tdw.doc
         app = tdw.app
 
-        last_event_time, last_x, last_y = self.doc.get_last_event_info(tdw)
         if last_event_time:
-            dtime = (event.time - last_event_time)/1000.0
-            dx = event.x - last_x
-            dy = event.y - last_y
+            dtime = (time - last_event_time)/1000.0
         else:
-            dtime = None
-        if dtime is None:
-            return super(FreehandOnlyMode, self).motion_notify_cb(tdw, event)
+            return False
 
         same_device = True
-        device = None
         if app is not None:
-            if gtk2compat.USE_GTK3:
-                device = event.get_source_device()
-            else:
-                device = event.device
             same_device = app.device_monitor.device_used(device)
 
         # Refuse drawing if the layer is locked or hidden
         if model.layer.locked or not model.layer.visible:
-            return super(FreehandOnlyMode, self).motion_notify_cb(tdw, event)
-            # TODO: some feedback, maybe
+            return False
 
-        x, y = tdw.display_to_model(event.x, event.y)
-
-        pressure = event.get_axis(gdk.AXIS_PRESSURE)
+        x, y = tdw.display_to_model(x, y)
 
         if pressure is not None and (   pressure > 1.0
                                      or pressure < 0.0
@@ -530,7 +668,7 @@ class FreehandOnlyMode (InteractionMode):
             if not hasattr(self, 'bad_devices'):
                 self.bad_devices = []
             if device.name not in self.bad_devices:
-                logger.warning('device %r is reporting bad pressure %+f',
+                logger.warning('device %r is reporting bad pressure %r',
                                device.name, pressure)
                 self.bad_devices.append(device.name)
             if not isfinite(pressure):
@@ -543,7 +681,7 @@ class FreehandOnlyMode (InteractionMode):
         if pressure is None:
             self.last_event_had_pressure_info = False
             if button1_pressed is None:
-                button1_pressed = event.state & gdk.BUTTON1_MASK
+                button1_pressed = state & gdk.BUTTON1_MASK
             if button1_pressed:
                 pressure = 0.5
             else:
@@ -551,8 +689,6 @@ class FreehandOnlyMode (InteractionMode):
         else:
             self.last_event_had_pressure_info = True
 
-        xtilt = event.get_axis(gdk.AXIS_XTILT)
-        ytilt = event.get_axis(gdk.AXIS_YTILT)
         # Check whether tilt is present.  For some tablets without
         # tilt support GTK reports a tilt axis with value nan, instead
         # of None.  https://gna.org/bugs/?17084
@@ -572,7 +708,7 @@ class FreehandOnlyMode (InteractionMode):
                 xtilt = tilt_magnitude * math.cos(tilt_angle)
                 ytilt = tilt_magnitude * math.sin(tilt_angle)
 
-        if event.state & gdk.CONTROL_MASK or event.state & gdk.MOD1_MASK:
+        if state & gdk.CONTROL_MASK or state & gdk.MOD1_MASK:
             # HACK: color picking, do not paint
             # Don't simply return; this is a workaround for unwanted lines
             # in https://gna.org/bugs/?16169
@@ -581,7 +717,7 @@ class FreehandOnlyMode (InteractionMode):
         if app is not None and app.pressure_mapping:
             pressure = app.pressure_mapping(pressure)
 
-        if event.state & gdk.SHIFT_MASK:
+        if state & gdk.SHIFT_MASK:
             pressure = 0.0
 
         if pressure:
@@ -600,31 +736,105 @@ class FreehandOnlyMode (InteractionMode):
         # On Windows, GTK timestamps have a resolution around
         # 15ms, but tablet events arrive every 8ms.
         # https://gna.org/bugs/index.php?16569
-        # TODO: proper fix in the brush engine, using only smooth,
-        #       filtered speed inputs, will make this unneccessary
         if dtime < 0.0:
             logger.warning('Time is running backwards, dtime=%f', dtime)
             dtime = 0.0
-        data = (x, y, pressure, xtilt, ytilt)
         if dtime == 0.0:
-            self.motions.append(data)
+            zdata = (model, x, y, pressure, xtilt, ytilt)
+            self._zero_dtime_motions.append(zdata)
         elif dtime > 0.0:
-            if self.motions:
+            if self._zero_dtime_motions:
                 # replay previous events that had identical timestamp
                 if dtime > 0.1:
                     # really old events, don't associate them with the new one
                     step = 0.1
                 else:
                     step = dtime
-                step /= len(self.motions)+1
-                for data_old in self.motions:
-                    model.stroke_to(step, *data_old)
+                step /= len(self._zero_dtime_motions)+1
+                for zdata in self._zero_dtime_motions:
+                    zmodel, zx, zy, zpressure, zxtilt, zytilt = zdata
+                    self._model_stroke_to(zmodel, dtime, zx, zy,
+                                          zpressure, zxtilt, zytilt)
                     dtime -= step
-                self.motions = []
-            model.stroke_to(dtime, *data)
+                self._zero_dtime_motions = []
+            self._model_stroke_to(model, dtime, x, y, pressure, xtilt, ytilt)
+        return False
 
-        super(FreehandOnlyMode, self).motion_notify_cb(tdw, event)
+
+    def _model_stroke_to(self, model, dtime, x, y, pressure, xtilt, ytilt):
+        """Sent stroke data to the model, either directly or via a queue"""
+        if self.STROKE_QUEUE_ENABLED:
+            self._queue_stroke(model, dtime, x, y, pressure, xtilt, ytilt)
+        else:
+            model.stroke_to(dtime, x, y, pressure, xtilt, ytilt)
+            self._last_stroketo_info = model,dtime,x,y,pressure,xtilt,ytilt
+
+
+    ## Stroke queueing (EXPERIMENTAL)
+
+    def _queue_stroke(self, model, dtime, x, y, pressure, xtilt, ytilt):
+        """Adds cleaned-up stroke data to a forwarding queue"""
+        if ( len(self._stroke_queue) >= 1
+             and len(self._stroke_queue) < self.MAX_QUEUED_STROKES
+             and dtime < 0.2 ):
+
+            # To make smaller chunks of work for the renderer, interpolate
+            # between the last queued stroke data point and the new one, if the
+            # last point is not too old (where too old means >= 0.2s)
+            pdata = self._stroke_queue[-1]
+            pmodel, pdtime, px, py, ppressure, pxtilt, pytilt = pdata
+            f = min(self.MAX_QUEUED_STROKES,
+                    max(1,int(dtime/self.STROKE_QUEUE_TIMESLICE)))
+            for i in xrange(1, f):
+                mx = px + i*(x-px)/f
+                my = py + i*(y-py)/f
+                mpressure = ppressure + i*(pressure-ppressure)/f
+                mxtilt = pxtilt + i*(xtilt-pxtilt)/f
+                mytilt = pytilt + i*(ytilt-pytilt)/f
+                mdata = (model, dtime/f, mx, my, mpressure, mxtilt, mytilt)
+                self._stroke_queue.append(mdata)
+            data = (model, dtime/f, x, y, pressure, xtilt, ytilt)
+            self._stroke_queue.append(data)
+        else:
+            # Queue the stroke as one big grain of work instead
+            data = (model, dtime, x, y, pressure, xtilt, ytilt)
+            self._stroke_queue.append(data)
+        # Start the processing idler if it isn't currently running
+        if self._stroke_queue_idle_cbid is None:
+            cbid = gobject.idle_add(self._stroke_queue_idle_cb,
+                                    priority=self.STROKE_QUEUE_PRIORITY)
+            self._stroke_queue_idle_cbid = cbid
+
+
+    def _stroke_queue_idle_cb(self):
+        """Idle routine for passing stroke data on to the target doc(s)"""
+        qlen = len(self._stroke_queue)
+        if qlen <= 1:
+            self._stroke_queue_idle_cbid = None
+            return False
+        model,dtime,x,y,pressure,xtilt,ytilt = self._stroke_queue.popleft()
+        model.stroke_to(dtime, x, y, pressure, xtilt, ytilt)
+        self._last_stroketo_info = model, dtime, x, y, pressure, xtilt, ytilt
+        qlen = len(self._stroke_queue)
+        if qlen > self.MAX_QUEUED_STROKES * 0.9:
+            logger.warning("Long stroke queue: size=%d", qlen)
+        if qlen <= 1:
+            if qlen == 1:
+                pressure = self._stroke_queue[0][4]
+                # Tail off at the end of processing if the pressure is zero,
+                # for a greater appearance of responsiveness. This can be
+                # seen best using the mouse.
+                if pressure <= 0.0:
+                    model, dtime, x, y, pressure, xtilt, ytilt \
+                            = self._stroke_queue.popleft()
+                    model.stroke_to(dtime, x, y, pressure, xtilt, ytilt)
+                    self._last_stroketo_info = (model, dtime, x, y, pressure,
+                                                xtilt, ytilt)
+                    self._stroke_queue.clear()
+            self._stroke_queue_idle_cbid = None
+            return False
         return True
+
 
 
 class SwitchableModeMixin (InteractionMode):
@@ -750,7 +960,12 @@ class SwitchableModeMixin (InteractionMode):
             return
         poss_list.sort()
         poss_msgs = []
+        permitted_action_names = self.permitted_switch_actions
         for pmods, button, action_name in poss_list:
+            # Filter by the class's whitelist, if it's set
+            if permitted_action_names:
+                if action_name not in permitted_action_names:
+                    continue
             # Don't repeat what's currently held
             pmods = pmods & ~mods
             label = buttonmap.button_press_displayname(button, pmods)
@@ -767,15 +982,17 @@ class SwitchableModeMixin (InteractionMode):
                 msg_tmpl = _(u"%(label)s: %(mode)s")
                 poss_msgs.append(msg_tmpl % { "label": label,
                                               "mode": mode_desc, })
+        if not poss_msgs:
+            return
         poss_msg = u"; ".join(poss_msgs)
         mods_msg = unicode(gtk.accelerator_get_label(0, mods))
         mods_msg = mods_msg.rstrip("+")
+
         msg_template = _(u"%(mode)s (+%(modifiers)s): %(possible)s")
         msg = msg_template % {"mode": self.get_name(),
                               "modifiers": mods_msg,
                               "possible": poss_msg }
-        cid = self.__get_context_id()
-        self.doc.app.statusbar.push(cid, msg)
+        self.doc.app.statusbar.push(context_id, msg)
 
 
     def leave(self):
@@ -846,13 +1063,107 @@ class SwitchableFreehandMode (SwitchableModeMixin, ScrollableModeMixin,
     """The default mode: freehand drawing, accepting modifiers to switch modes.
     """
 
+    ## Class constants
+
     __action_name__ = 'SwitchableFreehandMode'
     permitted_switch_actions = set()   # Any action is permitted
+
+    _OPTIONS_WIDGET = None
+
+    ## Method defs
 
     def __init__(self, ignore_modifiers=True, **args):
         # Ignore the additional arg that flip actions feed us
         super(SwitchableFreehandMode, self).__init__(**args)
 
+    def get_options_widget(self):
+        """Get the (class singleton) options widget"""
+        cls = self.__class__
+        if cls._OPTIONS_WIDGET is None:
+            widget = SwitchableFreehandModeOptionsWidget()
+            cls._OPTIONS_WIDGET = widget
+        return cls._OPTIONS_WIDGET
+
+
+class PaintingModeOptionsWidgetBase (gtk.Grid):
+    """Base class for the options widget of a generic painting mode"""
+
+    _COMMON_SETTINGS = [
+        ('radius_logarithmic', _("Size:")),
+        ('opaque', _("Opaque:")),
+        ('hardness', _("Hard:"))
+    ]
+
+    def __init__(self):
+        gtk.Grid.__init__(self)
+        self.set_row_spacing(6)
+        self.set_column_spacing(6)
+        from application import get_app
+        self.app = get_app()
+        self.adjustable_settings = set()  #: What the reset button resets
+        row = self.init_common_widgets(0)
+        row = self.init_specialized_widgets(row)
+        row = self.init_reset_widgets(row)
+
+    def init_common_widgets(self, row):
+        for cname, text in self._COMMON_SETTINGS:
+            label = gtk.Label()
+            label.set_text(text)
+            label.set_alignment(1.0, 0.5)
+            label.set_hexpand(False)
+            self.adjustable_settings.add(cname)
+            adj = self.app.brush_adjustment[cname]
+            scale = gtk.HScale(adj)
+            scale.set_draw_value(False)
+            scale.set_hexpand(True)
+            self.attach(label, 0, row, 1, 1)
+            self.attach(scale, 1, row, 1, 1)
+            row += 1
+        return row
+
+    def init_specialized_widgets(self, row):
+        return row
+
+    def init_reset_widgets(self, row):
+        align = gtk.Alignment(0.5, 1.0, 1.0, 0.0)
+        align.set_vexpand(True)
+        self.attach(align, 0, row, 2, 1)
+        button = gtk.Button(_("Reset"))
+        button.connect("clicked", self.reset_button_clicked_cb)
+        align.add(button)
+        row += 1
+        return row
+
+    def reset_button_clicked_cb(self, button):
+        app = self.app
+        bm = app.brushmanager
+        parent_brush = bm.get_parent_brush(brushinfo=app.brush)
+        parent_binf = parent_brush.get_brushinfo()
+        for cname in self.adjustable_settings:
+            parent_value = parent_binf.get_base_value(cname)
+            adj = self.app.brush_adjustment[cname]
+            adj.set_value(parent_value)
+        app.brushmodifier.normal_mode.activate()
+
+
+class SwitchableFreehandModeOptionsWidget (PaintingModeOptionsWidgetBase):
+    """Configuration widget for the switchable freehand mode"""
+
+    def init_specialized_widgets(self, row):
+        cname = "slow_tracking"
+        label = gtk.Label()
+        label.set_text(_("Smooth:"))
+        label.set_alignment(1.0, 0.5)
+        label.set_hexpand(False)
+        self.adjustable_settings.add(cname)
+        adj = self.app.brush_adjustment[cname]
+        scale = gtk.HScale(adj)
+        scale.set_draw_value(False)
+        scale.set_hexpand(True)
+        self.attach(label, 0, row, 1, 1)
+        self.attach(scale, 1, row, 1, 1)
+        row += 1
+        return row
 
 
 class ModeStack (object):
@@ -1004,6 +1315,10 @@ class ModeStack (object):
         """Mode stacks never test false, regardless of length."""
         return True
 
+    def __iter__(self):
+        for mode in self._stack:
+            yield mode
+
 
 class SpringLoadedModeMixin (InteractionMode):
     """Behavioural add-ons for modes which last as long as modifiers are held.
@@ -1074,7 +1389,8 @@ class SpringLoadedModeMixin (InteractionMode):
         # an idle function avoids confusing the derived class's enter() method:
         # a leave() during an enter() would be strange.
         if self.initial_modifiers is not None:
-            self.doc.modes.pop()
+            if self is self.doc.modes.top:
+                self.doc.modes.pop()
         return False
 
 
@@ -1089,9 +1405,49 @@ class SpringLoadedModeMixin (InteractionMode):
         if self.initial_modifiers:
             modifiers = self.current_modifiers()
             if modifiers & self.initial_modifiers == 0:
-                self.doc.modes.pop()
+                if self is self.doc.modes.top:
+                    self.doc.modes.pop()
                 return True
         return super(SpringLoadedModeMixin,self).key_release_cb(win,tdw,event)
+
+
+class SingleClickMode (InteractionMode):
+    """Base class for non-drag (single click) modes"""
+
+    #: The cursor to use when entering the mode
+    cursor = gdk.Cursor(gdk.BOGOSITY)
+
+    def __init__(self, ignore_modifiers=False, **kwds):
+        super(SingleClickMode, self).__init__(**kwds)
+        self._button_pressed = None
+
+    def enter(self, **kwds):
+        super(SingleClickMode, self).enter(**kwds)
+        assert self.doc is not None
+        self.doc.tdw.set_override_cursor(self.cursor)
+
+    def leave(self, **kwds):
+        if self.doc is not None:
+            self.doc.tdw.set_override_cursor(None)
+        super(SingleClickMode, self).leave(**kwds)
+
+    def button_press_cb(self, tdw, event):
+        if event.button == 1 and event.type == gdk.BUTTON_PRESS:
+            self._button_pressed = 1
+            return False
+        else:
+            return super(SingleClickMode, self).button_press_cb(tdw, event)
+
+    def button_release_cb(self, tdw, event):
+        if event.button == self._button_pressed:
+            self._button_pressed = None
+            self.clicked_cb(tdw, event)
+            return False
+        else:
+            return super(SingleClickMode, self).button_press_cb(tdw, event)
+
+    def clicked_cb(self, tdw, event):
+        assert not hasattr(super(SingleClickMode, self), "clicked_cb")
 
 
 class DragMode (InteractionMode):
@@ -1173,8 +1529,9 @@ class DragMode (InteractionMode):
             # This condition should be rare enough for this to be a valid
             # approach: the irritation of having to click again to do something
             # should be far less than that of getting "stuck" in a drag.
-            logger.debug("Exiting mode")
-            self.doc.modes.pop()
+            if self is self.doc.modes.top:
+                logger.debug("Exiting mode")
+                self.doc.modes.pop()
 
             # Sometimes a pointer ungrab is needed even though the grab
             # apparently failed to avoid the UI partially "locking up" with the
@@ -1198,7 +1555,9 @@ class DragMode (InteractionMode):
         if grab_status != gdk.GRAB_SUCCESS:
             logger.warning("Keyboard grab failed: %r", grab_status)
             gdk.pointer_ungrab(event.time)
-            self.doc.modes.pop()
+            if self is self.doc.modes.top:
+                logger.debug("Exiting mode")
+                self.doc.modes.pop()
             return
 
         # GTK too...
@@ -1233,8 +1592,9 @@ class DragMode (InteractionMode):
         logger.debug(" keyboard    : %r", event.keyboard)
         logger.debug(" implicit    : %r", event.implicit)
         logger.debug(" grab_window : %r", event.grab_window)
-        logger.debug("exiting %r", self)
-        self.doc.modes.pop()
+        if self is self.doc.modes.top:
+            logger.debug("exiting %r", self)
+            self.doc.modes.pop()
         return True
 
 
@@ -1388,27 +1748,45 @@ class OneshotDragModeMixin (InteractionMode):
 
     """
 
-    unmodified_persist = False
     #: If true, and spring-loaded, stay active if no modifiers held initially.
+    unmodified_persist = False
 
+    def get_options_widget(self):
+        """Don't replace stuff in the options panel by default"""
+        return None
 
     def drag_stop_cb(self):
         if not hasattr(self, "initial_modifiers"):
             # Always exit at the end of a drag if not spring-loaded.
-            self.doc.modes.pop()
+            if self is self.doc.modes.top:
+                self.doc.modes.pop()
         elif self.initial_modifiers != 0:
             # If started with modifiers, keeping the modifiers held keeps
             # spring-loaded modes active. If not, exit the mode.
             if (self.initial_modifiers & self.current_modifiers()) == 0:
-                self.doc.modes.pop()
+                if self is self.doc.modes.top:
+                    self.doc.modes.pop()
         else:
             # No modifiers were held when this mode was entered.
             if not self.unmodified_persist:
-                self.doc.modes.pop()
+                if self is self.doc.modes.top:
+                    self.doc.modes.pop()
         return super(OneshotDragModeMixin, self).drag_stop_cb()
 
 
-class PanViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
+class OneshotHelperModeBase (SpringLoadedDragMode, OneshotDragModeMixin):
+    """Base class for temporary helper modes.
+
+    These are utility modes which allow the user to do quick, simple tasks with
+    the canvas like pick a color from it or pan the view.
+    """
+
+    def stackable_on(self, mode):
+        """Helper modes return to the mode the user came from on exit"""
+        return not isinstance(mode, OneshotHelperModeBase)
+
+
+class PanViewMode (OneshotHelperModeBase):
     """A oneshot mode for translating the viewport by dragging."""
 
     __action_name__ = 'PanViewMode'
@@ -1417,22 +1795,18 @@ class PanViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
     def get_name(cls):
         return _(u"Scroll View")
 
-
     def get_usage(self):
         return _(u"Click and drag to move the view of the canvas")
-
 
     @property
     def inactive_cursor(self):
         return self.doc.app.cursors.get_action_cursor(
                 self.__action_name__)
+
     @property
     def active_cursor(self):
         return self.doc.app.cursors.get_action_cursor(
                 self.__action_name__)
-
-    def stackable_on(self, mode):
-        return isinstance(mode, SwitchableModeMixin)
 
     def drag_update_cb(self, tdw, event, dx, dy):
         tdw.scroll(-dx, -dy)
@@ -1440,7 +1814,7 @@ class PanViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
         super(PanViewMode, self).drag_update_cb(tdw, event, dx, dy)
 
 
-class ZoomViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
+class ZoomViewMode (OneshotHelperModeBase):
     """A oneshot mode for zooming the viewport by dragging."""
 
     __action_name__ = 'ZoomViewMode'
@@ -1463,9 +1837,6 @@ class ZoomViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
         return self.doc.app.cursors.get_action_cursor(
                 self.__action_name__)
 
-    def stackable_on(self, mode):
-        return isinstance(mode, SwitchableModeMixin)
-
     def drag_update_cb(self, tdw, event, dx, dy):
         tdw.scroll(-dx, -dy)
         tdw.zoom(math.exp(dy/100.0), center=(event.x, event.y))
@@ -1475,7 +1846,7 @@ class ZoomViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
         super(ZoomViewMode, self).drag_update_cb(tdw, event, dx, dy)
 
 
-class RotateViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
+class RotateViewMode (OneshotHelperModeBase):
     """A oneshot mode for rotating the viewport by dragging."""
 
     __action_name__ = 'RotateViewMode'
@@ -1497,9 +1868,6 @@ class RotateViewMode (SpringLoadedDragMode, OneshotDragModeMixin):
     def inactive_cursor(self):
         return self.doc.app.cursors.get_action_cursor(
                 self.__action_name__)
-
-    def stackable_on(self, mode):
-        return isinstance(mode, SwitchableModeMixin)
 
     def drag_update_cb(self, tdw, event, dx, dy):
         # calculate angular velocity from the rotation center
@@ -1560,13 +1928,6 @@ class LayerMoveMode (SwitchableModeMixin,
     permitted_switch_actions = set([
             'RotateViewMode', 'ZoomViewMode', 'PanViewMode',
         ] + extra_actions)
-
-
-    def stackable_on(self, mode):
-        # Any drawing mode
-        import linemode
-        return isinstance(mode, linemode.LineModeBase) \
-            or isinstance(mode, SwitchableFreehandMode)
 
 
     def __init__(self, **kwds):
@@ -1655,9 +2016,8 @@ class LayerMoveMode (SwitchableModeMixin,
             # Might have exited, in which case leave() will have cleaned up
             self._drag_update_idler_srcid = None
             return False
-        # Terminate if asked
+        # Terminate if asked. Assume the asker will clean up.
         if self._drag_update_idler_srcid is None:
-            self.move.cleanup()
             return False
         # Process some tile moves, and carry on if there's more to do
         if self.move.process():
@@ -1669,7 +2029,10 @@ class LayerMoveMode (SwitchableModeMixin,
 
 
     def drag_stop_cb(self):
-        self._drag_update_idler_srcid = None   # ask it to finish
+        # Stop the update idler running on its next scheduling
+        self._drag_update_idler_srcid = None
+        # This will leave a non-cleaned-up move if one is still active,
+        # so finalize it in its own idle routine.
         if self.move is not None:
             # Arrange for the background work to be done, and look busy
             tdw = self.drag_start_tdw
@@ -1698,11 +2061,12 @@ class LayerMoveMode (SwitchableModeMixin,
 
         # Leave mode if started with modifiers held and the user had released
         # them all at the end of the drag.
-        if self.initial_modifiers:
-            if (self.final_modifiers & self.initial_modifiers) == 0:
+        if self is self.doc.modes.top:
+            if self.initial_modifiers:
+                if (self.final_modifiers & self.initial_modifiers) == 0:
+                    self.doc.modes.pop()
+            else:
                 self.doc.modes.pop()
-        else:
-            self.doc.modes.pop()
 
     def _finalize_move_idler(self):
         # Finalize everything once the drag's finished.

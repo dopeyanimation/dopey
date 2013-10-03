@@ -21,14 +21,13 @@ import windowing
 import canvasevent
 from overlays import rounded_box, Overlay
 import colors
+import fill
 
 
 ## Color picking mode, with a preview rectangle overlay
 
-class ColorPickMode (canvasevent.SpringLoadedDragMode,
-                     canvasevent.OneshotDragModeMixin):
-    """Mode for picking colors from the screen, with a preview.
-    """
+class ColorPickMode (canvasevent.OneshotHelperModeBase):
+    """Mode for picking colors from the screen, with a preview"""
 
     # Class configuration
     __action_name__ = 'ColorPickMode'
@@ -51,13 +50,6 @@ class ColorPickMode (canvasevent.SpringLoadedDragMode,
 
     def get_usage(self):
         return _(u"Click to set the color used for painting")
-
-
-    def stackable_on(self, mode):
-        # Any drawing mode
-        import linemode
-        return isinstance(mode, linemode.LineModeBase) \
-            or isinstance(mode, canvasevent.SwitchableFreehandMode)
 
 
     def __init__(self, **kwds):

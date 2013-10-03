@@ -165,6 +165,89 @@ class Stroke(Action):
     def redo(self):
         self.doc.layer.load_snapshot(self.after)
 
+
+class FloodFill (Action):
+    """Flood-fill on the current layer"""
+
+    display_name = _("Flood Fill")
+
+    def __init__(self, doc, x, y, color, bbox, tolerance,
+                 sample_merged, make_new_layer):
+        self.doc = doc
+        self.x = x
+        self.y = y
+        self.color = color
+        self.bbox = bbox
+        self.tolerance = tolerance
+        self.sample_merged = sample_merged
+        self.make_new_layer = make_new_layer
+        self.new_layer = None
+        self.new_layer_idx = None
+        self.snapshot = None
+
+    def redo(self):
+        # Pick a source
+        if self.sample_merged:
+            src_layer = layer.Layer()
+            for l in self.doc.layers:
+                l.merge_into(src_layer, strokemap=False)
+        else:
+            src_layer = self.doc.layer
+        # Choose a target
+        if self.make_new_layer:
+            # Write to a new layer
+            assert self.new_layer is None
+            nl = layer.Layer()
+            nl.content_observers.append(self.doc.layer_modified_cb)
+            nl.set_symmetry_axis(self.doc.get_symmetry_axis())
+            self.new_layer = nl
+            self.new_layer_idx = self.doc.layer_idx + 1
+            self.doc.layers.insert(self.new_layer_idx, nl)
+            self.doc.layer_idx = self.new_layer_idx
+            self._notify_document_observers()
+            dst_layer = nl
+        else:
+            # Overwrite current, but snapshot 1st
+            assert self.snapshot is None
+            self.snapshot = self.doc.layer.save_snapshot()
+            dst_layer = self.doc.layer
+        # Fill connected areas of the source into the destination
+        src_layer.flood_fill(self.x, self.y, self.color, self.bbox,
+                             self.tolerance, dst_layer=dst_layer)
+
+    def undo(self):
+        if self.make_new_layer:
+            assert self.new_layer is not None
+            self.doc.layer_idx = self.new_layer_idx - 1
+            self.doc.layers.remove(self.new_layer)
+            self._notify_canvas_observers([self.doc.layer])
+            self._notify_document_observers()
+            self.new_layer = None
+            self.new_layer_idx = None
+        else:
+            assert self.snapshot is not None
+            self.doc.layer.load_snapshot(self.snapshot)
+            self.snapshot = None
+
+
+class TrimLayer (Action):
+    """Trim the current layer to the extent of the document frame"""
+
+    display_name = _("Trim Layer")
+
+    def __init__(self, doc):
+        self.doc = doc
+        self.before = None
+
+    def redo(self):
+        self.before = self.doc.layer.save_snapshot()
+        frame = self.doc.get_frame()
+        self.doc.layer.trim(frame)
+
+    def undo(self):
+        self.doc.layer.load_snapshot(self.before)
+
+
 class ClearLayer(Action):
     display_name = _("Clear Layer")
     def __init__(self, doc):
@@ -525,4 +608,52 @@ class SetLayerCompositeOp(Action):
         l.compositeop = self.old_compositeop
         self._notify_canvas_observers([l])
         self._notify_document_observers()
+
+
+class SetFrameEnabled (Action):
+    """Enable or disable the document frame"""
+
+    @property
+    def display_name(self):
+        if self.after:
+            return _("Enable Frame")
+        else:
+            return _("Disable Frame")
+
+    def __init__(self, doc, enable):
+        self.doc = doc
+        self.before = None
+        self.after = enable
+
+    def redo(self):
+        self.before = self.doc.frame_enabled
+        self.doc.set_frame_enabled(self.after, user_initiated=False)
+
+    def undo(self):
+        self.doc.set_frame_enabled(self.before, user_initiated=False)
+
+
+class UpdateFrame (Action):
+    """Update frame dimensions"""
+
+    display_name = _("Update Frame")
+
+    def __init__(self, doc, frame):
+        self.doc = doc
+        self.new_frame = frame
+        self.old_frame = None
+
+    def redo(self):
+        if self.old_frame is None:
+            self.old_frame = self.doc.frame[:]
+        self.doc.update_frame(*self.new_frame, user_initiated=False)
+
+    def update(self, frame):
+        assert self.old_frame is not None
+        self.new_frame = frame
+        self.doc.update_frame(*self.new_frame, user_initiated=False)
+
+    def undo(self):
+        assert self.old_frame is not None
+        self.doc.update_frame(*self.old_frame, user_initiated=False)
 

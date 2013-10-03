@@ -22,6 +22,7 @@ import lib.document
 from lib import brush
 from lib import helpers
 from lib import mypaintlib
+from brushlib import brushsettings
 
 
 def get_app():
@@ -47,6 +48,7 @@ import brusheditor
 import layerswindow
 import animationwindow
 import previewwindow
+import optionspanel
 import framewindow
 import scratchwindow
 import inputtestwindow
@@ -57,6 +59,7 @@ import toolbar
 import linemode
 import colors
 import colorpreview
+import fill
 from brushcolor import BrushColorManager
 from overlays import LastPaintPosOverlay
 from overlays import ScaleOverlay
@@ -237,6 +240,9 @@ class Application (object):
         self.brush_color_manager.set_picker_cursor(self.cursor_color_picker)
         self.brush_color_manager.set_data_path(self.datapath)
 
+        #: Mapping of setting cname to a GtkAdjustment which controls the base
+        #: value of that setting for the app's current brush.
+        self.brush_adjustment = {}
         self.init_brush_adjustments()
 
         # Connect signals defined in mypaint.xml
@@ -273,7 +279,6 @@ class Application (object):
             "BackgroundWindow": backgroundwindow.BackgroundWindow,
             "BrushEditorWindow": brusheditor.BrushEditorWindow,
             "PreferencesWindow": preferenceswindow.PreferencesWindow,
-            "FrameEditWindow": framewindow.FrameEditWindow,
             "InputTestWindow": inputtestwindow.InputTestWindow,
             "BrushIconEditorWindow": brushiconeditor.BrushIconEditorWindow,
             }
@@ -452,14 +457,39 @@ class Application (object):
             if result is not None:
                 return result
 
-    def init_brush_adjustments(self):
-        """Initializes all the brush adjustments for the current brush"""
-        self.brush_adjustment = {}
-        from brushlib import brushsettings
-        for i, s in enumerate(brushsettings.settings_visible):
-            adj = gtk.Adjustment(value=s.default, lower=s.min, upper=s.max, step_incr=0.01, page_incr=0.1)
-            self.brush_adjustment[s.cname] = adj
 
+    ## Brush settings: GtkAdjustments for base values
+
+    def init_brush_adjustments(self):
+        """Initializes the base value adjustments for all brush settings"""
+        assert not self.brush_adjustment
+        changed_cb = self._brush_adjustment_value_changed_cb
+        for s in brushsettings.settings_visible:
+            adj = gtk.Adjustment(value=s.default, lower=s.min, upper=s.max,
+                                 step_incr=0.01, page_incr=0.1)
+            self.brush_adjustment[s.cname] = adj
+            adj.connect("value-changed", changed_cb, s.cname)
+        self.brush.observers.append(self._brush_modified_cb)
+
+
+    def _brush_adjustment_value_changed_cb(self, adj, cname):
+        """Updates a brush setting when the user tweaks it using a scale"""
+        newvalue = adj.get_value()
+        if self.brush.get_base_value(cname) != newvalue:
+            self.brush.set_base_value(cname, newvalue)
+
+
+    def _brush_modified_cb(self, settings):
+        """Updates the brush's base setting adjustments on brush changes"""
+        for cname in settings:
+            adj = self.brush_adjustment.get(cname, None)
+            if adj is None:
+                continue
+            value = self.brush.get_base_value(cname)
+            adj.set_value(value)
+
+
+    ## Button mappings, global pressure curve, input devices...
 
     def update_button_mapping(self):
         self.button_mapping.update(self.preferences["input.button_mapping"])
@@ -696,11 +726,6 @@ class Application (object):
         """The preferences subwindow."""
         return self.get_subwindow("PreferencesWindow")
 
-
-    @property
-    def frame_edit_window(self):
-        """The frame editor subwindow."""
-        return self.get_subwindow("FrameEditWindow")
 
     @property
     def input_test_window(self):

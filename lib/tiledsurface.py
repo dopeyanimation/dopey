@@ -32,8 +32,9 @@ from layer import DEFAULT_COMPOSITE_OP
 import pixbufsurface
 
 
-class Tile:
+class Tile (object):
     def __init__(self, copy_from=None):
+        object.__init__(self)
         # note: pixels are stored with premultiplied alpha
         #       15bits are used, but fully opaque or white is stored as 2**15 (requiring 16 bits)
         #       This is to allow many calcuations to divide by 2**15 instead of (2**16-1)
@@ -85,7 +86,7 @@ def get_tiles_bbox(tiles):
         res.expandToIncludeRect(helpers.Rect(N*tx, N*ty, N, N))
     return res
 
-class SurfaceSnapshot:
+class SurfaceSnapshot (object):
     pass
 
 if use_gegl:
@@ -158,9 +159,11 @@ if use_gegl:
 
 # TODO:
 # - move the tile storage from MyPaintSurface to a separate class
-class MyPaintSurface():
+class MyPaintSurface (object):
     # the C++ half of this class is in tiledsurface.hpp
-    def __init__(self, mipmap_level=0, mipmap_surfaces=None, looped=False, looped_size=(0,0)):
+    def __init__(self, mipmap_level=0, mipmap_surfaces=None,
+                 looped=False, looped_size=(0,0)):
+        object.__init__(self)
 
         # TODO: pass just what it needs access to, not all of self
         self._backend = mypaintlib.TiledSurface(self)
@@ -216,6 +219,26 @@ class MyPaintSurface():
         self.tiledict = {}
         self.notify_observers(*get_tiles_bbox(tiles))
         if self.mipmap: self.mipmap.clear()
+
+
+    def trim(self, rect):
+        """Trim the layer to a rectangle, discarding data outside it
+
+        :param rect: A trimming rectangle in model coordinates
+        :type rect: tuple (x, y, w, h)
+
+        Only complete tiles are discarded by this method.
+        """
+        x, y, w, h = rect
+        logger.info("Trim %dx%d%+d%+d", w, h, x, y)
+        trimmed = []
+        for tx, ty in list(self.tiledict.keys()):
+            if tx*N+N < x or ty*N+N < y or tx*N > x+w or ty*N > y+h:
+                trimmed.append((tx, ty))
+                self.tiledict.pop((tx, ty))
+                self._mark_mipmap_dirty(tx, ty)
+        self.notify_observers(*get_tiles_bbox(trimmed))
+
 
     @contextlib.contextmanager
     def tile_request(self, tx, ty, readonly):
@@ -330,17 +353,25 @@ class MyPaintSurface():
             func = svg2composite_func[mode]
             func(src, dst, dst_has_alpha, opacity)
 
+
+    ## Snapshotting
+
     def save_snapshot(self):
+        """Creates and returns a snapshot of the surface"""
         sshot = SurfaceSnapshot()
         for t in self.tiledict.itervalues():
             t.readonly = True
         sshot.tiledict = self.tiledict.copy()
         return sshot
 
+
     def load_snapshot(self, sshot):
+        """Loads a saved snapshot, replacing the internal tiledict"""
         self._load_tiledict(sshot.tiledict)
 
+
     def _load_tiledict(self, d):
+        """Efficiently loads a tiledict, and notifies the observers"""
         if d == self.tiledict:
             # common case optimization, called from split_stroke() via stroke.redo()
             # testcase: comparison above (if equal) takes 0.6ms, code below 30ms
@@ -355,8 +386,14 @@ class MyPaintSurface():
         if not bbox.empty():
             self.notify_observers(*bbox)
 
+
+    ## Loading tile data
+
+
     def load_from_surface(self, other):
+        """Loads tile data from another surface, via a snapshot"""
         self.load_snapshot(other.save_snapshot())
+
 
     def _load_from_pixbufsurface(self, s):
         dirty_tiles = set(self.tiledict.keys())
@@ -370,7 +407,17 @@ class MyPaintSurface():
         bbox = get_tiles_bbox(dirty_tiles)
         self.notify_observers(*bbox)
 
+
     def load_from_numpy(self, arr, x, y):
+        """Loads tile data from a numpy array
+
+        :param arr: Array containing the pixel data
+        :type arr: numpy.ndarray of uint8, dimensions HxWx3 or HxWx4
+        :param x: X coordinate for the array
+        :param y: Y coordinate for the array
+        :returns: the dimensions of the loaded surface, as (x,y,w,h)
+
+        """
         h, w, channels = arr.shape
         if h <= 0 or w <= 0:
             return (x, y, w, h)
@@ -378,16 +425,8 @@ class MyPaintSurface():
         if arr.dtype == 'uint8':
             s = pixbufsurface.Surface(x, y, w, h, data=arr)
             self._load_from_pixbufsurface(s)
-        elif arr.dtype == 'uint16':
-            # We only support this for backgrounds, which are tile-aligned
-            assert w % N == 0 and h % N == 0
-            assert x == 0 and y == 0
-            for ty in range(h/N):
-                for tx in range(w/N):
-                    with self.tile_request(tx, ty, readonly=False) as dst:
-                        dst[:,:,:] = arr[ty*N:(ty+1)*N, tx*N:(tx+1)*N, :]
         else:
-            raise ValueError
+            raise ValueError, "Only uint8 data is supported by MyPaintSurface"
 
         return (x, y, w, h)
 
@@ -480,84 +519,304 @@ class MyPaintSurface():
         return not self.tiledict
 
     def remove_empty_tiles(self):
-        # Only used in tests
+        """Removes tiles from the tiledict which contain no data"""
         for pos, data in self.tiledict.items():
             if not data.rgba.any():
                 self.tiledict.pop(pos)
 
-    def get_move(self, x, y):
-        return _InteractiveMove(self, x, y)
+    def get_move(self, x, y, sort=True):
+        """Returns a move object for this surface
+
+        :param x: Start position for the move, X coord
+        :param y: Start position for the move, X coord
+        :param sort: If true, sort tiles to move by distance from (x,y)
+        :rtype: TiledSurfaceMove
+
+        It's up to the caller to ensure that only one move is active at a
+        any single instant in time.
+        """
+        return TiledSurfaceMove(self, x, y, sort=sort)
 
 
-class _InteractiveMove:
+    def flood_fill(self, x, y, color, bbox, tolerance, dst_surface):
+        """Fills connected areas of this surface
 
-    def __init__(self, surface, x, y):
+        :param x: Starting point X coordinate
+        :param y: Starting point Y coordinate
+        :param color: an RGB color
+        :type color: tuple
+        :param bbox: Bounding box: limits the fill
+        :type bbox: lib.helpers.Rect or equivalent 4-tuple
+        :param tolerance: how much filled pixels are permitted to vary
+        :type tolerance: float [0.0, 1.0]
+        :param dst_surface: Target surface
+        :type dst_surface: MyPaintSurface
+
+        See also `lib.layer.Layer.flood_fill()`.
+        """
+        # Colour to fill with
+        fill_r, fill_g, fill_b = color
+
+        # Limits
+        tolerance = helpers.clamp(tolerance, 0.0, 1.0)
+
+        # Maximum area to fill: tile and in-tile pixel extents
+        bbx, bby, bbw, bbh = bbox
+        if bbh <= 0 or bbw <= 0:
+            return
+        bbbrx = bbx + bbw - 1
+        bbbry = bby + bbh - 1
+        min_tx = int(bbx // N)
+        min_ty = int(bby // N)
+        max_tx = int(bbbrx // N)
+        max_ty = int(bbbry // N)
+        min_px = int(bbx % N)
+        min_py = int(bby % N)
+        max_px = int(bbbrx % N)
+        max_py = int(bbbry % N)
+
+        # Tile and pixel addressing for the seed point
+        tx, ty = int(x//N), int(y//N)
+        px, py = int(x%N), int(y%N)
+
+        # Sample the pixel colour there to obtain the target colour
+        with self.tile_request(tx, ty, readonly=True) as start:
+            targ_r, targ_g, targ_b, targ_a = [int(c) for c in start[py][px]]
+        if targ_a == 0:
+            targ_r = 0
+            targ_g = 0
+            targ_b = 0
+            targ_a = 0
+
+        # Flood-fill loop
+        filled = {}
+        tileq = [ ((tx, ty), [(px, py)]) ]
+        while len(tileq) > 0:
+            (tx, ty), seeds = tileq.pop(0)
+            # Bbox-derived limits
+            if tx > max_tx or ty > max_ty:
+                continue
+            if tx < min_tx or ty < min_ty:
+                continue
+            # Pixel limits within this tile...
+            min_x = 0
+            min_y = 0
+            max_x = N-1
+            max_y = N-1
+            # ... vary at the edges
+            if tx == min_tx:
+                min_x = min_px
+            if ty == min_ty:
+                min_y = min_py
+            if tx == max_tx:
+                max_x = max_px
+            if ty == max_ty:
+                max_y = max_py
+            # Flood-fill one tile
+            one = 1<<15
+            col = (int(fill_r*one), int(fill_g*one), int(fill_b*one), one)
+            with self.tile_request(tx, ty, readonly=True) as src:
+                dst = filled.get((tx, ty), None)
+                if dst is None:
+                    dst = zeros((N, N, 4), 'uint16')
+                    filled[(tx, ty)] = dst
+                overflows = mypaintlib.tile_flood_fill(src, dst, seeds,
+                               targ_r, targ_g, targ_b, targ_a,
+                               fill_r, fill_g, fill_b,
+                               min_x, min_y, max_x, max_y,
+                               tolerance)
+                seeds_n, seeds_e, seeds_s, seeds_w = overflows
+            # Enqueue overflows in each cardinal direction
+            if seeds_n and ty > min_ty:
+                tpos = (tx, ty-1)
+                tileq.append((tpos, seeds_n))
+            if seeds_w and tx > min_tx:
+                tpos = (tx-1, ty)
+                tileq.append((tpos, seeds_w))
+            if seeds_s and ty < max_ty:
+                tpos = (tx, ty+1)
+                tileq.append((tpos, seeds_s))
+            if seeds_e and tx < max_tx:
+                tpos = (tx+1, ty)
+                tileq.append((tpos, seeds_e))
+
+        # Composite filled tiles into the destination surface
+        comp = functools.partial(mypaintlib.tile_composite,
+                                 mypaintlib.BlendingModeNormal)
+        for (tx, ty), src in filled.iteritems():
+            with dst_surface.tile_request(tx, ty, readonly=False) as dst:
+                comp(src, dst, True, 1.0)
+            dst_surface._mark_mipmap_dirty(tx, ty)
+        bbox = get_tiles_bbox(filled)
+        dst_surface.notify_observers(*bbox)
+
+
+class TiledSurfaceMove (object):
+    """Ongoing move state for a tiled surface, processed in chunks
+
+    Tile move processing involves slicing and copying data from a snapshot of
+    the surface's original tile arrays into an active surface within the model
+    document. It's therefore potentially very slow for huge layers: doing this
+    interactively requires the move to be processed in chunks in idle routines.
+
+    Moves are created by a surface's get_move() method starting at a particular
+    point in model coordinates. During an interactive move, they are then
+    updated in response to the user moving the pointer, and get processed in
+    chunks of a few hundred tiles in an idle routine. They can also be
+    processed non-interactively by calling all the different phases together.
+
+    """
+
+    def __init__(self, surface, x, y, sort=True):
+        """Starts the move, recording state in the Move object
+
+        :param x: Where to start, model X coordinate
+        :param y: Where to start, model Y coordinate
+        :param sort: If true, sort tiles to move by distance from (x,y)
+
+        Sorting tiles by distance makes the move look nicer when moving
+        interactively, but it's pointless for non-interactive moves.
+
+        """
+        object.__init__(self)
         self.surface = surface
         self.snapshot = surface.save_snapshot()
         self.chunks = self.snapshot.tiledict.keys()
-        # logger.debug("Number of Tiledict_keys: %r", len(self.chunks))
+        self.sort = sort
         tx = x // N
         ty = y // N
-        chebyshev = lambda p: max(abs(tx - p[0]), abs(ty - p[1]))
-        manhattan = lambda p: abs(tx - p[0]) + abs(ty - p[1])
-        euclidean = lambda p: math.sqrt((tx - p[0])**2 + (ty - p[1])**2)
-        self.chunks.sort(key=manhattan)
+        self.start_pos = (x, y)
+        if self.sort:
+            manhattan_dist = lambda p: abs(tx - p[0]) + abs(ty - p[1])
+            self.chunks.sort(key=manhattan_dist)
         self.chunks_i = 0
+        # Tile state tracking for individual update cycles
+        self.written = set()
+        self.blank_queue = []
+
 
     def update(self, dx, dy):
-        # Tiles to be blanked at the end of processing
-        self.blanked = set(self.surface.tiledict.keys())
+        """Updates the offset during a move
+
+        :param dx: New move offset: relative to the constructor x.
+        :param dy: New move offset: relative to the constructor y.
+
+        This causes all the move's work to be re-queued.
+        """
+        # Nothing has been written in this pass yet
+        self.written = set()
+        # Tile indices to be cleared during processing, unless written
+        self.blank_queue = self.surface.tiledict.keys()
+        if self.sort:
+            x, y = self.start_pos
+            tx = (x + dx) // N
+            ty = (y + dy) // N
+            manhattan_dist = lambda p: abs(tx - p[0]) + abs(ty - p[1])
+            self.blank_queue.sort(key=manhattan_dist)
         # Calculate offsets
         self.slices_x = calc_translation_slices(int(dx))
         self.slices_y = calc_translation_slices(int(dy))
+        # Need to process every source chunk
         self.chunks_i = 0
 
+
     def cleanup(self):
-        # called at the end of each set of processing batches
-        for b in self.blanked:
-            self.surface.tiledict.pop(b, None)
-            self.surface._mark_mipmap_dirty(*b)
-        bbox = get_tiles_bbox(self.blanked)
-        self.surface.notify_observers(*bbox)
-        # Remove empty tile created by Layer Move
+        """Cleans up after processing all tile moves in one update cycle
+
+        This should be called after `process()` indicates that all tiles have
+        been sliced and moved. It should always happen at the end of a move,
+        but for an iteractive move, this can happen in the middle of
+        proceedings too if the user pauses their drag for long enough. The move
+        can still be updated and processed after this method has been called.
+        """
+        # Process any remaining work. Caller should have done this already.
+        if self.chunks_i < len(self.chunks) or len(self.blank_queue) > 0:
+            logger.warning("Stuff left to do at end of move cleanup(). May "
+                           "result in poor interactive appearance. "
+                           "chunks=%d/%d, blanks=%d", self.chunks_i,
+                           len(self.chunks), len(self.blank_queue))
+            logger.warning("Doing cleanup now...")
+            self.process(n=-1)
+        assert self.chunks_i >= len(self.chunks)
+        assert len(self.blank_queue) == 0
+        # Remove empty tiles created by Layer Move
         self.surface.remove_empty_tiles()
 
+
     def process(self, n=200):
+        """Process a number of pending tile moves
+
+        :param n: The number of source tiles to process in this call.
+                  Specify a negative `n` to process all remaining tiles.
+        :returns: whether there are any more tiles to process
+        :type: bool
+
+        """
+        updated = set()
+        moves_remaining = self._process_moves(n, updated)
+        blanks_remaining = self._process_blanks(n, updated)
+        for pos in updated:
+            self.surface._mark_mipmap_dirty(*pos)
+        bbox = get_tiles_bbox(updated)
+        self.surface.notify_observers(*bbox)
+        return blanks_remaining or moves_remaining
+
+
+    def _process_moves(self, n, updated):
+        """Process the tile movement queue"""
         if self.chunks_i > len(self.chunks):
             return False
-        written = set()
         if n <= 0:
             n = len(self.chunks)  # process all remaining
-        for tile_pos in self.chunks[self.chunks_i : self.chunks_i + n]:
-            src_tx, src_ty = tile_pos
-            src_tile = self.snapshot.tiledict[(src_tx, src_ty)]
-            is_integral = len(self.slices_x) == 1 and len(self.slices_y) == 1
+        is_integral = len(self.slices_x) == 1 and len(self.slices_y) == 1
+        for src_t in self.chunks[self.chunks_i : self.chunks_i + n]:
+            src_tx, src_ty = src_t
+            src_tile = self.snapshot.tiledict[src_t]
             for (src_x0, src_x1), (targ_tdx, targ_x0, targ_x1) in self.slices_x:
                 for (src_y0, src_y1), (targ_tdy, targ_y0, targ_y1) in self.slices_y:
                     targ_tx = src_tx + targ_tdx
                     targ_ty = src_ty + targ_tdy
+                    targ_t = targ_tx, targ_ty
                     if is_integral:
-                        self.surface.tiledict[(targ_tx, targ_ty)] = src_tile.copy()
-                    else:
-                        targ_tile = None
-                        if (targ_tx, targ_ty) in self.blanked:
-                            targ_tile = Tile()
-                            self.surface.tiledict[(targ_tx, targ_ty)] = targ_tile
-                            self.blanked.remove( (targ_tx, targ_ty) )
-                        else:
-                            targ_tile = self.surface.tiledict.get((targ_tx, targ_ty), None)
-                        if targ_tile is None:
-                            targ_tile = Tile()
-                            self.surface.tiledict[(targ_tx, targ_ty)] = targ_tile
-                        targ_tile.rgba[targ_y0:targ_y1, targ_x0:targ_x1] = src_tile.rgba[src_y0:src_y1, src_x0:src_x1]
-                    written.add((targ_tx, targ_ty))
-        self.blanked -= written
-        for pos in written:
-            self.surface._mark_mipmap_dirty(*pos)
-        bbox = get_tiles_bbox(written) # hopefully relatively contiguous
-        self.surface.notify_observers(*bbox)
+                        # We're lucky. Perform a straight data copy.
+                        self.surface.tiledict[targ_t] = src_tile.copy()
+                        continue
+                    # Get a tile to write
+                    targ_tile = None
+                    if targ_t in self.written:
+                        # Reuse a blank tile made earlier in this update cycle
+                        targ_tile = self.surface.tiledict.get(targ_t, None)
+                    if targ_tile is None:
+                        # Create and store a new blank tile to avoid corruption
+                        targ_tile = Tile()
+                        self.surface.tiledict[targ_t] = targ_tile
+                        self.written.add(targ_t)
+                    # Copy this source slice to the desination
+                    targ_tile.rgba[targ_y0:targ_y1, targ_x0:targ_x1] \
+                                = src_tile.rgba[src_y0:src_y1, src_x0:src_x1]
+                    updated.add(targ_t)
+            # The source tile has been fully processed at this point, and can be blanked
+            # if it's safe to do so
+            if src_t in self.surface.tiledict:
+                if src_t not in self.written:
+                    self.surface.tiledict.pop(src_t, None)
+                    updated.add(src_t)
+        # Move on, and return whether we're complete
         self.chunks_i += n
         return self.chunks_i < len(self.chunks)
+
+
+    def _process_blanks(self, n, updated):
+        """Internal: process blanking-out queue"""
+        if n <= 0:
+            n = len(self.blank_queue)
+        while len(self.blank_queue) > 0 and n > 0:
+            t = self.blank_queue.pop(0)
+            if t not in self.written:
+                self.surface.tiledict.pop(t, None)
+                updated.add(t)
+                n -= 1
+        return len(self.blank_queue) > 0
 
 
 def calc_translation_slices(dc):
@@ -579,20 +838,31 @@ def calc_translation_slices(dc):
         return [ ((0, N-dcr), (tdc, dcr, N)) ,
                  ((N-dcr, N), (tdc+1, 0, dcr)) ]
 
+
 # Set which surface backend to use
 Surface = GeglSurface if use_gegl else MyPaintSurface
 
+
 def new_surface():
+    """Creates a new Surface object. Used by mypaintlib internals."""
     return Surface()
 
 
 class BackgroundError(Exception):
+    """Errors raised by Background during failed initiailizations"""
     pass
 
-class Background(Surface):
-    """ """
+
+class Background (Surface):
+    """A background layer surface, with a repeating image"""
 
     def __init__(self, obj, mipmap_level=0):
+        """Construct from a color or from a NumPy array
+
+        :param obj: RGB triple (uint8), or a HxWx4 or HxWx3 numpy array which
+           can be either uint8 or uint16.
+        :param mipmap_level: mipmap level, used internally. Root is zero.
+        """
 
         if not isinstance(obj, numpy.ndarray):
             r, g, b = obj
@@ -603,8 +873,8 @@ class Background(Surface):
         if height % N or width % N:
             raise BackgroundError, 'unsupported background tile size: %dx%d' % (width, height)
 
-        Surface.__init__(self, mipmap_level=0,
-                                      looped=True, looped_size=(width, height))
+        super(Background, self).__init__(mipmap_level=0, looped=True,
+                                         looped_size=(width, height))
         self.load_from_numpy(obj, 0, 0)
 
         # Generate mipmap
@@ -618,3 +888,25 @@ class Background(Surface):
             self.mipmap = Background(mipmap_obj, mipmap_level+1)
             self.mipmap.parent = self
             self.mipmap_level = mipmap_level
+
+
+    def load_from_numpy(self, arr, x, y):
+        """Loads tile data from a numpy array
+
+        This extends the base class's implementation with additional support
+        for tile-aligned uint16 data.
+
+        """
+        h, w, channels = arr.shape
+        if h <= 0 or w <= 0:
+            return (x, y, w, h)
+        if arr.dtype == 'uint16':
+            assert w % N == 0 and h % N == 0
+            assert x == 0 and y == 0
+            for ty in range(h/N):
+                for tx in range(w/N):
+                    with self.tile_request(tx, ty, readonly=False) as dst:
+                        dst[:,:,:] = arr[ty*N:(ty+1)*N, tx*N:(tx+1)*N, :]
+            return (x, y, w, h)
+        else:
+            return super(Background, self).load_from_numpy(arr, x, y)
