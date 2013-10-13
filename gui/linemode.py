@@ -6,6 +6,17 @@
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 
+# NOTE: Much of this was written before the new modes system.
+# NOTE: The InteractionMode stuff was sort of bolted on after the fact.
+
+# TODO: Understand it more; devolve specifics to specific subclasses.
+# TODO: Document stuff properly.
+# TODO: Use generic SwitchableModeMixin stuff to select tweak submodes?
+# TODO: Reorganize keys & exploit modality so that Pick Color can be invoked!
+
+
+## Imports
+
 import math
 import logging
 logger = logging.getLogger(__name__)
@@ -18,6 +29,9 @@ import gobject
 from curve import CurveWidget
 
 import canvasevent
+
+
+## Module constants
 
 # internal-name, display-name, constant, minimum, default, maximum, tooltip
 _LINE_MODE_SETTINGS_LIST = [
@@ -33,6 +47,8 @@ _LINE_MODE_SETTINGS_LIST = [
      _("Stroke trail-off beginning")],
     ]
 
+
+## Line pressure settings
 
 class LineModeSettings (object):
     """Manage GtkAdjustments for tweaking LineMode settings.
@@ -141,6 +157,8 @@ class LineModeCurveWidget (CurveWidget):
             adj.set_value(value)
 
 
+## Options UI
+
 class LineModeOptionsWidget (canvasevent.PaintingModeOptionsWidgetBase):
     """Options widget for geometric line modes"""
 
@@ -162,11 +180,13 @@ class LineModeOptionsWidget (canvasevent.PaintingModeOptionsWidgetBase):
         self.curve._update(from_defaults=True)
 
 
+## Interaction modes for making lines
+
 class LineModeBase (canvasevent.SwitchableModeMixin,
                     canvasevent.SpringLoadedDragMode,
                     canvasevent.ScrollableModeMixin,
                     canvasevent.OneshotDragModeMixin):
-    """Draws geometric lines."""
+    """Draws geometric lines (base class)"""
 
     ## Class constants
 
@@ -716,10 +736,6 @@ class LineModeBase (canvasevent.SwitchableModeMixin,
                 self.record_last_stroke(command, x, y)
 
 
-
-## User-facing modes
-
-
 class StraightMode (LineModeBase):
     __action_name__ = "StraightMode"
     line_mode = "StraightMode"
@@ -729,8 +745,7 @@ class StraightMode (LineModeBase):
         return _(u"Lines and Curves")
 
     def get_usage(self):
-        return _(u"Click, drag, and release to draw a straight line; "
-                  "shift-drag curves the last line")
+        return _(u"Draw straight lines; Shift adds curves, Ctrl constrains angle")
 
 
 class SequenceMode (LineModeBase):
@@ -742,8 +757,7 @@ class SequenceMode (LineModeBase):
         return _(u"Connected Lines")
 
     def get_usage(cls):
-        return _("Click to continue drawing a sequence of lines; "
-                 "shift-drag curves the last line")
+        return _("Draw a sequence of lines; Shift adds curves, Ctrl constrains angle")
 
 
 class EllipseMode (LineModeBase):
@@ -755,11 +769,10 @@ class EllipseMode (LineModeBase):
         return _(u"Elipses and Circles")
 
     def get_usage(self):
-        return _(u"Click and drag to add ellipes; when dragging, Shift "
-                  "adjusts angle, and Ctrl locks the ratio")
+        return _(u"Draw ellipes; Shift rotates, Ctrl constrains ratio/angle")
 
 
-### Curve Math
+## Curve Math
 def point_on_curve_1(t, cx, cy, sx, sy, x1, y1, x2, y2):
     ratio = t/100.0
     x3, y3 = multiply_add(sx, sy, x1, y1, ratio)
@@ -782,7 +795,7 @@ def point_on_curve_2(t, cx, cy, sx, sy, kx, ky, x1, y1, x2, y2, x3, y3):
     return x, y
 
 
-### Ellipse Math
+## Ellipse Math
 def starting_point_for_ellipse(x, y, rotate):
     # Rotate starting point
     r = math.radians(rotate)
@@ -810,7 +823,7 @@ def rotate_ellipse(x, y, sin, cos):
     return x, y
 
 
-### Vector Math
+## Vector Math
 def get_angle(x1, y1, x2, y2):
     dot = dot_product(x1, y1, x2, y2)
     if abs(dot) < 1.0:

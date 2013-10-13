@@ -12,44 +12,13 @@
 struct _MyPaintPythonTiledSurface {
     MyPaintTiledSurface parent;
     PyObject * py_obj;
-    int atomic;
 };
 
 // Forward declare
 void free_tiledsurf(MyPaintSurface *surface);
 
-void begin_atomic(MyPaintSurface *surface)
-{
-    MyPaintPythonTiledSurface *self = (MyPaintPythonTiledSurface *)surface;
-
-    mypaint_tiled_surface_begin_atomic((MyPaintTiledSurface *)self);
-
-    self->atomic++;
-}
-
-MyPaintRectangle *end_atomic(MyPaintSurface *surface)
-{
-    MyPaintPythonTiledSurface *self = (MyPaintPythonTiledSurface *)surface;
-
-    MyPaintRectangle *bbox = mypaint_tiled_surface_end_atomic((MyPaintTiledSurface *)self);
-
-    assert(self->atomic > 0);
-    self->atomic--;
-
-    if (self->atomic == 0) {
-        if (bbox->width > 0) {
-            PyObject* res;
-            res = PyObject_CallMethod(self->py_obj, "notify_observers", "(iiii)",
-                                      bbox->x, bbox->y, bbox->width, bbox->height);
-            Py_DECREF(res);
-        }
-    }
-
-    return bbox;
-}
-
 static void
-tile_request_start(MyPaintTiledSurface *tiled_surface, MyPaintTiledSurfaceTileRequestData *request)
+tile_request_start(MyPaintTiledSurface *tiled_surface, MyPaintTileRequest *request)
 {
     MyPaintPythonTiledSurface *self = (MyPaintPythonTiledSurface *)tiled_surface;
 
@@ -87,7 +56,7 @@ tile_request_start(MyPaintTiledSurface *tiled_surface, MyPaintTiledSurfaceTileRe
 }
 
 static void
-tile_request_end(MyPaintTiledSurface *tiled_surface, MyPaintTiledSurfaceTileRequestData *request)
+tile_request_end(MyPaintTiledSurface *tiled_surface, MyPaintTileRequest *request)
 {
     // We modify tiles directly, so don't need to do anything here
 }
@@ -102,11 +71,8 @@ mypaint_python_tiled_surface_new(PyObject *py_object)
 
     // MyPaintSurface vfuncs
     self->parent.parent.destroy = free_tiledsurf;
-    self->parent.parent.begin_atomic = begin_atomic;
-    self->parent.parent.end_atomic = end_atomic;
 
     self->py_obj = py_object; // no need to incref
-    self->atomic = 0;
 
     return self;
 }

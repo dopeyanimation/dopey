@@ -22,6 +22,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 from lib import helpers, tiledsurface, pixbufsurface
+from lib.observable import event
 import cursor
 
 
@@ -102,6 +103,13 @@ class TiledDrawWidget (gtk.EventBox):
 
         #: Scroll to match appearing/disappearing sidebars and toolbars.
         self.scroll_on_allocate = True
+
+        forwarder = lambda *a: self.transformation_updated()
+        self.renderer.transformation_updated += forwarder
+
+    @event
+    def transformation_updated(self):
+        """Forwarded event: transformation was updated"""
 
 
     def _size_allocate_cb(self, widget, alloc):
@@ -368,7 +376,7 @@ class CanvasTransformation (object):
                     (self.mirrored and " mirrored" or ""))
 
 
-class DrawCursorMixin:
+class DrawCursorMixin(object):
     """Mixin for renderer widgets needing a managed drawing cursor.
 
     Required members: self.doc, self.scale, gtk.Widget stuff.
@@ -557,6 +565,11 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
         return self._tdw.doc
 
 
+    @event
+    def transformation_updated(self):
+        """Event: transformation was updated"""
+
+
     def _invalidate_cached_transform_matrix(self):
         self.cached_transformation_matrix = None
 
@@ -654,10 +667,12 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
 
     def _get_model_view_transformation(self):
         if self.cached_transformation_matrix is None:
-            matrix = calculate_transformation_matrix(self.scale, self.rotation,
-                                                     self.translation_x, self.translation_y, self.mirrored)
+            matrix = calculate_transformation_matrix(
+                        self.scale, self.rotation,
+                        self.translation_x, self.translation_y,
+                        self.mirrored)
             self.cached_transformation_matrix = matrix
-        
+            self.transformation_updated()
         return self.cached_transformation_matrix
 
 
@@ -880,22 +895,6 @@ class CanvasRenderer(gtk.DrawingArea, DrawCursorMixin):
             pattern.set_filter(cairo.FILTER_NEAREST)
 
         cr.paint()
-
-        if self.doc.frame_enabled:
-            # Draw a overlay for all the area outside the "document area"
-            cr.save()
-            frame_rgba = self.app.preferences["frame.color_rgba"]
-            frame_rgba = [helpers.clamp(c, 0, 1) for c in frame_rgba]
-            cr.set_source_rgba(*frame_rgba)
-            cr.set_operator(cairo.OPERATOR_OVER)
-            mipmap_factor = 2**mipmap_level
-            frame = self.doc.get_frame()
-            cr.rectangle(frame[0]/mipmap_factor, frame[1]/mipmap_factor,
-                            frame[2]/mipmap_factor, frame[3]/mipmap_factor)
-            cr.rectangle(*model_bbox)
-            cr.set_fill_rule(cairo.FILL_RULE_EVEN_ODD)
-            cr.fill()
-            cr.restore()
 
         if self.visualize_rendering:
             # visualize painted bboxes (blue)

@@ -21,15 +21,14 @@ logger = logging.getLogger(__name__)
 import mypaintlib
 import helpers
 import math
+import pixbufsurface
+from layer import DEFAULT_COMPOSITE_OP
 
 TILE_SIZE = N = mypaintlib.TILE_SIZE
-MAX_MIPMAP_LEVEL = 4
+MAX_MIPMAP_LEVEL = mypaintlib.MAX_MIPMAP_LEVEL
 
 use_gegl = True if os.environ.get('MYPAINT_ENABLE_GEGL', 0) else False
 
-from layer import DEFAULT_COMPOSITE_OP
-
-import pixbufsurface
 
 
 class Tile (object):
@@ -200,11 +199,16 @@ class MyPaintSurface (object):
         # Forwarding API
         self.set_symmetry_state = self._backend.set_symmetry_state
         self.begin_atomic = self._backend.begin_atomic
-        self.end_atomic = self._backend.end_atomic
+
         self.get_color = self._backend.get_color
         self.get_alpha = self._backend.get_alpha
         self.draw_dab = self._backend.draw_dab
 
+
+    def end_atomic(self):
+	bbox = self._backend.end_atomic()
+	if (bbox[2] > 0 and bbox[3] > 0):
+	    self.notify_observers(*bbox)
 
     @property
     def backend(self):

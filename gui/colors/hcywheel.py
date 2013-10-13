@@ -64,7 +64,7 @@ The New button lets you choose one of several templates as a starting point.
 """)
 
 
-class MaskableWheelMixin:
+class MaskableWheelMixin(object):
     """Provides wheel widgets with maskable areas.
 
     For use with implementations of `HueSaturationWheelAdjusterMixin`.
@@ -361,7 +361,7 @@ class MaskableWheelMixin:
         HueSaturationWheelMixin.paint_foreground_cb(self, cr, wd, ht)
 
 
-class HCYHueChromaWheelMixin:
+class HCYHueChromaWheelMixin(object):
     """Mixin for wheel-style adjusters to display the H+C from the HCY model.
 
     For use with implementations of `HueSaturationWheelAdjusterMixin`; make
@@ -872,12 +872,12 @@ class HCYMaskPreview (MaskableWheelMixin,
 
     """
 
-    def __init__(self, mask=None):
+    def __init__(self):
         MaskableWheelMixin.__init__(self)
         HueSaturationWheelAdjuster.__init__(self)
         self.set_app_paintable(True)
         self.set_has_window(False)
-        self.set_mask(mask)
+        self.set_mask([])
         self.mask_toggle.set_active(True)
         self.set_size_request(64, 64)
 
@@ -975,7 +975,9 @@ class HCYMaskTemplateDialog (gtk.Dialog):
                             (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT))
         self.set_position(gtk.WIN_POS_MOUSE)
         target_mgr = target.get_color_manager()
-        mgr = ColorManager()
+        prefs_ro = deepcopy(target_mgr.get_prefs())
+        datapath = target_mgr.get_data_path()
+        mgr = ColorManager(prefs=prefs_ro, datapath=datapath)
         mgr.set_wheel_type(target_mgr.get_wheel_type())
         self.target = target
         size = 64
@@ -992,8 +994,9 @@ class HCYMaskTemplateDialog (gtk.Dialog):
             label.set_size_request(375, -1)
             label.set_line_wrap(True)
             label.set_alignment(0, 0.5)
-            preview = HCYMaskPreview(mask)
+            preview = HCYMaskPreview()
             preview.set_color_manager(mgr)
+            preview.set_mask(mask)
             preview_frame = gtk.AspectFrame(obey_child=True)
             preview_frame.add(preview)
             preview_frame.set_shadow_type(gtk.SHADOW_NONE)
@@ -1041,7 +1044,10 @@ class HCYMaskPropertiesDialog (gtk.Dialog):
         self.set_position(gtk.WIN_POS_MOUSE)
         self.target = target
         ed = HCYMaskEditorWheel()
-        ed_mgr = ColorManager()
+        target_mgr = target.get_color_manager()
+        prefs_ro = deepcopy(target_mgr.get_prefs())
+        datapath = target_mgr.get_data_path()
+        ed_mgr = ColorManager(prefs=prefs_ro, datapath=datapath)
         ed.set_color_manager(ed_mgr)
         self.editor = ed
         ed.set_size_request(300, 300)
@@ -1114,7 +1120,10 @@ class HCYMaskPropertiesDialog (gtk.Dialog):
                 pal.append(col, col_name)
         preview = HCYMaskPreview()
         preview.set_size_request(128, 128)
-        mgr = ColorManager()
+        target_mgr = self.target.get_color_manager()
+        prefs_ro = deepcopy(target_mgr.get_prefs())
+        datapath = target_mgr.get_data_path()
+        mgr = ColorManager(prefs=prefs_ro, datapath=datapath)
         preview.set_color_manager(mgr)
         preview.set_managed_color(self.editor.get_managed_color())
         palette_save_via_dialog(pal, title=_("Save mask as a Gimp palette"),
@@ -1124,7 +1133,10 @@ class HCYMaskPropertiesDialog (gtk.Dialog):
     def __load_clicked(self, button):
         preview = HCYMaskPreview()
         preview.set_size_request(128, 128)
-        mgr = ColorManager()
+        target_mgr = self.target.get_color_manager()
+        prefs_ro = deepcopy(target_mgr.get_prefs())
+        datapath = target_mgr.get_data_path()
+        mgr = ColorManager(prefs=prefs_ro, datapath=datapath)
         preview.set_color_manager(mgr)
         preview.set_managed_color(self.editor.get_managed_color())
         dialog_title = _("Load mask from a Gimp palette")
@@ -1246,7 +1258,7 @@ class HCYAdjusterPage (CombinedAdjusterPage):
 if __name__ == '__main__':
     import os, sys
     from adjbases import ColorManager
-    mgr = ColorManager()
+    mgr = ColorManager(prefs={}, datapath='.')
     mgr.set_color(HSVColor(0.0, 0.0, 0.55))
     if len(sys.argv) > 1:
         # Generate icons
