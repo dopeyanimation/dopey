@@ -53,6 +53,7 @@ import framewindow
 import scratchwindow
 import inputtestwindow
 import brushiconeditor
+import history
 import colortools
 import brushmodifier
 import toolbar
