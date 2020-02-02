@@ -183,6 +183,8 @@ class DrawWindow (gtk.Window):
         mode_img = self.app.builder.get_object("app_current_mode_icon")
         mode_img.connect("query-tooltip", self._mode_icon_query_tooltip_cb)
         mode_img.set_has_tooltip(True)
+        
+        self.ani = self.app.doc.ani
 
 
     def _init_actions(self):
