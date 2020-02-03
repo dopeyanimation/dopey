@@ -12,6 +12,9 @@ from gettext import gettext as _
 import json
 import tempfile
 from subprocess import call
+import logging
+logger = logging.getLogger('animation subsystem')
+
 
 import pixbufsurface
 
@@ -124,12 +127,17 @@ class Animation(object):
 
             for i, d in enumerate(raster_frames):
                 if d['idx'] is not None:
-                    cel = self.doc.layers[d['idx']]
+                    #cel = self.doc.layers[d['idx']] - this line exceptions with some files if the first frame is a key
+                    
+                    # cels appear to be numbered from 
+                    # 0 in memory, but from 1 on disk...
+                    cel = self.doc.layers[d['idx']-1] 
                 else:
                     cel = None
                 self.frames[i].is_key = d['is_key']
                 self.frames[i].description = d['description']
                 self.frames[i].cel = cel
+                logger.info("loading cel #" + str(i))
 
         else:
             # load in legacy style

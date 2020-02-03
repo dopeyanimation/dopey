@@ -199,7 +199,7 @@ class AnimationTool (gtk.VBox):
         opacity_checkbox('other keys', _('Other keys'), _("Show the other keys cels."))
         opacity_checkbox('other', _('Other'), _("Show the rest of the cels."))
 
-        self.framerate_adjustment = gtk.Adjustment(value=self.ani.framerate, lower=1, upper=120, step_incr=0.01)
+        self.framerate_adjustment = gtk.Adjustment(value=self.ani.framerate, lower=1, upper=120, step_incr=1.0)
         self.framerate_adjustment.connect("value-changed", self.on_framerate_changed)
         self.framerate_entry = gtk.SpinButton(adjustment=self.framerate_adjustment, digits=2, climb_rate=1.5)
         framerate_lbl = gtk.Label(_('Frame rate:'))
